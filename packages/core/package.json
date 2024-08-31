@@ -1,0 +1,82 @@
+{
+	"name": "crelte",
+	"version": "0.1.0",
+	"author": "Crelte <support@crelte.com>",
+	"type": "module",
+	"scripts": {
+		"lint": "eslint ./src",
+		"test": "vitest",
+		"build": "svelte-package -i ./src",
+		"watch": "svelte-package -i ./src -w"
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"module": "dist/index.js",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./client": {
+			"types": "./dist/init/client.d.ts",
+			"default": "./dist/init/client.js"
+		},
+		"./server": {
+			"types": "./dist/init/server.d.ts",
+			"default": "./dist/init/server.js"
+		},
+		"./stores": {
+			"types": "./dist/stores/index.d.ts",
+			"default": "./dist/stores/index.js"
+		},
+		"./graphql": {
+			"types": "./dist/graphql/index.d.ts",
+			"default": "./dist/graphql/index.js"
+		},
+		"./routing": {
+			"types": "./dist/routing/index.d.ts",
+			"default": "./dist/routing/index.js"
+		},
+		"./ssr": {
+			"types": "./dist/ssr/index.d.ts",
+			"default": "./dist/ssr/index.js"
+		},
+		"./loadData": {
+			"types": "./dist/loadData/index.d.ts",
+			"default": "./dist/loadData/index.js"
+		},
+		"./plugins": {
+			"types": "./dist/plugins/index.d.ts",
+			"default": "./dist/plugins/index.js"
+		},
+		"./cookies": {
+			"types": "./dist/cookies/index.d.ts",
+			"default": "./dist/cookies/index.js"
+		},
+		"./blocks": {
+			"types": "./dist/blocks/index.d.ts",
+			"default": "./dist/blocks/index.js"
+		}
+	},
+	"dependencies": {
+		"chuchi-utils": "^0.1.1",
+		"svelte": "^4.2.12"
+	},
+	"devDependencies": {
+		"@sveltejs/package": "^2.3.1",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@tsconfig/svelte": "^5.0.2",
+		"@eslint/js": "^9.4.0",
+		"@types/eslint__js": "^8.42.3",
+		"eslint": "^8.45.0",
+		"prettier": "^3.2.5",
+		"tslib": "^2.6.2",
+		"typescript": "^5.2.2",
+		"typescript-eslint": "^7.11.0",
+		"vitest": "^2.0.0"
+	}
+}
