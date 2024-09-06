@@ -1,3 +1,4 @@
+import { Cookies } from './cookies/index.js';
 import Crelte from './Crelte.js';
 import GraphQl, { GraphQlRequestOptions } from './graphql/GraphQl.js';
 import type Globals from './loadData/Globals.js';
@@ -50,6 +51,10 @@ export default class CrelteRouted {
 
 	get globals(): Globals {
 		return this.inner.globals;
+	}
+
+	get cookies(): Cookies {
+		return this.inner.cookies;
 	}
 
 	// overload this function to add your plugin type

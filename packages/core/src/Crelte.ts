@@ -1,8 +1,11 @@
 import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
-import CrelteRouted from './CrelteRouted.js';
-import GraphQl, { GraphQlOptions } from './graphql/GraphQl.js';
+import CrelteRouted, { GraphQlQuery } from './CrelteRouted.js';
+import GraphQl, {
+	GraphQlOptions,
+	GraphQlRequestOptions,
+} from './graphql/GraphQl.js';
 import Globals from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins from './plugins/Plugins.js';
@@ -90,6 +93,24 @@ export default class Crelte {
 		}
 
 		return new CrelteRouted(this, route, site);
+	}
+
+	/**
+	 * Run a GraphQl Query
+	 *
+	 * @param query the default export from a graphql file
+	 * @param variables variables that should be passed to the
+	 * graphql query
+	 * @param options opts `{ caching: true, previewToken: string,
+	 * siteToken: string, ignoreStatusCode: false, headers: {} }`
+	 */
+	async query(
+		query: GraphQlQuery,
+		variables: Record<string, unknown> = {},
+		opts: GraphQlRequestOptions = {},
+	): Promise<unknown> {
+		// this function is added as convenience
+		return this.toRouted().query(query, variables, opts);
 	}
 
 	// don't use
