@@ -253,7 +253,7 @@ export default class Router {
 		this.nextRoute.setSilent(route);
 		const siteChanged = this.nextSite.get()?.id !== site.id;
 		this.nextSite.setSilent(site);
-		this.route.notify();
+		this.nextRoute.notify();
 		if (siteChanged) this.nextSite.notify();
 
 		// route prepared
