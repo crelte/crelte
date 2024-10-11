@@ -29,7 +29,7 @@ export type SetCookie = {
 export function setCookieToString(cookie: SetCookie): string {
 	let s = `${cookie.name}=${encodeURIComponent(cookie.value)}`;
 
-	if (cookie.maxAge) {
+	if (typeof cookie.maxAge === 'number') {
 		s += `; Max-Age=${cookie.maxAge}`;
 	}
 
