@@ -46,10 +46,8 @@ export default class InnerRouter {
 		this.listen();
 
 		// let's first try to load from the state
-		const route = this.routeFromUrl(
-			window.location.href,
-			window.history.state,
-		);
+		const route = this.targetToRoute(window.location.href);
+		route._fillFromState(window.history.state);
 
 		route.origin = 'init';
 
@@ -121,17 +119,35 @@ export default class InnerRouter {
 	}
 
 	/**
-	 * Resolve a url and convert it to a Route
+	 * Resolve a url or Route and convert it to a Route
 	 *
-	 * @param fullUrl
-	 * @param state history state if known
+	 * @param target
 	 * @return Returns null if the url does not match our host (the protocol get's ignored)
 	 */
-	routeFromUrl(fullUrl: string | URL, state?: any): Route {
-		if (typeof fullUrl === 'string' && !fullUrl.startsWith('http')) {
-			throw new Error('fullUrl needs to start with http');
+	targetToRoute(target: string | URL | Route): Route {
+		if (typeof target === 'string') {
+			if (target.startsWith('/')) {
+				const site = this.site;
+				target = new URL(site.uri + target, site.url);
+			} else {
+				target = new URL(target);
+			}
 		}
 
+		if (target instanceof URL) {
+			return this.routeFromUrl(target);
+		}
+
+		return target;
+	}
+
+	/**
+	 * Resolve a url and convert it to a Route
+	 *
+	 * @param url
+	 * @return Returns null if the url does not match our host (the protocol get's ignored)
+	 */
+	routeFromUrl(fullUrl: URL): Route {
 		// strip stuff we dont need from url
 		const route = new Route(fullUrl, null);
 		const url = route.url;
@@ -157,8 +173,6 @@ export default class InnerRouter {
 		}
 
 		route.site = site;
-
-		route._fillFromState(state);
 
 		return route;
 	}
@@ -193,7 +207,7 @@ export default class InnerRouter {
 				if (link && link.target.toLowerCase() === '_blank') return;
 
 				if (link && !link.hasAttribute('data-no-preload')) {
-					this.preloadUrl(link.href);
+					this.preload(link.href);
 				}
 
 				currentMouseOver = link;
@@ -237,7 +251,8 @@ export default class InnerRouter {
 		window.addEventListener('popstate', async e => {
 			if (!('route' in e.state)) return;
 
-			const route = this.routeFromUrl(window.location.href, e.state);
+			const route = this.targetToRoute(window.location.href);
+			route._fillFromState(e.state);
 			route.origin = 'pop';
 
 			// since the pop event replaced our state we can't replace the state
@@ -255,7 +270,9 @@ export default class InnerRouter {
 	 * @param route a route object or an url or uri
 	 * @param pushState if true pushed the state to the window.history
 	 */
-	open(route: Route, pushState: boolean = true) {
+	open(target: string | URL | Route, pushState: boolean = true) {
+		const route = this.targetToRoute(target);
+
 		const current = this.route;
 		if (current) {
 			// store the scroll position
@@ -265,7 +282,7 @@ export default class InnerRouter {
 
 		// if the domain of the current site is different than the domain of the
 		// new site we need to do a window.location.href call
-		if (current && route && current.url.origin !== route.url.origin) {
+		if (current && current.url.origin !== route.url.origin) {
 			window.location.href = route.url.href;
 			return;
 		}
@@ -341,10 +358,16 @@ export default class InnerRouter {
 	 *
 	 * @param url
 	 */
-	preloadUrl(url: string) {
-		if (!url.startsWith('http')) return;
+	preload(target: string | URL | Route) {
+		const route = this.targetToRoute(target);
 
-		const route = this.routeFromUrl(url);
+		// if the domain of the current site is different than the domain of the
+		// new site id does not make sense to preload
+		if (this.site.url.origin !== route.url.origin) {
+			window.location.href = route.url.href;
+			return;
+		}
+
 		const current = this.route;
 		const site = route.site ?? this.site;
 

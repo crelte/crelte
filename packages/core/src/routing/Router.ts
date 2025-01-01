@@ -182,19 +182,6 @@ export default class Router {
 	 * the site baseUrl
 	 */
 	open(target: string | URL | Route) {
-		if (typeof target === 'string') {
-			if (target.startsWith('/')) {
-				const site = this.inner.site;
-				target = new URL(site.uri + target, site.url);
-			} else {
-				target = new URL(target);
-			}
-		}
-
-		if (target instanceof URL) {
-			target = this.inner.routeFromUrl(target);
-		}
-
 		this.inner.open(target);
 	}
 
@@ -240,8 +227,8 @@ export default class Router {
 	/**
 	 * Preload a url
 	 */
-	preload(url: string) {
-		this.inner.preloadUrl(url);
+	preload(target: string | URL | Route) {
+		this.inner.preload(target);
 	}
 
 	private setNewRoute(route: Route) {
@@ -273,7 +260,7 @@ export default class Router {
 			};
 		});
 
-		const route = this.inner.routeFromUrl(url);
+		const route = this.inner.targetToRoute(url);
 
 		// let's see if the url matches any route and site
 		// if not let's redirect to the site which matches the acceptLang
