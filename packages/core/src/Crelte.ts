@@ -1,6 +1,7 @@
 import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
+import CrelteBase from './CrelteBase.js';
 import CrelteRouted, { GraphQlQuery } from './CrelteRouted.js';
 import GraphQl, {
 	GraphQlOptions,
@@ -8,7 +9,7 @@ import GraphQl, {
 } from './graphql/GraphQl.js';
 import Globals from './loadData/Globals.js';
 import Events from './plugins/Events.js';
-import Plugins from './plugins/Plugins.js';
+import Plugins, { Plugin } from './plugins/Plugins.js';
 import Route from './routing/Route.js';
 import Router, { RouterOpts } from './routing/Router.js';
 import Site, { SiteFromGraphQl } from './routing/Site.js';
@@ -51,7 +52,7 @@ export class CrelteBuilder {
 	}
 }
 
-export default class Crelte {
+export default class Crelte implements CrelteBase {
 	ssrCache: SsrCache;
 	graphQl: GraphQl;
 	router: Router;
@@ -73,12 +74,22 @@ export default class Crelte {
 		this.cookies = builder.cookies;
 	}
 
+	getPlugin(name: string): Plugin | null {
+		return this.plugins.get(name);
+	}
+
 	/**
 	 * returns an env Variables, always needs to be prefixed VITE_
 	 * Except ENDPOINT_URL and CRAFT_WEB_URL
 	 */
 	getEnv(name: string): string | null {
 		return this.ssrCache.get(name);
+	}
+
+	/// calling this from loadGlobalData will always return null
+	/// this does return the resolved store
+	getGlobal(name: string): any | null {
+		return this.globals.get(name) ?? null;
 	}
 
 	/// requires a site if the route does not contain a site

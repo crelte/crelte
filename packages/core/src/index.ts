@@ -7,11 +7,13 @@ import type GraphQl from './graphql/GraphQl.js';
 import type ReadonlyStore from './stores/ReadonlyStore.js';
 import Crelte from './Crelte.js';
 import CrelteRouted from './CrelteRouted.js';
+import CrelteBase from './CrelteBase.js';
 import { Flag } from './stores/index.js';
 import { Global, GlobalData } from './loadData/Globals.js';
 import { Cookies } from './cookies/index.js';
 
 export { Crelte, CrelteRouted };
+export type { CrelteBase };
 
 /**
  * Get the Crelte from the current context

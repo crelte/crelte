@@ -1,5 +1,6 @@
 import { Cookies } from './cookies/index.js';
 import Crelte from './Crelte.js';
+import CrelteBase from './CrelteBase.js';
 import GraphQl, { GraphQlRequestOptions } from './graphql/GraphQl.js';
 import type Globals from './loadData/Globals.js';
 import type Events from './plugins/Events.js';
@@ -14,7 +15,7 @@ export type GraphQlQuery = {
 	query: string;
 };
 
-export default class CrelteRouted {
+export default class CrelteRouted implements CrelteBase {
 	route: Route;
 	site: Site;
 
@@ -29,16 +30,12 @@ export default class CrelteRouted {
 		this.innerGlobals = new Map();
 	}
 
+	get crelte(): Crelte {
+		return this.inner;
+	}
+
 	get ssrCache(): SsrCache {
 		return this.inner.ssrCache;
-	}
-
-	get graphQl(): GraphQl {
-		return this.inner.graphQl;
-	}
-
-	get router(): Router {
-		return this.inner.router;
 	}
 
 	get plugins(): Plugins {
@@ -47,6 +44,14 @@ export default class CrelteRouted {
 
 	get events(): Events {
 		return this.inner.events;
+	}
+
+	get graphQl(): GraphQl {
+		return this.inner.graphQl;
+	}
+
+	get router(): Router {
+		return this.inner.router;
 	}
 
 	get globals(): Globals {
@@ -58,7 +63,7 @@ export default class CrelteRouted {
 	}
 
 	// overload this function to add your plugin type
-	plugin(name: string): Plugin | null {
+	getPlugin(name: string): Plugin | null {
 		return this.inner.plugins.get(name);
 	}
 
