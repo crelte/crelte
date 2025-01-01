@@ -4,6 +4,8 @@ import Site, { SiteFromGraphQl } from './Site.js';
 import InnerRouter from './InnerRouter.js';
 import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { Flag, Readable } from '../stores/index.js';
+import Listeners from 'chuchi-utils/sync/Listeners';
+import Barrier, { BarrierAction } from 'chuchi-utils/sync/Barrier';
 
 export type RouterOpts = {
 	preloadOnMouseOver?: boolean;
@@ -52,6 +54,11 @@ export function trimSlashEnd(str: string) {
 	return str.endsWith('/') ? str.substring(0, str.length - 1) : str;
 }
 
+export type OnNextRouteOpts = {
+	loadBarrier: Barrier<undefined>;
+	renderBarrier: Barrier<undefined>;
+};
+
 export default class Router {
 	/**
 	 * The current route
@@ -86,6 +93,10 @@ export default class Router {
 	 */
 	private _loadingProgress: Writable<number>;
 
+	private _onNextRoute: Listeners<[Route, OnNextRouteOpts]>;
+	private _loadBarrier: Barrier<undefined> | null;
+	private _renderBarrier: BarrierAction<undefined> | null;
+
 	// doc hidden
 	_internal: Internal;
 
@@ -109,6 +120,10 @@ export default class Router {
 		this._nextSite = new Writable(null!);
 		this._loading = new Flag();
 		this._loadingProgress = new Writable(0);
+
+		this._onNextRoute = new Listeners();
+		this._loadBarrier = null;
+		this._renderBarrier = null;
 
 		this._internal = {
 			onLoaded: () => {},
@@ -231,6 +246,10 @@ export default class Router {
 		this.inner.preload(target);
 	}
 
+	onNextRoute(fn: (route: Route, opts: OnNextRouteOpts) => {}): () => void {
+		return this._onNextRoute.add(fn);
+	}
+
 	private setNewRoute(route: Route) {
 		this._route.setSilent(route);
 		this._nextRoute.setSilent(route);
@@ -281,12 +300,37 @@ export default class Router {
 		return await prom;
 	}
 
-	private _onRoute(route: Route, site: Site) {
-		this._nextRoute.setSilent(route);
+	private async _onRoute(route: Route, site: Site) {
+		this._nextRoute.setSilent(route.clone());
 		const siteChanged = this.nextSite.get()?.id !== site.id;
 		this._nextSite.setSilent(site);
 		this._nextRoute.notify();
 		if (siteChanged) this._nextSite.notify();
+
+		const loadBarrier = new Barrier<undefined>();
+		this._loadBarrier = loadBarrier;
+		const loadBarrierAction = loadBarrier.add();
+
+		if (this._renderBarrier) {
+			// make sure nobody waits forevery
+			this._renderBarrier.remove();
+		}
+
+		const renderBarrier = new Barrier<undefined>();
+		const renderBarrierAction = renderBarrier.add();
+		this._renderBarrier = renderBarrierAction;
+
+		this._onNextRoute.trigger(route.clone(), {
+			loadBarrier,
+			renderBarrier,
+		});
+
+		// lets wait until all agree we should load the route
+		await loadBarrierAction.ready(undefined);
+
+		// check if we are not in "race condition"
+		if (this._loadBarrier !== loadBarrier) return;
+		this._loadBarrier = null;
 
 		// route prepared
 		this.pageLoader.load(route, site);
@@ -296,7 +340,18 @@ export default class Router {
 		this.pageLoader.preload(route, site);
 	}
 
-	private _onLoaded(resp: LoadResponse, route: Route, site: Site) {
+	private async _onLoaded(resp: LoadResponse, route: Route, site: Site) {
+		// we need to wait on the renderBarrier
+		const renderBarrierAction = this._renderBarrier;
+
+		if (renderBarrierAction) {
+			await renderBarrierAction.ready(undefined);
+
+			// check if we are not in a "race condition"
+			if (this._renderBarrier !== renderBarrierAction) return;
+			this._renderBarrier = null;
+		}
+
 		const updateRoute = () => {
 			this._route.setSilent(route);
 			const siteChanged = this.site.get()?.id !== site.id;

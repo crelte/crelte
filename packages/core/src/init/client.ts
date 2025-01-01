@@ -108,7 +108,6 @@ export function main(data: MainData) {
 		}
 	};
 
-	let prepareRenderVersion = 0;
 	crelte.router._internal.onLoaded = async (
 		success,
 		route,
@@ -118,15 +117,6 @@ export function main(data: MainData) {
 		if (!success) return handleLoadError(readyForProps());
 
 		const cr = crelte.toRouted(route, site);
-
-		// is it possible to delay the opts change for example if we wan't to run an animation to
-		// completion first?
-		if (appInstance && data.app.prepareNewRender) {
-			const prevVersion = ++prepareRenderVersion;
-			await data.app.prepareNewRender(appInstance, cr);
-
-			if (prevVersion !== prepareRenderVersion) return;
-		}
 
 		const startTime = data.debugTiming ? Date.now() : null;
 
