@@ -3,7 +3,7 @@ import type Writable from './Writable.js';
 /**
  * A svelte store
  */
-export default class ReadonlyStore<T> {
+export default class Readable<T> {
 	private inner: Writable<T>;
 
 	/**

@@ -4,11 +4,10 @@ import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
-import type ReadonlyStore from './stores/ReadonlyStore.js';
 import Crelte from './Crelte.js';
 import CrelteRouted from './CrelteRouted.js';
 import CrelteBase from './CrelteBase.js';
-import { Flag } from './stores/index.js';
+import { Flag, Readable } from './stores/index.js';
 import { Global, GlobalData } from './loadData/Globals.js';
 import { Cookies } from './cookies/index.js';
 
@@ -46,29 +45,29 @@ export function getGraphQl(): GraphQl {
 /**
  * Get the current route
  */
-export function getRoute(): ReadonlyStore<Route> {
-	return getRouter().route.readonly();
+export function getRoute(): Readable<Route> {
+	return getRouter().route;
 }
 
 /**
  * Get the current site
  */
-export function getSite(): ReadonlyStore<Site> {
-	return getRouter().site.readonly();
+export function getSite(): Readable<Site> {
+	return getRouter().site;
 }
 
 /**
  * Get the next route
  */
-export function getNextRoute(): ReadonlyStore<Route> {
-	return getRouter().nextRoute.readonly();
+export function getNextRoute(): Readable<Route> {
+	return getRouter().nextRoute;
 }
 
 /**
  * Get the next site
  */
-export function getNextSite(): ReadonlyStore<Site> {
-	return getRouter().nextSite.readonly();
+export function getNextSite(): Readable<Site> {
+	return getRouter().nextSite;
 }
 
 /**
@@ -82,15 +81,15 @@ export function getEnv(name: string): string | null {
 /**
  * returns a store which indicates if the a page is loading
  */
-export function getLoading(): Flag {
+export function getLoading(): Readable<boolean> {
 	return getRouter().loading;
 }
 
 /**
  * returns a store which indicates the loading progress
  */
-export function getLoadingProgress(): ReadonlyStore<number> {
-	return getRouter().loadingProgress.readonly();
+export function getLoadingProgress(): Readable<number> {
+	return getRouter().loadingProgress;
 }
 
 /**

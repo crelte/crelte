@@ -1,26 +1,27 @@
 import Listeners from 'chuchi-utils/sync/Listeners';
+import Writable from './Writable.js';
+import Readable from './Readable.js';
 
 export default class Flag {
-	private flag: boolean;
-	private listeners: Listeners<[boolean]>;
+	private inner: Writable<boolean>;
 
 	constructor(flag = false) {
-		this.flag = flag;
-		this.listeners = new Listeners();
+		this.inner = new Writable(flag);
 	}
 
 	subscribe(fn: (flag: boolean) => void) {
-		fn(this.flag);
-
-		return this.listeners.add(fn);
+		return this.inner.subscribe(fn);
 	}
 
 	set(flag: boolean) {
-		this.flag = flag;
-		this.listeners.trigger(this.flag);
+		this.inner.set(flag);
 	}
 
-	get() {
-		return this.flag;
+	get(): boolean {
+		return this.inner.get();
+	}
+
+	readonly(): Readable<boolean> {
+		return new Readable(this.inner);
 	}
 }

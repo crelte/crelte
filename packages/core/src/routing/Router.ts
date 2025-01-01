@@ -3,7 +3,7 @@ import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
 import InnerRouter from './InnerRouter.js';
 import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
-import { Flag } from '../stores/index.js';
+import { Flag, Readable } from '../stores/index.js';
 
 export type RouterOpts = {
 	preloadOnMouseOver?: boolean;
@@ -58,33 +58,33 @@ export default class Router {
 	 *
 	 * this is a svelte store
 	 */
-	route: Writable<Route>;
+	private _route: Writable<Route>;
 
 	/**
 	 * The current site
 	 */
-	site: Writable<Site>;
+	private _site: Writable<Site>;
 
 	/**
 	 * The next route which is currently being loaded
 	 */
-	nextRoute: Writable<Route>;
+	private _nextRoute: Writable<Route>;
 
 	/**
 	 * The next site which is currently being loaded
 	 */
-	nextSite: Writable<Site>;
+	private _nextSite: Writable<Site>;
 
 	/**
 	 * The loading flag, specifies if a page is currently
 	 * getting loaded
 	 */
-	loading: Flag;
+	private _loading: Flag;
 
 	/**
 	 * The loading progress, the value is between 0 and 1
 	 */
-	loadingProgress: Writable<number>;
+	private _loadingProgress: Writable<number>;
 
 	// doc hidden
 	_internal: Internal;
@@ -103,12 +103,12 @@ export default class Router {
 		});
 
 		// in the first onRoute call we will update this value
-		this.route = new Writable(null!);
-		this.site = new Writable(null!);
-		this.nextRoute = new Writable(null!);
-		this.nextSite = new Writable(null!);
-		this.loading = new Flag();
-		this.loadingProgress = new Writable(0);
+		this._route = new Writable(null!);
+		this._site = new Writable(null!);
+		this._nextRoute = new Writable(null!);
+		this._nextSite = new Writable(null!);
+		this._loading = new Flag();
+		this._loadingProgress = new Writable(0);
 
 		this._internal = {
 			onLoaded: () => {},
@@ -127,6 +127,51 @@ export default class Router {
 			this._internal.onLoad(route, site, opts);
 		this.pageLoader.onProgress = (loading, progress) =>
 			this._onProgress(loading, progress);
+	}
+
+	/**
+	 * The current route
+	 *
+	 * this is a svelte store
+	 */
+	get route(): Readable<Route> {
+		return this._route.readonly();
+	}
+
+	/**
+	 * The current site
+	 */
+	get site(): Readable<Site> {
+		return this._site.readonly();
+	}
+
+	/**
+	 * The next route which is currently being loaded
+	 */
+	get nextRoute(): Readable<Route> {
+		return this._nextRoute.readonly();
+	}
+
+	/**
+	 * The next site which is currently being loaded
+	 */
+	get nextSite(): Readable<Site> {
+		return this._nextSite.readonly();
+	}
+
+	/**
+	 * The loading flag, specifies if a page is currently
+	 * getting loaded
+	 */
+	get loading(): Readable<boolean> {
+		return this._loading.readonly();
+	}
+
+	/**
+	 * The loading progress, the value is between 0 and 1
+	 */
+	get loadingProgress(): Readable<number> {
+		return this._loadingProgress.readonly();
 	}
 
 	/**
@@ -200,12 +245,12 @@ export default class Router {
 	}
 
 	private setNewRoute(route: Route) {
-		this.route.setSilent(route);
-		this.nextRoute.setSilent(route);
+		this._route.setSilent(route);
+		this._nextRoute.setSilent(route);
 
 		if (route.site) {
-			this.site.setSilent(route.site);
-			this.nextSite.setSilent(route.site);
+			this._site.setSilent(route.site);
+			this._nextSite.setSilent(route.site);
 		}
 	}
 
@@ -250,11 +295,11 @@ export default class Router {
 	}
 
 	private _onRoute(route: Route, site: Site) {
-		this.nextRoute.setSilent(route);
+		this._nextRoute.setSilent(route);
 		const siteChanged = this.nextSite.get()?.id !== site.id;
-		this.nextSite.setSilent(site);
-		this.nextRoute.notify();
-		if (siteChanged) this.nextSite.notify();
+		this._nextSite.setSilent(site);
+		this._nextRoute.notify();
+		if (siteChanged) this._nextSite.notify();
 
 		// route prepared
 		this.pageLoader.load(route, site);
@@ -266,11 +311,11 @@ export default class Router {
 
 	private _onLoaded(resp: LoadResponse, route: Route, site: Site) {
 		const updateRoute = () => {
-			this.route.setSilent(route);
+			this._route.setSilent(route);
 			const siteChanged = this.site.get()?.id !== site.id;
-			this.site.setSilent(site);
-			this.route.notify();
-			if (siteChanged) this.site.notify();
+			this._site.setSilent(site);
+			this._route.notify();
+			if (siteChanged) this._site.notify();
 		};
 
 		this._internal.onLoaded(resp.success, route, site, () => {
@@ -280,8 +325,8 @@ export default class Router {
 	}
 
 	private _onProgress(loading: boolean, progress?: number): void {
-		if (this.loading.get() !== loading) this.loading.set(loading);
+		if (this._loading.get() !== loading) this._loading.set(loading);
 
-		if (typeof progress === 'number') this.loadingProgress.set(progress);
+		if (typeof progress === 'number') this._loadingProgress.set(progress);
 	}
 }

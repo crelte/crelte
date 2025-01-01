@@ -1,5 +1,5 @@
 import Listeners from 'chuchi-utils/sync/Listeners';
-import ReadonlyStore from './ReadonlyStore.js';
+import Readable from './Readable.js';
 
 /**
  * A svelte store
@@ -59,7 +59,7 @@ export default class Writable<T> {
 		return this.inner;
 	}
 
-	readonly(): ReadonlyStore<T> {
-		return new ReadonlyStore(this);
+	readonly(): Readable<T> {
+		return new Readable(this);
 	}
 }
