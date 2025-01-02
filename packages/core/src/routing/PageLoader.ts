@@ -23,13 +23,18 @@ export type LoadOptions = {
 /**
  * The PageLoader which is responsible for loading page Data
  */
-export default class PageLoader {
+export default class PageLoader<More> {
 	private debugTiming: boolean;
 	private preloadedUrls: Set<string>;
 
 	private loadingVersion: number;
 
-	onLoaded: (resp: LoadResponse, route: Route, site: Site) => void;
+	onLoaded: (
+		resp: LoadResponse,
+		route: Route,
+		site: Site,
+		more: More,
+	) => void;
 	onProgress: (loading: boolean, progress?: number) => void;
 	loadFn: LoadFn;
 
@@ -57,7 +62,7 @@ export default class PageLoader {
 		this.onProgress(false);
 	}
 
-	async load(route: Route, site: Site) {
+	async load(route: Route, site: Site, more: More) {
 		this.onProgress(true);
 
 		const version = ++this.loadingVersion;
@@ -86,7 +91,7 @@ export default class PageLoader {
 			return console.log('route changed quickly, ignoring response');
 
 		this.onProgress(false);
-		this.onLoaded(resp, route, site);
+		this.onLoaded(resp, route, site, more);
 	}
 
 	// you don't need to wait on this call

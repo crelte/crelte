@@ -17,7 +17,11 @@ export default class InnerRouter {
 	route: Route | null;
 	site: Site;
 	preloadOnMouseOver: boolean;
-	onRoute: (route: Route, site: Site) => void;
+	/**
+	 * @param changeHistory returns a function you need to call when you are ready to
+	 update the window history (note do not call this after another onRoute call was made)
+	 */
+	onRoute: (route: Route, site: Site, changeHistory: () => void) => void;
 	onPreload: (route: Route, site: Site) => void;
 
 	/**
@@ -289,10 +293,12 @@ export default class InnerRouter {
 
 		if (pushState) {
 			route.index = (current?.index ?? 0) + 1;
-			this.pushState(route);
+			this.onRoute(route, route.site ?? this.site, () => {
+				this.pushState(route);
+			});
+		} else {
+			this.setRoute(route);
 		}
-
-		this.setRoute(route);
 	}
 
 	/**
@@ -307,7 +313,7 @@ export default class InnerRouter {
 		this.route = route;
 		if (route.site) this.site = route.site;
 
-		this.onRoute(route, this.site);
+		this.onRoute(route, this.site, () => {});
 	}
 
 	/**

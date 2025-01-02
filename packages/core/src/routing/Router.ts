@@ -17,6 +17,10 @@ const defaultRouterOpts = {
 	deubgTiming: false,
 };
 
+type LoadedMore = {
+	changeHistory: () => void;
+};
+
 /**
  * internal only
  */
@@ -100,7 +104,7 @@ export default class Router {
 	_internal: Internal;
 
 	private inner: InnerRouter;
-	private pageLoader: PageLoader;
+	private pageLoader: PageLoader<LoadedMore>;
 
 	constructor(sites: SiteFromGraphQl[], opts: RouterOpts = {}) {
 		opts = { ...defaultRouterOpts, ...opts };
@@ -133,11 +137,12 @@ export default class Router {
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
 		};
 
-		this.inner.onRoute = (route, site) => this._onRoute(route, site);
+		this.inner.onRoute = (route, site, changeHistory) =>
+			this._onRoute(route, site, changeHistory);
 		this.inner.onPreload = (route, site) => this._onPreload(route, site);
 
-		this.pageLoader.onLoaded = (resp, route, site) =>
-			this._onLoaded(resp, route, site);
+		this.pageLoader.onLoaded = (resp, route, site, more) =>
+			this._onLoaded(resp, route, site, more);
 		this.pageLoader.loadFn = (route, site, opts) =>
 			this._internal.onLoad(route, site, opts);
 		this.pageLoader.onProgress = (loading, progress) =>
@@ -320,7 +325,7 @@ export default class Router {
 		return await prom;
 	}
 
-	private async _onRoute(route: Route, site: Site) {
+	private _onRoute(route: Route, site: Site, changeHistory: () => void) {
 		this._nextRoute.setSilent(route.clone());
 		const siteChanged = this.nextSite.get()?.id !== site.id;
 		this._nextSite.setSilent(site);
@@ -328,30 +333,35 @@ export default class Router {
 		if (siteChanged) this._nextSite.notify();
 
 		if (this._renderBarrier) {
+			const barr = this._renderBarrier;
+			this._renderBarrier = null;
 			// make sure nobody waits forevery
-			this._renderBarrier.remove();
+			barr.remove();
 		}
 
 		const renderBarrier = new Barrier<undefined>();
-		const renderBarrierAction = renderBarrier.add();
-		this._renderBarrier = renderBarrierAction;
+		this._renderBarrier = renderBarrier.add();
 
 		this._onNextRoute.trigger(route.clone(), site, {
 			renderBarrier,
 		});
 
 		// route prepared
-		this.pageLoader.load(route, site);
+		this.pageLoader.load(route, site, { changeHistory });
 	}
 
 	private _onPreload(route: Route, site: Site) {
 		this.pageLoader.preload(route, site);
 	}
 
-	private async _onLoaded(resp: LoadResponse, route: Route, site: Site) {
+	private async _onLoaded(
+		resp: LoadResponse,
+		route: Route,
+		site: Site,
+		more: LoadedMore,
+	) {
 		// we need to wait on the renderBarrier
 		const renderBarrierAction = this._renderBarrier;
-
 		if (renderBarrierAction) {
 			await renderBarrierAction.ready(undefined);
 
@@ -359,6 +369,11 @@ export default class Router {
 			if (this._renderBarrier !== renderBarrierAction) return;
 			this._renderBarrier = null;
 		}
+
+		// when the data is loaded let's update the route of the inner
+		// this is will only happen if no other route has been requested
+		// in the meantime
+		more.changeHistory();
 
 		const updateRoute = () => {
 			this._route.setSilent(route.clone());
