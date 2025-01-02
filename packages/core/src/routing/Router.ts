@@ -55,7 +55,6 @@ export function trimSlashEnd(str: string) {
 }
 
 export type OnNextRouteOpts = {
-	loadBarrier: Barrier<undefined>;
 	renderBarrier: Barrier<undefined>;
 };
 
@@ -95,7 +94,6 @@ export default class Router {
 	private _onRouteEv: Listeners<[Route, Site]>;
 
 	private _onNextRoute: Listeners<[Route, Site, OnNextRouteOpts]>;
-	private _loadBarrier: Barrier<undefined> | null;
 	private _renderBarrier: BarrierAction<undefined> | null;
 
 	// doc hidden
@@ -125,7 +123,6 @@ export default class Router {
 		this._onRouteEv = new Listeners();
 
 		this._onNextRoute = new Listeners();
-		this._loadBarrier = null;
 		this._renderBarrier = null;
 
 		this._internal = {
@@ -330,10 +327,6 @@ export default class Router {
 		this._nextRoute.notify();
 		if (siteChanged) this._nextSite.notify();
 
-		const loadBarrier = new Barrier<undefined>();
-		this._loadBarrier = loadBarrier;
-		const loadBarrierAction = loadBarrier.add();
-
 		if (this._renderBarrier) {
 			// make sure nobody waits forevery
 			this._renderBarrier.remove();
@@ -344,16 +337,8 @@ export default class Router {
 		this._renderBarrier = renderBarrierAction;
 
 		this._onNextRoute.trigger(route.clone(), site, {
-			loadBarrier,
 			renderBarrier,
 		});
-
-		// lets wait until all agree we should load the route
-		await loadBarrierAction.ready(undefined);
-
-		// check if we are not in "race condition"
-		if (this._loadBarrier !== loadBarrier) return;
-		this._loadBarrier = null;
 
 		// route prepared
 		this.pageLoader.load(route, site);
