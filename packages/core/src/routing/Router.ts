@@ -59,11 +59,10 @@ export type OnNextRouteOpts = {
 	renderBarrier: Barrier<undefined>;
 };
 
+// Make sure route and nextRoute are not the same object as _inner.route
 export default class Router {
 	/**
 	 * The current route
-	 *
-	 * this is a svelte store
 	 */
 	private _route: Writable<Route>;
 
@@ -93,7 +92,9 @@ export default class Router {
 	 */
 	private _loadingProgress: Writable<number>;
 
-	private _onNextRoute: Listeners<[Route, OnNextRouteOpts]>;
+	private _onRouteEv: Listeners<[Route, Site]>;
+
+	private _onNextRoute: Listeners<[Route, Site, OnNextRouteOpts]>;
 	private _loadBarrier: Barrier<undefined> | null;
 	private _renderBarrier: BarrierAction<undefined> | null;
 
@@ -120,6 +121,8 @@ export default class Router {
 		this._nextSite = new Writable(null!);
 		this._loading = new Flag();
 		this._loadingProgress = new Writable(0);
+
+		this._onRouteEv = new Listeners();
 
 		this._onNextRoute = new Listeners();
 		this._loadBarrier = null;
@@ -246,17 +249,37 @@ export default class Router {
 		this.inner.preload(target);
 	}
 
-	onNextRoute(fn: (route: Route, opts: OnNextRouteOpts) => {}): () => void {
+	/**
+	 * Add a listener for the onRoute event
+	 *
+	 * This differs from router.route.subscribe in the way that
+	 * it will only trigger if a new render / load will occur
+	 */
+	onRoute(fn: (route: Route, site: Site) => {}): () => void {
+		return this._onRouteEv.add(fn);
+	}
+
+	onNextRoute(
+		fn: (route: Route, site: Site, opts: OnNextRouteOpts) => {},
+	): () => void {
 		return this._onNextRoute.add(fn);
 	}
 
 	private setNewRoute(route: Route) {
-		this._route.setSilent(route);
-		this._nextRoute.setSilent(route);
+		this._route.setSilent(route.clone());
+		this._nextRoute.setSilent(route.clone());
 
 		if (route.site) {
 			this._site.setSilent(route.site);
 			this._nextSite.setSilent(route.site);
+		}
+
+		this._nextRoute.notify();
+		this._route.notify();
+
+		if (route.site) {
+			this._nextSite.notify();
+			this._site.notify();
 		}
 	}
 
@@ -320,7 +343,7 @@ export default class Router {
 		const renderBarrierAction = renderBarrier.add();
 		this._renderBarrier = renderBarrierAction;
 
-		this._onNextRoute.trigger(route.clone(), {
+		this._onNextRoute.trigger(route.clone(), site, {
 			loadBarrier,
 			renderBarrier,
 		});
@@ -353,11 +376,13 @@ export default class Router {
 		}
 
 		const updateRoute = () => {
-			this._route.setSilent(route);
+			this._route.setSilent(route.clone());
 			const siteChanged = this.site.get()?.id !== site.id;
 			this._site.setSilent(site);
 			this._route.notify();
 			if (siteChanged) this._site.notify();
+
+			this._onRouteEv.trigger(route.clone(), site);
 		};
 
 		this._internal.onLoaded(resp.success, route, site, () => {
