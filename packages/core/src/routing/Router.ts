@@ -59,7 +59,10 @@ export function trimSlashEnd(str: string) {
 }
 
 export type OnNextRouteOpts = {
-	renderBarrier: Barrier<undefined>;
+	/**
+	 * If you call delayRender you need to call ready or the render will never happen
+	 */
+	delayRender: () => DelayRender;
 };
 
 // Make sure route and nextRoute are not the same object as _inner.route
@@ -98,7 +101,7 @@ export default class Router {
 	private _onRouteEv: Listeners<[Route, Site]>;
 
 	private _onNextRoute: Listeners<[Route, Site, OnNextRouteOpts]>;
-	private _renderBarrier: BarrierAction<undefined> | null;
+	private _renderBarrier: RenderBarrier | null;
 
 	// doc hidden
 	_internal: Internal;
@@ -336,14 +339,14 @@ export default class Router {
 			const barr = this._renderBarrier;
 			this._renderBarrier = null;
 			// make sure nobody waits forevery
-			barr.remove();
+			barr.cancel();
 		}
 
-		const renderBarrier = new Barrier<undefined>();
-		this._renderBarrier = renderBarrier.add();
+		const barrier = new RenderBarrier();
+		this._renderBarrier = barrier;
 
 		this._onNextRoute.trigger(route.clone(), site, {
-			renderBarrier,
+			delayRender: () => barrier.add(),
 		});
 
 		// route prepared
@@ -361,12 +364,10 @@ export default class Router {
 		more: LoadedMore,
 	) {
 		// we need to wait on the renderBarrier
-		const renderBarrierAction = this._renderBarrier;
-		if (renderBarrierAction) {
-			await renderBarrierAction.ready(undefined);
-
-			// check if we are not in a "race condition"
-			if (this._renderBarrier !== renderBarrierAction) return;
+		const renderBarrier = this._renderBarrier;
+		if (renderBarrier) {
+			// check if the render was cancelled
+			if (await renderBarrier.ready()) return;
 			this._renderBarrier = null;
 		}
 
@@ -397,3 +398,52 @@ export default class Router {
 		if (typeof progress === 'number') this._loadingProgress.set(progress);
 	}
 }
+
+class RenderBarrier {
+	inner: Barrier<unknown>;
+	cancelled: boolean;
+	root: DelayRender;
+
+	constructor() {
+		this.inner = new Barrier();
+		this.cancelled = false;
+		this.root = this.add();
+	}
+
+	add(): DelayRender {
+		let action = this.inner.add();
+
+		return {
+			ready: async () => {
+				await action.ready(null);
+				return this.cancelled;
+			},
+			remove: () => action.remove(),
+		};
+	}
+
+	cancel() {
+		this.cancelled = true;
+		this.root.remove();
+	}
+
+	// returns if the render was cancelled
+	ready(): Promise<boolean> {
+		return this.root.ready();
+	}
+}
+
+export type DelayRender = {
+	/**
+	 * Call this when you're ready for the render to happen
+	 * the promise will resolve when the render is done or was cancelled
+	 *
+	 * @returns if the render was cancelled
+	 */
+	ready: () => Promise<boolean>;
+
+	/**
+	 * If youre not interested in the render anymore
+	 */
+	remove: () => void;
+};
