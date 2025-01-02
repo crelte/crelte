@@ -130,11 +130,14 @@ export default class Route {
 	}
 
 	/**
-	 * Sets the search param or removes it if the value is falsy
+	 * Sets the search param or removes it if the value is null or undefined
 	 */
-	setSearchParam(key: string, value?: string | null) {
-		if (value) this.search.set(key, value);
-		else this.search.delete(key);
+	setSearchParam(key: string, value?: string | number | null) {
+		if (typeof value !== 'undefined' && value !== null) {
+			this.search.set(key, value as string);
+		} else {
+			this.search.delete(key);
+		}
 	}
 
 	clone() {
