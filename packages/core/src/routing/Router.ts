@@ -6,6 +6,7 @@ import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { Flag, Readable } from '../stores/index.js';
 import Listeners from 'chuchi-utils/sync/Listeners';
 import Barrier, { BarrierAction } from 'chuchi-utils/sync/Barrier';
+import { ServerHistory } from './History.js';
 
 export type RouterOpts = {
 	preloadOnMouseOver?: boolean;
@@ -136,7 +137,7 @@ export default class Router {
 			onLoaded: () => {},
 			onLoad: () => {},
 			domReady: route => this.inner.domReady(route),
-			initClient: () => this.inner.initClient(),
+			initClient: () => this._initClient(),
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
 		};
 
@@ -288,10 +289,16 @@ export default class Router {
 		}
 	}
 
+	private async _initClient() {
+		this.inner.initClient();
+	}
+
 	private async _initServer(
 		url: string,
 		acceptLang?: string,
 	): Promise<ServerInited> {
+		this.inner.initServer();
+
 		const prom: Promise<ServerInited> = new Promise(resolve => {
 			this._internal.onLoaded = (success, route, site, ready) => {
 				const props = ready();
@@ -321,6 +328,20 @@ export default class Router {
 				site,
 				props: {},
 			};
+		}
+
+		const hist = this.inner.history as ServerHistory;
+		if (hist.url) {
+			const nRoute = new Route(hist.url, null);
+			if (!route.eq(nRoute)) {
+				return {
+					success: true,
+					redirect: true,
+					route: nRoute,
+					site: route.site!,
+					props: {},
+				};
+			}
 		}
 
 		this.inner.setRoute(route);

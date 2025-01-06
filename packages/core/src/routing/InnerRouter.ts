@@ -4,6 +4,7 @@
 
 import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
+import History, { ClientHistory, ServerHistory } from './History.js';
 
 export type InnerRouterOpts = {
 	preloadOnMouseOver: boolean;
@@ -16,6 +17,7 @@ export default class InnerRouter {
 	sites: Site[];
 	route: Route | null;
 	site: Site;
+	history: History;
 	preloadOnMouseOver: boolean;
 	/**
 	 * @param changeHistory returns a function you need to call when you are ready to
@@ -35,6 +37,7 @@ export default class InnerRouter {
 
 		this.route = null;
 		this.site = this.defaultSite();
+		this.history = null!;
 		this.preloadOnMouseOver = opts.preloadOnMouseOver;
 
 		// this.preloadListeners = new Listeners();
@@ -47,6 +50,8 @@ export default class InnerRouter {
 	 * Initializes the router when running on the client.
 	 */
 	initClient() {
+		this.history = new ClientHistory();
+
 		this.listen();
 
 		// let's first try to load from the state
@@ -62,6 +67,13 @@ export default class InnerRouter {
 		window.history.scrollRestoration = 'manual';
 
 		this.open(route, false);
+	}
+
+	/**
+	 * Initializes the router when running on the server.
+	 */
+	initServer() {
+		this.history = new ServerHistory();
 	}
 
 	/**
@@ -238,7 +250,7 @@ export default class InnerRouter {
 				timeout = setTimeout(() => {
 					if (!current.eq(this.route!)) return;
 
-					window.history.replaceState(this.route?._toState(), '');
+					this.history.replaceState(this.route?._toState());
 
 					if (current.origin === 'live-preview-init') {
 						sessionStorage.setItem(
@@ -280,14 +292,14 @@ export default class InnerRouter {
 		const current = this.route;
 		if (current) {
 			// store the scroll position
-			current.scrollY = window.scrollY;
-			window.history.replaceState(current._toState(), '');
+			current.scrollY = this.history.scrollY();
+			this.history.replaceState(current._toState());
 		}
 
 		// if the domain of the current site is different than the domain of the
 		// new site we need to do a window.location.href call
 		if (current && current.url.origin !== route.url.origin) {
-			window.location.href = route.url.href;
+			this.history.open(route.url.href);
 			return;
 		}
 
@@ -328,9 +340,8 @@ export default class InnerRouter {
 	pushState(route: Route) {
 		const url = route.url;
 
-		window.history.pushState(
+		this.history.pushState(
 			route._toState(),
-			'',
 			url.pathname + url.search + url.hash,
 		);
 
@@ -347,9 +358,8 @@ export default class InnerRouter {
 	replaceState(route: Route) {
 		const url = route.url;
 
-		window.history.replaceState(
+		this.history.replaceState(
 			route._toState(),
-			'',
 			url.pathname + url.search + url.hash,
 		);
 
@@ -370,7 +380,6 @@ export default class InnerRouter {
 		// if the domain of the current site is different than the domain of the
 		// new site id does not make sense to preload
 		if (this.site.url.origin !== route.url.origin) {
-			window.location.href = route.url.href;
 			return;
 		}
 
