@@ -1,7 +1,3 @@
-/**
- * The origin of
- */
-
 import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
 import History, { ClientHistory, ServerHistory } from './History.js';
@@ -37,6 +33,7 @@ export default class InnerRouter {
 
 		this.route = null;
 		this.site = this.defaultSite();
+		// @ts-ignore
 		this.history = import.meta.env.SSR
 			? new ServerHistory()
 			: new ClientHistory();
@@ -245,20 +242,25 @@ export default class InnerRouter {
 
 				if (timeout) return;
 
+				// this might cause `Attempt to use history.replaceState() more than
+				// 100 times per 30 seconds` in safari
+				// since we wait a moment we should almost ever be fine
 				timeout = setTimeout(() => {
-					if (!current.eq(this.route!)) return;
+					if (!this.route || !current.eq(this.route)) return;
 
-					this.history.replaceState(this.route?._toState());
+					// use the latest state
+					this.history.replaceState(this.route._toState());
 
 					if (current.origin === 'live-preview-init') {
 						sessionStorage.setItem(
 							'live-preview-scroll',
-							current.scrollY + '',
+							// use the latest scrollY
+							this.route.scrollY + '',
 						);
 					}
 
 					timeout = null;
-				}, 200);
+				}, 280);
 			});
 		}
 
