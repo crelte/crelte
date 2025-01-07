@@ -1,3 +1,8 @@
-import GraphQl, { gql, GraphQlQuery } from './GraphQl.js';
+import GraphQl, {
+	gql,
+	GraphQlQuery,
+	GraphQlError,
+	GraphQlRequestOptions,
+} from './GraphQl.js';
 
-export { GraphQl, gql, GraphQlQuery };
+export { GraphQl, gql, GraphQlQuery, GraphQlError, type GraphQlRequestOptions };
