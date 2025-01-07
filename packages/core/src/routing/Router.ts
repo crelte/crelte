@@ -315,6 +315,7 @@ export default class Router {
 		});
 
 		const route = this.inner.targetToRoute(url);
+		route.origin = 'init';
 
 		// let's see if the url matches any route and site
 		// if not let's redirect to the site which matches the acceptLang

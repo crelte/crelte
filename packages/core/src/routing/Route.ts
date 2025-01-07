@@ -7,7 +7,22 @@ export type RouteOpts = {
 	origin?: RouteOrigin;
 };
 
-export type RouteOrigin = 'init' | 'live-preview-init' | 'click' | 'pop';
+/**
+ * RouteOrigin represents the origin of a route.
+ * This type is non-exhaustive and might expand in the future.
+ *
+ * - `'init'`: is set on the first page load
+ * - `'manual'`: is set when a route is triggered manually via `Router.open`
+ * - `'live-preview-init'`: is set on the first page load in live preview mode
+ * - `'click'`: is set when a route is triggered by a click event
+ * - `'pop'`: is set when a route is triggered by a popstate event (back/forward)
+ */
+export type RouteOrigin =
+	| 'init'
+	| 'live-preview-init'
+	| 'manual'
+	| 'click'
+	| 'pop';
 
 /**
  * A Route contains information about the current page for example the url and
@@ -36,14 +51,14 @@ export default class Route {
 	 * the position in the browser history of this route
 	 * this allows to find out if we can go back
 	 */
-	index: number | null;
+	index: number;
 
 	/**
 	 * The origin of this route
 	 *
 	 * Might pop, click or init (non exclusive)
 	 */
-	origin: RouteOrigin | null;
+	origin: RouteOrigin;
 
 	/**
 	 * Creates a new Route
@@ -53,8 +68,8 @@ export default class Route {
 
 		this.site = site;
 		this.scrollY = opts.scrollY ?? 0;
-		this.index = opts.index ?? null;
-		this.origin = opts.origin ?? null;
+		this.index = opts.index ?? 0;
+		this.origin = opts.origin ?? 'manual';
 	}
 
 	/**
@@ -143,8 +158,8 @@ export default class Route {
 	clone() {
 		return new Route(this.url.href, this.site, {
 			scrollY: this.scrollY,
-			index: this.index ?? undefined,
-			origin: this.origin ?? undefined,
+			index: this.index,
+			origin: this.origin,
 		});
 	}
 
