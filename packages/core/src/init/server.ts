@@ -165,7 +165,7 @@ async function loadSites(builder: CrelteBuilder): Promise<SiteFromGraphQl[]> {
 	}
 
 	const resp = (await builder.graphQl.request(
-		'query { crelteSites { baseUrl id language } }',
+		'query { crelteSites { id baseUrl language name handle primary } }',
 		{},
 		// don't cache since we cache ourself
 		{ caching: false },

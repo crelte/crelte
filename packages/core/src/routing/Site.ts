@@ -4,6 +4,9 @@ export type SiteFromGraphQl = {
 	id: number;
 	baseUrl: string;
 	language: string;
+	name: string | null;
+	handle: string;
+	primary: boolean;
 };
 
 /**
@@ -27,10 +30,28 @@ export default class Site {
 	 */
 	language: string;
 
+	/**
+	 * The name of the site
+	 */
+	name: string | null;
+
+	/**
+	 * The handle of the site
+	 */
+	handle: string;
+
+	/**
+	 * Is this the primary site
+	 */
+	primary: boolean;
+
 	constructor(obj: SiteFromGraphQl) {
 		this.id = obj.id;
 		this.url = new URL(obj.baseUrl);
 		this.language = obj.language;
+		this.name = obj.name;
+		this.handle = obj.handle;
+		this.primary = obj.primary;
 	}
 
 	/**

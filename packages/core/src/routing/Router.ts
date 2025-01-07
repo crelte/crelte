@@ -184,6 +184,13 @@ export default class Router {
 	}
 
 	/**
+	 * The sites which are available
+	 */
+	get sites(): Site[] {
+		return this.inner.sites;
+	}
+
+	/**
 	 * The loading flag, specifies if a page is currently
 	 * getting loaded
 	 */
