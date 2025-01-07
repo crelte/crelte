@@ -110,13 +110,29 @@ export function main(data: MainData) {
 		}
 	};
 
+	let firstLoad = true;
 	crelte.router._internal.onLoaded = async (
 		success,
 		route,
 		site,
 		readyForProps,
 	) => {
-		if (!success) return handleLoadError(readyForProps());
+		const isFirstLoad = firstLoad;
+		firstLoad = false;
+
+		if (!success) {
+			// if this is not the first load we should reload the page
+			// we don't reload everytime because this might cause a reload loop
+			// and since the first load will probably just contain ssrCache data in almost all cases the first load will never faill
+			if (!isFirstLoad) {
+				// the load might contain a js error and we prefer the error
+				// page
+				window.location.reload();
+				return;
+			}
+
+			return handleLoadError(readyForProps());
+		}
 
 		const cr = crelte.toRouted(route, site);
 
