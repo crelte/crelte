@@ -1,4 +1,6 @@
+import { o } from 'vitest/dist/chunks/reporters.C_zwCd4j.js';
 import { CrelteBuilder } from '../Crelte.js';
+import { CrelteRouted } from '../index.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
 import { tick } from 'svelte';
@@ -94,7 +96,7 @@ export function main(data: MainData) {
 	// render Space
 
 	let appInstance: any;
-	const render = (props: any) => {
+	const updateAppProps = (props: any) => {
 		if (!appInstance) {
 			appInstance = new data.app.default({
 				target: document.body,
@@ -119,40 +121,36 @@ export function main(data: MainData) {
 		const cr = crelte.toRouted(route, site);
 
 		const startTime = data.debugTiming ? Date.now() : null;
+		let render = async () => {
+			// we should trigger the route update here
+			pluginsBeforeRender(cr);
+			crelte.globals._updateSiteId(site.id);
+			updateAppProps(readyForProps());
 
-		optionalStartViewTransition(
-			data.viewTransition && appInstance,
-			async () => {
-				// we should trigger the route update here
-				pluginsBeforeRender(cr);
-				crelte.globals._updateSiteId(site.id);
-				render(readyForProps());
+			await tick();
 
-				await tick();
+			if (startTime) {
+				console.log(
+					'dom update took ' + (Date.now() - startTime) + 'ms',
+				);
+			}
 
-				if (startTime) {
-					console.log(
-						'dom update took ' + (Date.now() - startTime) + 'ms',
-					);
-				}
+			crelte.router._internal.domReady(route);
+		};
 
-				crelte.router._internal.domReady(route);
-			},
-		);
+		// render with view Transition if enabled and not in hydration
+		if (
+			data.viewTransition &&
+			appInstance &&
+			(document as any).startViewTransition
+		) {
+			render = () => (document as any).startViewTransition(render);
+		}
+
+		await render();
 	};
 
 	crelte.router._internal.initClient();
-}
-
-function optionalStartViewTransition(enabled = false, cb: () => Promise<any>) {
-	// @ts-ignore
-	if (!enabled || !document.startViewTransition) {
-		cb();
-		return;
-	}
-
-	// @ts-ignore
-	document.startViewTransition(cb);
 }
 
 function handleLoadError(e: any) {

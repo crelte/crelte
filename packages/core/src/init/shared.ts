@@ -1,7 +1,7 @@
 import CrelteRouted, { GraphQlQuery } from '../CrelteRouted.js';
 import Crelte from '../Crelte.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
-import { Plugin } from '../plugins/Plugins.js';
+import { Plugin, PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
 interface App<D, E, T> {
@@ -26,10 +26,7 @@ type LazyTemplateModule<E, T> =
 	| (() => Promise<TemplateModule<E, T>>)
 	| TemplateModule<E, T>;
 
-export function setupPlugins(
-	crelte: Crelte,
-	plugins: ((crelte: Crelte) => Plugin)[],
-) {
+export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
 		const p = plugin(crelte);
 		crelte.plugins.add(p);

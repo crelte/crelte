@@ -37,7 +37,9 @@ export default class InnerRouter {
 
 		this.route = null;
 		this.site = this.defaultSite();
-		this.history = null!;
+		this.history = import.meta.env.SSR
+			? new ServerHistory()
+			: new ClientHistory();
 		this.preloadOnMouseOver = opts.preloadOnMouseOver;
 
 		// this.preloadListeners = new Listeners();
@@ -50,8 +52,6 @@ export default class InnerRouter {
 	 * Initializes the router when running on the client.
 	 */
 	initClient() {
-		this.history = new ClientHistory();
-
 		this.listen();
 
 		// let's first try to load from the state
@@ -72,9 +72,7 @@ export default class InnerRouter {
 	/**
 	 * Initializes the router when running on the server.
 	 */
-	initServer() {
-		this.history = new ServerHistory();
-	}
+	initServer() {}
 
 	/**
 	 * Get a site and if possible use the accept lang header.

@@ -1,13 +1,10 @@
 import Crelte from '../Crelte.js';
 
 export interface Plugin {
-	name(): string;
-	// ready(): void;
-
-	destroy(): void;
+	name: string;
 }
 
-export type PluginCreator = (csi: Crelte) => Plugin;
+export type PluginCreator = (crelte: Crelte) => Plugin;
 
 export default class Plugins {
 	plugins: Map<string, Plugin>;
@@ -17,7 +14,7 @@ export default class Plugins {
 	}
 
 	add(plugin: Plugin) {
-		this.plugins.set(plugin.name(), plugin);
+		this.plugins.set(plugin.name, plugin);
 	}
 
 	get(name: string): Plugin | null {
