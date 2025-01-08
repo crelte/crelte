@@ -28,7 +28,7 @@ jobs:
           VERSION="${TAG_NAME#*@}"
           echo "PACKAGE_SHORT_NAME=${PACKAGE_SHORT_NAME}" >> $GITHUB_ENV
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "PACKAGE_FOLDER=${PACKAGE_SHORT_NAME}" >> $GITHUB_ENV
+          echo "PACKAGE_FOLDER=packages/${PACKAGE_SHORT_NAME}" >> $GITHUB_ENV
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -50,7 +50,7 @@ jobs:
         run: |
           cd ${PACKAGE_FOLDER} # Navigate to the correct package folder
           echo "Building package from ${PACKAGE_FOLDER}"
-          cp ../LICENSE.md .
+          cp ../../LICENSE.md .
           npm run build
 
       - name: Publish to npm
