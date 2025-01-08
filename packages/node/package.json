@@ -9,6 +9,10 @@
 		"build": "tsc",
 		"watch": "tsc -w"
 	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/crelte/crelte"
+	},
 	"files": [
 		"dist",
 		"./types.d.ts"
