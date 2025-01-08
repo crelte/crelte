@@ -1,7 +1,7 @@
 import CrelteRouted, { GraphQlQuery } from '../CrelteRouted.js';
 import Crelte from '../Crelte.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
-import { Plugin, PluginCreator } from '../plugins/Plugins.js';
+import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
 interface App<D, E, T> {

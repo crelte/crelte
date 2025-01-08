@@ -6,7 +6,7 @@ const emergency = getGlobal('emergency');
 cr.getGlobal('emergency')
 */
 
-import { Writable } from '../stores/index.js';
+import { Writable } from 'crelte-std/stores';
 
 export type GlobalWaiters = [(g: Global<any> | null) => void];
 

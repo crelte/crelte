@@ -7,9 +7,9 @@ import type GraphQl from './graphql/GraphQl.js';
 import Crelte from './Crelte.js';
 import CrelteRouted from './CrelteRouted.js';
 import CrelteBase from './CrelteBase.js';
-import { Flag, Readable } from './stores/index.js';
 import { Global, GlobalData } from './loadData/Globals.js';
 import { Cookies } from './cookies/index.js';
+import { Readable } from 'crelte-std/stores';
 
 export { Crelte, CrelteRouted };
 export type { CrelteBase };

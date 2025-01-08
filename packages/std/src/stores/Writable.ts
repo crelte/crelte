@@ -1,5 +1,7 @@
-import Listeners from 'chuchi-utils/sync/Listeners';
+import { Cloneable } from '../index.js';
+import { Listeners } from '../sync/index.js';
 import Readable from './Readable.js';
+import Readclone from './Readclone.js';
 
 /**
  * A svelte store
@@ -61,5 +63,9 @@ export default class Writable<T> {
 
 	readonly(): Readable<T> {
 		return new Readable(this);
+	}
+
+	readclone(this: Writable<T & Cloneable>): Readclone<T & Cloneable> {
+		return new Readclone(this);
 	}
 }

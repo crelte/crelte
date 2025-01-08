@@ -1,12 +1,10 @@
-import Writable from '../stores/Writable.js';
 import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
 import InnerRouter from './InnerRouter.js';
 import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
-import { Flag, Readable } from '../stores/index.js';
-import Listeners from 'chuchi-utils/sync/Listeners';
-import Barrier, { BarrierAction } from 'chuchi-utils/sync/Barrier';
 import { ServerHistory } from './History.js';
+import { Readable, Writable } from 'crelte-std/stores';
+import { Barrier, Listeners } from 'crelte-std/sync';
 
 export type RouterOpts = {
 	preloadOnMouseOver?: boolean;
@@ -92,7 +90,7 @@ export default class Router {
 	 * The loading flag, specifies if a page is currently
 	 * getting loaded
 	 */
-	private _loading: Flag;
+	private _loading: Writable<boolean>;
 
 	/**
 	 * The loading progress, the value is between 0 and 1
@@ -125,7 +123,7 @@ export default class Router {
 		this._site = new Writable(null!);
 		this._nextRoute = new Writable(null!);
 		this._nextSite = new Writable(null!);
-		this._loading = new Flag();
+		this._loading = new Writable(false);
 		this._loadingProgress = new Writable(0);
 
 		this._onRouteEv = new Listeners();
@@ -268,12 +266,12 @@ export default class Router {
 	 * This differs from router.route.subscribe in the way that
 	 * it will only trigger if a new render / load will occur
 	 */
-	onRoute(fn: (route: Route, site: Site) => {}): () => void {
+	onRoute(fn: (route: Route, site: Site) => void): () => void {
 		return this._onRouteEv.add(fn);
 	}
 
 	onNextRoute(
-		fn: (route: Route, site: Site, opts: OnNextRouteOpts) => {},
+		fn: (route: Route, site: Site, opts: OnNextRouteOpts) => void,
 	): () => void {
 		return this._onNextRoute.add(fn);
 	}
@@ -440,7 +438,7 @@ class RenderBarrier {
 	}
 
 	add(): DelayRender {
-		let action = this.inner.add();
+		const action = this.inner.add();
 
 		return {
 			ready: async () => {

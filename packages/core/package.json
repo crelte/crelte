@@ -29,10 +29,6 @@
 			"types": "./dist/init/server.d.ts",
 			"default": "./dist/init/server.js"
 		},
-		"./stores": {
-			"types": "./dist/stores/index.d.ts",
-			"default": "./dist/stores/index.js"
-		},
 		"./graphql": {
 			"types": "./dist/graphql/index.d.ts",
 			"default": "./dist/graphql/index.js"
@@ -63,7 +59,7 @@
 		}
 	},
 	"dependencies": {
-		"chuchi-utils": "^0.1.1",
+		"crelte-std": "../std",
 		"svelte": "^4.2.12"
 	},
 	"devDependencies": {

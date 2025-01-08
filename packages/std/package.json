@@ -1,0 +1,49 @@
+{
+	"name": "crelte-std",
+	"version": "0.1.0",
+	"author": "Crelte <support@crelte.com>",
+	"type": "module",
+	"scripts": {
+		"lint": "eslint ./src",
+		"test": "vitest",
+		"build": "svelte-package -i ./src",
+		"watch": "svelte-package -i ./src -w"
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"module": "dist/index.js",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./sync": {
+			"types": "./dist/sync/index.d.ts",
+			"default": "./dist/sync/index.js"
+		},
+		"./stores": {
+			"types": "./dist/stores/index.d.ts",
+			"default": "./dist/stores/index.js"
+		}
+	},
+	"dependencies": {
+		"svelte": "^4.2.12"
+	},
+	"devDependencies": {
+		"@sveltejs/package": "^2.3.1",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@tsconfig/svelte": "^5.0.2",
+		"@eslint/js": "^9.4.0",
+		"@types/eslint__js": "^8.42.3",
+		"eslint": "^8.45.0",
+		"prettier": "^3.2.5",
+		"tslib": "^2.6.2",
+		"typescript": "^5.2.2",
+		"typescript-eslint": "^7.11.0",
+		"vitest": "^2.0.0"
+	}
+}

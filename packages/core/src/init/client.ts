@@ -1,6 +1,4 @@
-import { o } from 'vitest/dist/chunks/reporters.C_zwCd4j.js';
 import { CrelteBuilder } from '../Crelte.js';
-import { CrelteRouted } from '../index.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
 import { tick } from 'svelte';

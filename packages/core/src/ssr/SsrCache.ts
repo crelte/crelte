@@ -51,7 +51,7 @@ export default class SsrCache {
 
 	// internal
 	private exportAsJson(): string {
-		return JSON.stringify(this.store).replaceAll('<', '\\u003c');
+		return JSON.stringify(this.store).replace(/</g, '\\u003c');
 	}
 
 	// internal
