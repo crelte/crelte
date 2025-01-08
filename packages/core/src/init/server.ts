@@ -99,7 +99,7 @@ export async function main(data: MainData): Promise<{
 	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', site.language);
 
 	const finalHtml = htmlTemplate
-		.replace('<!--ssr-head-->', head)
+		.replace('</head>', head + '\n\t</head>')
 		.replace('<!--ssr-body-->', html);
 
 	const entry = props.entry;
