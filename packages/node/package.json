@@ -4,6 +4,7 @@
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
+		"check": "prettier -c .",
 		"lint": "eslint ./src",
 		"build": "tsc",
 		"watch": "tsc -w"

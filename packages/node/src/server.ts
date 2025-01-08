@@ -11,31 +11,18 @@ async function readFile(path: string): Promise<string> {
 export type ServerOptions = {
 	// typescript client.ts & server.ts
 	ts?: boolean;
-
-	// set this to false if you don't have a craft instance
-	// using static
-	hasCraft?: boolean;
 };
 
 export async function newServer(opts: ServerOptions = {}) {
 	opts = {
 		ts: false,
-		hasCraft: true,
 		...opts,
 	};
 
 	const server = new Server(opts);
-	await server._setup(opts);
+	await server._setup();
 	return server;
 }
-
-export type GenericRouteOptions = {
-	hookBefore?: (
-		req: Request,
-		res: Response,
-		next: () => void,
-	) => Promise<boolean> | boolean;
-};
 
 export type RenderResponse = {
 	status: number;
@@ -88,11 +75,9 @@ export class Server {
 	 *
 	 * - Creates the vite middleware
 	 * - loads the ssr manifest and the index.html file
-	 *
-	 * @param {Object} opts if env is present it should be a Map
 	 */
-	async _setup(opts: ServerOptions = {}) {
-		let envPath = opts.hasCraft ? '../craft/.env' : '.env';
+	async _setup() {
+		const envPath = '../craft/.env';
 
 		try {
 			this.env = readEnv(await readFile(envPath));
@@ -100,19 +85,13 @@ export class Server {
 			throw new Error('failed to read ' + envPath + ' file');
 		}
 
-		if (opts.hasCraft) {
-			const endpointUrl = this.env.get('ENDPOINT_URL');
-			if (!endpointUrl) throw new Error('ENDPOINT_URL not set');
-			this.endpointUrl = endpointUrl;
+		const endpointUrl = this.env.get('ENDPOINT_URL');
+		if (!endpointUrl) throw new Error('ENDPOINT_URL not set');
+		this.endpointUrl = endpointUrl;
 
-			const craftWebUrl = this.env.get('CRAFT_WEB_URL');
-			if (!craftWebUrl) throw new Error('CRAFT_WEB_URL not set');
-			this.craftWebUrl = craftWebUrl;
-		} else {
-			// shim them if we don't have craft
-			this.endpointUrl = '';
-			this.craftWebUrl = '';
-		}
+		const craftWebUrl = this.env.get('CRAFT_WEB_URL');
+		if (!craftWebUrl) throw new Error('CRAFT_WEB_URL not set');
+		this.craftWebUrl = craftWebUrl;
 
 		// parse all vite related env variables
 		this.viteEnv = new Map(
@@ -128,13 +107,10 @@ export class Server {
 
 	/**
 	 * Setups the generic routes
-	 *
-	 * @param {Object} opts
-	 * - opts.hookBefore(req, res, next) -> bool (true stops routing)
 	 */
-	async setupGenericRoute(opts: GenericRouteOptions = {}) {
+	async setupGenericRoute() {
 		this.app.use('*', async (req, res, next) => {
-			return await this._handleGenericRequest(req, res, next, opts);
+			return await this._handleGenericRequest(req, res, next);
 		});
 	}
 
@@ -203,14 +179,7 @@ export class Server {
 		req: Request,
 		res: Response,
 		next: (e?: any) => void,
-		opts: GenericRouteOptions = {},
 	) {
-		// at the moment only used in static package
-		if (opts.hookBefore) {
-			const quit = await opts.hookBefore(req, res, next);
-			if (quit) return;
-		}
-
 		const url = req.originalUrl;
 		const fullUrl = req.protocol + '://' + req.get('host') + url;
 		const acceptLang = req.get('accept-language') ?? null;
@@ -326,7 +295,7 @@ export class Server {
  */
 function readEnv(fileCtn: string): Map<string, string> {
 	// todo should we skip comments?
-	const REGEX = /^ *(\w+) *= *\"?(.+?)\"? *$/gm;
+	const REGEX = /^ *(\w+) *= *"?(.+?)"? *$/gm;
 
 	const map = new Map();
 	// @ts-ignore

@@ -4,6 +4,7 @@
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
+		"check": "prettier -c .",
 		"lint": "eslint ./src",
 		"test": "vitest",
 		"build": "svelte-package -i ./src",
@@ -37,10 +38,6 @@
 		"@sveltejs/package": "^2.3.1",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@tsconfig/svelte": "^5.0.2",
-		"@eslint/js": "^9.4.0",
-		"@types/eslint__js": "^8.42.3",
-		"eslint": "^8.45.0",
-		"prettier": "^3.2.5",
 		"tslib": "^2.6.2",
 		"typescript": "^5.2.2",
 		"typescript-eslint": "^7.11.0",
