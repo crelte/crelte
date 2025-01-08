@@ -1,4 +1,5 @@
 import { relative } from 'path';
+import MagicString from 'magic-string';
 
 // todo need to replace this
 export function usedSsrComponents(dirname: string) {
@@ -12,24 +13,34 @@ export function usedSsrComponents(dirname: string) {
 
 			const initFnSign =
 				'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
-
 			let idx = code.indexOf(initFnSign);
 			if (idx < 0) return;
 			idx += initFnSign.length;
 
-			code = `
-import { getContext as __modulesGetContext } from 'svelte';
-${code.substring(0, idx)}
+			const s = new MagicString(code);
+
+			s.prepend(
+				`import { getContext as __modulesGetContext } from 'svelte';\n`,
+			);
+
+			const ctxAdd = `
 (() => {
 const ctx = __modulesGetContext('modules');
 if (ctx && ctx instanceof Set) {
 	ctx.add('${file}');
 }
 })();
-${code.substring(idx)}
 `;
+			s.appendLeft(idx, ctxAdd);
 
-			return code;
+			return {
+				map: s.generateMap({
+					source: id,
+					includeContent: true,
+					hires: 'boundary',
+				}),
+				code: s.toString(),
+			};
 		},
 	};
 }

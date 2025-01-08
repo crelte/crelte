@@ -221,21 +221,16 @@ export class Server {
 		let thrownError: any = null;
 
 		try {
-			if (this.inDebug && vite) {
+			serverMod = await this._getServer();
+		} catch (e) {
+			return next(e);
+		}
+
+		try {
+			if (vite) {
 				// read index
 				template = await readFile('./index.html');
-				template = await vite.transformIndexHtml(url, template);
-
-				// load server entry
-				serverMod = await vite.ssrLoadModule(
-					'./src/server.' + this.fileExtension,
-					{
-						fixStacktrace: false,
-					},
-				);
-			} else {
-				const distServer = path.resolve('./dist/server.js');
-				serverMod = await import(distServer);
+				template = await vite!.transformIndexHtml(url, template);
 			}
 
 			// render app html
@@ -270,16 +265,16 @@ export class Server {
 
 			console.log('error', e);
 
-			if (!serverMod || !('renderError' in serverMod)) return next(e);
+			if (typeof serverMod.renderError !== 'function') return next(e);
 
 			thrownError = e;
 		}
 
-		// in the case of an error let's to render a nice Error Page
+		// in the case of an error let's try to render a nice Error Page
 		try {
 			const error = {
 				status: 500,
-				message: thrownError?.message,
+				message: thrownError.message,
 			};
 
 			if (typeof thrownError.__isGraphQlError__ === 'function')
@@ -310,18 +305,12 @@ export class Server {
 		const vite = this.vite;
 		if (this.inDebug && vite) {
 			// load server entry
-			try {
-				return await vite.ssrLoadModule(
-					'./src/server.' + this.fileExtension,
-					{
-						fixStacktrace: false,
-					},
-				);
-			} catch (e) {
-				// If an error is caught, let Vite fix the stack trace so it maps back to
-				// your actual source code.
-				if (vite) vite.ssrFixStacktrace(e as any);
-			}
+			return await vite.ssrLoadModule(
+				'./src/server.' + this.fileExtension,
+				{
+					fixStacktrace: true,
+				},
+			);
 		}
 
 		const distServer = path.resolve('./dist/server.js');

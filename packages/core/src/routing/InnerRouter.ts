@@ -283,7 +283,7 @@ export default class InnerRouter {
 	/**
 	 * Open's a route
 	 *
-	 * @param route a route object or an url or uri
+	 * @param route a route object or an url or uri, never input the same route object again
 	 * @param pushState if true pushed the state to the window.history
 	 */
 	open(target: string | URL | Route, pushState: boolean = true) {
@@ -335,7 +335,7 @@ export default class InnerRouter {
 	 * You can use when using pagination for example change the route object
 	 * (search argument) and then call pushState
 	 *
-	 * @param route
+	 * @param route, never input the same route object again
 	 */
 	pushState(route: Route) {
 		const url = route.url;
@@ -353,7 +353,7 @@ export default class InnerRouter {
 	 * This replaces the state of the route without triggering a currentRoute
 	 * or currentSiteId change
 	 *
-	 * @param route
+	 * @param route, never input the same route object again
 	 */
 	replaceState(route: Route) {
 		const url = route.url;
