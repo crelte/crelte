@@ -10,6 +10,10 @@
 		"build": "svelte-package -i ./src",
 		"watch": "svelte-package -i ./src -w"
 	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/crelte/crelte"
+	},
 	"files": [
 		"dist",
 		"src"
