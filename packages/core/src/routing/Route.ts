@@ -45,7 +45,7 @@ export default class Route {
 	/**
 	 * The scroll position of the current route
 	 */
-	scrollY: number;
+	scrollY: number | null;
 
 	/**
 	 * the position in the browser history of this route
@@ -67,7 +67,7 @@ export default class Route {
 		this.url = new URL(url);
 
 		this.site = site;
-		this.scrollY = opts.scrollY ?? 0;
+		this.scrollY = opts.scrollY ?? null;
 		this.index = opts.index ?? 0;
 		this.origin = opts.origin ?? 'manual';
 	}
@@ -157,7 +157,7 @@ export default class Route {
 
 	clone() {
 		return new Route(this.url.href, this.site, {
-			scrollY: this.scrollY,
+			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
 		});

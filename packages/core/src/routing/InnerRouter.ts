@@ -22,6 +22,8 @@ export default class InnerRouter {
 	onRoute: (route: Route, site: Site, changeHistory: () => void) => void;
 	onPreload: (route: Route, site: Site) => void;
 
+	private scrollDebounceTimeout: any | null;
+
 	/**
 	 * Creates a new Router
 	 *
@@ -43,6 +45,8 @@ export default class InnerRouter {
 
 		this.onRoute = () => {};
 		this.onPreload = () => {};
+
+		this.scrollDebounceTimeout = null;
 	}
 
 	/**
@@ -231,8 +235,6 @@ export default class InnerRouter {
 		// current/previous state
 		// eslint-disable-next-line no-constant-condition
 		if (true) {
-			let timeout: any = null;
-
 			window.addEventListener('scroll', () => {
 				const current = this.route;
 				if (!current) return;
@@ -240,12 +242,12 @@ export default class InnerRouter {
 				// store the scroll position
 				current.scrollY = window.scrollY;
 
-				if (timeout) return;
+				if (this.scrollDebounceTimeout) return;
 
 				// this might cause `Attempt to use history.replaceState() more than
 				// 100 times per 30 seconds` in safari
 				// since we wait a moment we should almost ever be fine
-				timeout = setTimeout(() => {
+				this.scrollDebounceTimeout = setTimeout(() => {
 					if (!this.route || !current.eq(this.route)) return;
 
 					// use the latest state
@@ -259,7 +261,7 @@ export default class InnerRouter {
 						);
 					}
 
-					timeout = null;
+					this.scrollDebounceTimeout = null;
 				}, 280);
 			});
 		}
@@ -291,6 +293,13 @@ export default class InnerRouter {
 
 		const current = this.route;
 		if (current) {
+			// if the scrollY will still be updated we clear the timeout
+			// since we should have the latest scrollY
+			if (this.scrollDebounceTimeout) {
+				clearTimeout(this.scrollDebounceTimeout);
+				this.scrollDebounceTimeout = null;
+			}
+
 			// store the scroll position
 			current.scrollY = this.history.scrollY();
 			this.history.replaceState(current._toState());
@@ -395,30 +404,14 @@ export default class InnerRouter {
 
 	domReady(route: Route) {
 		// scroll to target
-		let scrollTo: { top: number; behavior: ScrollBehavior } | null = null;
-
-		// if we have a hash in the route scroll to that element
-		if (route.hash) {
-			const el = document.getElementById(route.hash.substring(1));
-			if (el) {
-				scrollTo = {
-					top: el.offsetTop,
-					behavior: 'smooth',
-				};
-			}
-		}
-
-		// if the route already contains a scrollY scroll to that
-		if (route.scrollY) {
-			scrollTo = {
-				top: route.scrollY,
-				behavior: 'instant',
-			};
-		}
+		let scrollTo:
+			| { top: number; behavior: ScrollBehavior }
+			| { intoView: HTMLElement; behavior: ScrollBehavior }
+			| null = null;
 
 		// if the route is a live preview init and we have a scrollY stored
 		// scroll to that
-		if (!scrollTo && route.origin === 'live-preview-init') {
+		if (route.origin === 'live-preview-init') {
 			const scrollY = sessionStorage.getItem('live-preview-scroll');
 			if (scrollY) {
 				scrollTo = {
@@ -426,16 +419,51 @@ export default class InnerRouter {
 					behavior: 'instant',
 				};
 			}
+			// if we have a hash and the route was not visited
+		} else if (
+			route.hash &&
+			((route.origin === 'init' && typeof route.scrollY !== 'number') ||
+				route.origin === 'click')
+		) {
+			const el = document.getElementById(route.hash.substring(1));
+			if (el) {
+				scrollTo = {
+					intoView: el,
+					behavior: 'smooth',
+				};
+			}
 		}
 
-		// if we don't have a scrollY and the route is a click scroll to the top
-		if (!scrollTo && route.origin === 'click') {
+		// restore scroll position
+		if (
+			!scrollTo &&
+			route.origin !== 'click' &&
+			typeof route.scrollY === 'number'
+		) {
+			scrollTo = {
+				top: route.scrollY,
+				behavior: 'instant',
+			};
+		}
+
+		// scroll to the top if nothing else matches
+		if (!scrollTo) {
 			scrollTo = {
 				top: 0,
 				behavior: 'instant',
 			};
 		}
 
-		if (scrollTo) window.scrollTo(scrollTo);
+		if ('top' in scrollTo) {
+			window.scrollTo({
+				top: scrollTo.top,
+				behavior: scrollTo.behavior,
+			});
+		} else {
+			scrollTo.intoView.scrollIntoView({
+				behavior: scrollTo.behavior,
+				block: 'start',
+			});
+		}
 	}
 }
