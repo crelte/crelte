@@ -157,7 +157,7 @@ export default class Router {
 	 * this is a svelte store
 	 */
 	get route(): Readable<Route> {
-		return this._route.readonly();
+		return this._route.readclone();
 	}
 
 	/**
@@ -171,7 +171,7 @@ export default class Router {
 	 * The next route which is currently being loaded
 	 */
 	get nextRoute(): Readable<Route> {
-		return this._nextRoute.readonly();
+		return this._nextRoute.readclone();
 	}
 
 	/**
@@ -277,8 +277,8 @@ export default class Router {
 	}
 
 	private setNewRoute(route: Route) {
-		this._route.setSilent(route.clone());
-		this._nextRoute.setSilent(route.clone());
+		this._route.setSilent(route);
+		this._nextRoute.setSilent(route);
 
 		if (route.site) {
 			this._site.setSilent(route.site);
@@ -356,7 +356,7 @@ export default class Router {
 	}
 
 	private _onRoute(route: Route, site: Site, changeHistory: () => void) {
-		this._nextRoute.setSilent(route.clone());
+		this._nextRoute.setSilent(route);
 		const siteChanged = this.nextSite.get()?.id !== site.id;
 		this._nextSite.setSilent(site);
 		this._nextRoute.notify();
@@ -377,7 +377,7 @@ export default class Router {
 		});
 
 		// route prepared
-		this.pageLoader.load(route, site, { changeHistory });
+		this.pageLoader.load(route.clone(), site, { changeHistory });
 	}
 
 	private _onPreload(route: Route, site: Site) {
@@ -404,7 +404,7 @@ export default class Router {
 		more.changeHistory();
 
 		const updateRoute = () => {
-			this._route.setSilent(route.clone());
+			this._route.setSilent(route);
 			const siteChanged = this.site.get()?.id !== site.id;
 			this._site.setSilent(site);
 			this._route.notify();
