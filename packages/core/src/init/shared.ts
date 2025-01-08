@@ -11,8 +11,6 @@ interface App<D, E, T> {
 	loadEntryData?: LoadData<any>;
 
 	templates?: Record<string, LazyTemplateModule<E, T>>;
-
-	loadTemplate?(cr: CrelteRouted, entry: E): Promise<TemplateModule<E, T>>;
 }
 
 interface TemplateModule<E, T> {
@@ -132,8 +130,6 @@ export async function loadFn<D, E, T>(
 	let template;
 	if (app.templates) {
 		template = await loadTemplate(app.templates, entry);
-	} else if (app.loadTemplate) {
-		template = await app.loadTemplate(cr, entry);
 	} else {
 		throw new Error('App must have templates or loadTemplate method');
 	}
