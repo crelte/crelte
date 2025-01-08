@@ -1,0 +1,60 @@
+name: Publish Package
+
+on:
+  push:
+    tags:
+      - '*@v*.*.*' # Trigger on tags like core@v1.0.1, std@v1.2.0, node@v1.3.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read # Allow reading the repository content
+      id-token: write # Required for provenance and JSR authentication
+    container:
+      image: node:20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Parse Tag
+        id: parse_tag
+        run: |
+          # Extract the tag name (e.g., core@v1.2.0)
+          TAG_NAME="${GITHUB_REF##*/}"
+          PACKAGE_SHORT_NAME="${TAG_NAME%@*}"
+          VERSION="${TAG_NAME#*@}"
+          echo "PACKAGE_SHORT_NAME=${PACKAGE_SHORT_NAME}" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "PACKAGE_FOLDER=${PACKAGE_SHORT_NAME}" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: |
+          cd ${PACKAGE_FOLDER}
+          npm run lint
+
+      - name: Build Package
+        run: |
+          cd ${PACKAGE_FOLDER} # Navigate to the correct package folder
+          echo "Building package from ${PACKAGE_FOLDER}"
+          cp ../LICENSE.md .
+          npm run build
+
+      - name: Publish to npm
+        run: |
+          cd ${PACKAGE_FOLDER} # Navigate to the correct package folder
+          echo "Publishing package from ${PACKAGE_FOLDER} with version ${VERSION}"
+          npm publish --provenance
