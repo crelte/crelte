@@ -1,12 +1,12 @@
 export default interface History {
-	scrollY(): number;
+	scrollY(): number | null;
 	replaceState(data: any, url?: string): void;
 	pushState(data: any, url: string): void;
 	open(url: string): void;
 }
 
 export class ClientHistory implements History {
-	scrollY(): number {
+	scrollY(): number | null {
 		return window.scrollY;
 	}
 
@@ -32,8 +32,8 @@ export class ServerHistory implements History {
 		this.url = null;
 	}
 
-	scrollY(): number {
-		return 0;
+	scrollY(): number | null {
+		return null;
 	}
 
 	replaceState(data: any, url?: string): void {

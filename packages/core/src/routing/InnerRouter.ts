@@ -301,13 +301,19 @@ export default class InnerRouter {
 			}
 
 			// store the scroll position
-			current.scrollY = this.history.scrollY();
-			this.history.replaceState(current._toState());
+			const scrollY = this.history.scrollY();
+			if (typeof scrollY === 'number') {
+				current.scrollY = scrollY;
+				this.history.replaceState(current._toState());
+			}
 		}
 
 		// if the domain of the current site is different than the domain of the
 		// new site we need to do a window.location.href call
-		if (current && current.url.origin !== route.url.origin) {
+		if (
+			(current && current.url.origin !== route.url.origin) ||
+			import.meta.env.SSR
+		) {
 			this.history.open(route.url.href);
 			return;
 		}

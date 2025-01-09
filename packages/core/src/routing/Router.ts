@@ -336,6 +336,10 @@ export default class Router {
 			};
 		}
 
+		this.inner.setRoute(route);
+
+		const resp = await prom;
+
 		const hist = this.inner.history as ServerHistory;
 		if (hist.url) {
 			const nRoute = new Route(hist.url, null);
@@ -350,9 +354,7 @@ export default class Router {
 			}
 		}
 
-		this.inner.setRoute(route);
-
-		return await prom;
+		return resp;
 	}
 
 	private _onRoute(route: Route, site: Site, changeHistory: () => void) {
