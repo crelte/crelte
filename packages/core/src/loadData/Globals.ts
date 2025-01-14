@@ -25,13 +25,15 @@ export default class Globals {
 		this.prevSiteId = null;
 	}
 
-	get(name: string): Global<any> | null {
+	get<T extends GlobalData>(name: string): Global<T> | null {
 		return this.entries.get(name) ?? null;
 	}
 
 	// call this only in loadGlobalData when by default the global
 	// is not available
-	getAsync(name: string): Promise<Global<any> | null> | Global<any> | null {
+	getAsync<T extends GlobalData>(
+		name: string,
+	): Promise<Global<T> | null> | Global<T> | null {
 		if (this.loaded) return this.get(name);
 
 		let waiter = this.waiters.get(name);
@@ -90,6 +92,7 @@ export default class Globals {
 
 export interface GlobalData {
 	siteId?: number;
+	[key: string]: any;
 }
 
 export class Global<T extends GlobalData> {

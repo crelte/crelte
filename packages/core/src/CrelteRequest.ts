@@ -3,6 +3,7 @@ import { GraphQlQuery, GraphQlRequestOptions } from './graphql/GraphQl.js';
 import Site from './routing/Site.js';
 import Request from './routing/Request.js';
 import Route from './routing/Route.js';
+import { GlobalData } from './loadData/Globals.js';
 
 export default class CrelteRequest extends Crelte {
 	req: Request;
@@ -44,11 +45,13 @@ export default class CrelteRequest extends Crelte {
 	/// get a global and wait for it if it is still loaded
 	/// this is useful when you need to load a global in the
 	/// loadGlobalData function
-	async getGlobalAsync(name: string): Promise<any | null> {
+	async getGlobalAsync<T extends GlobalData>(
+		name: string,
+	): Promise<T | null> {
 		const global = this.innerGlobals.get(name);
 		if (global) return global;
 
-		const r = await this.globals.getAsync(name);
+		const r = await this.globals.getAsync<T>(name);
 		if (!r) return null;
 
 		return r.bySiteId(this.site.id);

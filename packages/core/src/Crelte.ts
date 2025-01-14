@@ -6,7 +6,7 @@ import GraphQl, {
 	GraphQlQuery,
 	GraphQlRequestOptions,
 } from './graphql/GraphQl.js';
-import Globals from './loadData/Globals.js';
+import Globals, { Global, GlobalData } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
 import Router, { RouterOpts } from './routing/Router.js';
@@ -114,7 +114,7 @@ export default class Crelte {
 
 	/// calling this from loadGlobalData will always return null
 	/// this does return the resolved store
-	getGlobal(name: string): any | null {
+	getGlobal<T extends GlobalData>(name: string): Global<T> | null {
 		return this.globals.get(name) ?? null;
 	}
 
