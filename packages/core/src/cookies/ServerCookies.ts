@@ -1,5 +1,5 @@
 import { Cookies, SetOptions } from './index.js';
-import { parseCookies, SetCookie, setCookieToString } from './utils.js';
+import { parseCookies, type SetCookie, setCookieToString } from './utils.js';
 
 export default class ServerCookies implements Cookies {
 	requestCookies: Map<string, string>;

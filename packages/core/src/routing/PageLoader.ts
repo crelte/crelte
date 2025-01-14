@@ -1,4 +1,4 @@
-import Route from './Route.js';
+import Request from './Request.js';
 import Site from './Site.js';
 
 export type PageLoaderOptions = {
@@ -11,7 +11,7 @@ export type LoadResponse = {
 };
 
 export type LoadFn = (
-	route: Route,
+	req: Request,
 	site: Site,
 	opts: LoadOptions,
 ) => Promise<any> | any;
@@ -31,7 +31,7 @@ export default class PageLoader<More> {
 
 	onLoaded: (
 		resp: LoadResponse,
-		route: Route,
+		req: Request,
 		site: Site,
 		more: More,
 	) => void;
@@ -62,7 +62,7 @@ export default class PageLoader<More> {
 		this.onProgress(false);
 	}
 
-	async load(route: Route, site: Site, more: More) {
+	async load(req: Request, site: Site, more: More) {
 		this.onProgress(true);
 
 		const version = ++this.loadingVersion;
@@ -76,7 +76,7 @@ export default class PageLoader<More> {
 
 		const resp: LoadResponse = { success: false, data: null };
 		try {
-			resp.data = await this.loadFn(route, site, { setProgress });
+			resp.data = await this.loadFn(req, site, { setProgress });
 			resp.success = true;
 		} catch (e) {
 			resp.success = false;
@@ -91,18 +91,18 @@ export default class PageLoader<More> {
 			return console.log('route changed quickly, ignoring response');
 
 		this.onProgress(false);
-		this.onLoaded(resp, route, site, more);
+		this.onLoaded(resp, req, site, more);
 	}
 
 	// you don't need to wait on this call
-	async preload(route: Route, site: Site) {
-		const url = route.url.origin + route.url.pathname;
+	async preload(req: Request, site: Site) {
+		const url = req.url.origin + req.url.pathname;
 		if (this.preloadedUrls.has(url)) return;
 
 		this.preloadedUrls.add(url);
 
 		try {
-			await this.loadFn(route, site, { setProgress: () => null });
+			await this.loadFn(req, site, { setProgress: () => null });
 		} catch (_e) {
 			console.log('preload failed');
 			// retry at another time

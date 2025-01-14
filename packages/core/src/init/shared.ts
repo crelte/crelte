@@ -1,5 +1,6 @@
-import CrelteRouted, { GraphQlQuery } from '../CrelteRouted.js';
 import Crelte from '../Crelte.js';
+import CrelteRequest from '../CrelteRequest.js';
+import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
@@ -17,7 +18,7 @@ interface TemplateModule<E, T> {
 	// svelte component
 	default: any;
 
-	loadData?(cr: CrelteRouted, entry: E): Promise<T>;
+	loadData?(cr: CrelteRequest, entry: E): Promise<T>;
 }
 
 type LazyTemplateModule<E, T> =
@@ -31,7 +32,7 @@ export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	}
 }
 
-export function pluginsBeforeRender(cr: CrelteRouted): void {
+export function pluginsBeforeRender(cr: CrelteRequest): void {
 	cr.events.trigger('beforeRender', cr);
 }
 
@@ -58,7 +59,7 @@ export function getEntry(page: any): any {
 }
 
 export async function loadFn<D, E, T>(
-	cr: CrelteRouted,
+	cr: CrelteRequest,
 	app: App<D, E, T>,
 	entryQuery: GraphQlQuery,
 	globalQuery?: GraphQlQuery,
@@ -91,14 +92,14 @@ export async function loadFn<D, E, T>(
 	}
 
 	let pageProm = null;
-	if (cr.route.site) {
-		let uri = decodeURI(cr.route.uri);
+	if (cr.req.site) {
+		let uri = decodeURI(cr.req.uri);
 		if (uri.startsWith('/')) uri = uri.substring(1);
 		if (uri === '' || uri === '/') uri = '__home__';
 
 		pageProm = cr.query(entryQuery, {
 			uri,
-			siteId: cr.route.site.id,
+			siteId: cr.req.site.id,
 		});
 	}
 

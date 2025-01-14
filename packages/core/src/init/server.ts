@@ -4,6 +4,7 @@ import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
 import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
+import CrelteRequest from '../CrelteRequest.js';
 
 export type ServerData = {
 	url: string;
@@ -65,7 +66,7 @@ export async function main(data: MainData): Promise<{
 	// setup load Data
 
 	crelte.router._internal.onLoad = (route, site) => {
-		const cr = crelte.toRouted(route, site);
+		const cr = new CrelteRequest(crelte, route, site);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery);
 	};
 
@@ -87,7 +88,7 @@ export async function main(data: MainData): Promise<{
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 
-	pluginsBeforeRender(crelte.toRouted(route, site));
+	pluginsBeforeRender(new CrelteRequest(crelte, route, site));
 	crelte.globals._updateSiteId(site.id);
 	// eslint-disable-next-line prefer-const
 	let { html, head } = data.app.default.render(props, { context });

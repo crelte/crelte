@@ -5,6 +5,7 @@ import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { ServerHistory } from './History.js';
 import { Readable, Writable } from 'crelte-std/stores';
 import { Barrier, Listeners } from 'crelte-std/sync';
+import Request from './Request.js';
 
 export type RouterOpts = {
 	preloadOnMouseOver?: boolean;
@@ -37,7 +38,7 @@ type Internal = {
 
 	onLoad: LoadFn;
 
-	domReady: (route: Route) => void;
+	domReady: (req: Request) => void;
 
 	initClient: () => void;
 
@@ -76,15 +77,8 @@ export default class Router {
 	 */
 	private _site: Writable<Site>;
 
-	/**
-	 * The next route which is currently being loaded
-	 */
-	private _nextRoute: Writable<Route>;
-
-	/**
-	 * The next site which is currently being loaded
-	 */
-	private _nextSite: Writable<Site>;
+	// the next request, just here to destroy it
+	private _request: Request | null;
 
 	/**
 	 * The loading flag, specifies if a page is currently
@@ -99,7 +93,7 @@ export default class Router {
 
 	private _onRouteEv: Listeners<[Route, Site]>;
 
-	private _onNextRoute: Listeners<[Route, Site, OnNextRouteOpts]>;
+	private _onRequest: Listeners<[Request, Site, OnNextRouteOpts]>;
 	private _renderBarrier: RenderBarrier | null;
 
 	// doc hidden
@@ -121,14 +115,13 @@ export default class Router {
 		// in the first onRoute call we will update this value
 		this._route = new Writable(null!);
 		this._site = new Writable(null!);
-		this._nextRoute = new Writable(null!);
-		this._nextSite = new Writable(null!);
+		this._request = null;
 		this._loading = new Writable(false);
 		this._loadingProgress = new Writable(0);
 
 		this._onRouteEv = new Listeners();
 
-		this._onNextRoute = new Listeners();
+		this._onRequest = new Listeners();
 		this._renderBarrier = null;
 
 		this._internal = {
@@ -165,20 +158,6 @@ export default class Router {
 	 */
 	get site(): Readable<Site> {
 		return this._site.readonly();
-	}
-
-	/**
-	 * The next route which is currently being loaded
-	 */
-	get nextRoute(): Readable<Route> {
-		return this._nextRoute.readclone();
-	}
-
-	/**
-	 * The next site which is currently being loaded
-	 */
-	get nextSite(): Readable<Site> {
-		return this._nextSite.readonly();
 	}
 
 	/**
@@ -270,28 +249,19 @@ export default class Router {
 		return this._onRouteEv.add(fn);
 	}
 
-	onNextRoute(
-		fn: (route: Route, site: Site, opts: OnNextRouteOpts) => void,
+	onRequest(
+		fn: (req: Request, site: Site, opts: OnNextRouteOpts) => void,
 	): () => void {
-		return this._onNextRoute.add(fn);
+		return this._onRequest.add(fn);
 	}
 
 	private setNewRoute(route: Route) {
+		this.destroyRequest();
+
 		this._route.setSilent(route);
-		this._nextRoute.setSilent(route);
-
-		if (route.site) {
-			this._site.setSilent(route.site);
-			this._nextSite.setSilent(route.site);
-		}
-
-		this._nextRoute.notify();
+		if (route.site) this._site.setSilent(route.site);
 		this._route.notify();
-
-		if (route.site) {
-			this._nextSite.notify();
-			this._site.notify();
-		}
+		if (route.site) this._site.notify();
 	}
 
 	private async _initClient() {
@@ -319,7 +289,7 @@ export default class Router {
 			};
 		});
 
-		const route = this.inner.targetToRoute(url);
+		const route = this.inner.targetToRequest(url);
 		route.origin = 'init';
 
 		// let's see if the url matches any route and site
@@ -357,12 +327,10 @@ export default class Router {
 		return resp;
 	}
 
-	private _onRoute(route: Route, site: Site, changeHistory: () => void) {
-		this._nextRoute.setSilent(route);
-		const siteChanged = this.nextSite.get()?.id !== site.id;
-		this._nextSite.setSilent(site);
-		this._nextRoute.notify();
-		if (siteChanged) this._nextSite.notify();
+	private _onRoute(req: Request, site: Site, changeHistory: () => void) {
+		this.destroyRequest();
+
+		this._request = req;
 
 		if (this._renderBarrier) {
 			const barr = this._renderBarrier;
@@ -374,21 +342,27 @@ export default class Router {
 		const barrier = new RenderBarrier();
 		this._renderBarrier = barrier;
 
-		this._onNextRoute.trigger(route.clone(), site, {
+		this._onRequest.trigger(req.clone(), site, {
 			delayRender: () => barrier.add(),
 		});
 
 		// route prepared
-		this.pageLoader.load(route.clone(), site, { changeHistory });
+		this.pageLoader.load(req.clone(), site, { changeHistory });
 	}
 
-	private _onPreload(route: Route, site: Site) {
-		this.pageLoader.preload(route, site);
+	private destroyRequest() {
+		if (!this._request) return;
+
+		this._request = null;
+	}
+
+	private _onPreload(req: Request, site: Site) {
+		this.pageLoader.preload(req, site);
 	}
 
 	private async _onLoaded(
 		resp: LoadResponse,
-		route: Route,
+		req: Request,
 		site: Site,
 		more: LoadedMore,
 	) {
@@ -404,6 +378,8 @@ export default class Router {
 		// this is will only happen if no other route has been requested
 		// in the meantime
 		more.changeHistory();
+
+		const route = req.toRoute();
 
 		const updateRoute = () => {
 			this._route.setSilent(route);

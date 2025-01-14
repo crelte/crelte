@@ -5,4 +5,10 @@ import GraphQl, {
 	GraphQlRequestOptions,
 } from './GraphQl.js';
 
-export { GraphQl, gql, GraphQlQuery, GraphQlError, type GraphQlRequestOptions };
+export {
+	GraphQl,
+	gql,
+	type GraphQlQuery,
+	GraphQlError,
+	type GraphQlRequestOptions,
+};

@@ -45,8 +45,8 @@ if (ctx && ctx instanceof Set) {
 	};
 }
 
-// transform graphql files into a function which can be called to make
-// the request
+// transform graphql files into a GraphQlQuery which can called with
+// crelte.query or graphQl.query
 //
 // See: https://craftcms.com/docs/4.x/graphql.html#specifying-variables
 export function graphQlFiles() {
@@ -62,7 +62,6 @@ export function graphQlFiles() {
 export default {
 	path: ${JSON.stringify(path)},
 	query: ${json},
-	__GraphQlQuery__: () => {}
 };
 `;
 		},

@@ -1,4 +1,4 @@
-import { CrelteRouted } from '../index.js';
+import { CrelteRequest } from '../index.js';
 import { callLoadData } from '../loadData/index.js';
 
 export interface Module {
@@ -107,7 +107,7 @@ export default class Blocks {
 		this.data = blocks.map(() => null);
 	}
 
-	async loadData(cr: CrelteRouted) {
+	async loadData(cr: CrelteRequest) {
 		this.data = await Promise.all(
 			this.blocks.map((block, i) => {
 				const mod = this.modules.get(block.typeHandle)!;

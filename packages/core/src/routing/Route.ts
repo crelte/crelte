@@ -163,7 +163,7 @@ export default class Route {
 		});
 	}
 
-	// internal function
+	/** @hidden */
 	_fillFromState(state: any) {
 		if (typeof state?.route?.scrollY === 'number')
 			this.scrollY = state.route.scrollY;
@@ -172,7 +172,7 @@ export default class Route {
 			this.index = state.route.index;
 	}
 
-	// internal function
+	/** @hidden */
 	_toState(): any {
 		return {
 			route: {

@@ -1,4 +1,4 @@
-import { CrelteRouted } from '../index.js';
+import { CrelteRequest } from '../index.js';
 
 export default class Events {
 	inner: Map<string, Set<any>>;
@@ -13,13 +13,13 @@ export default class Events {
 	// override this function to add your own function signatures
 	on(
 		ev: 'loadGlobalData',
-		fn: (cr: CrelteRouted) => Promise<any>,
+		fn: (cr: CrelteRequest) => Promise<any>,
 	): () => void;
 	on(
 		ev: 'loadData',
-		fn: (cr: CrelteRouted, entry: any, data: any) => Promise<any>,
+		fn: (cr: CrelteRequest, entry: any, data: any) => Promise<any>,
 	): () => void;
-	on(ev: 'beforeRender', fn: (cr: CrelteRouted) => void): () => void;
+	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {
 		let set = this.inner.get(ev);
 		if (!set) {

@@ -4,15 +4,13 @@ import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
-import Crelte from './Crelte.js';
-import CrelteRouted from './CrelteRouted.js';
-import CrelteBase from './CrelteBase.js';
-import { Global, GlobalData } from './loadData/Globals.js';
-import { Cookies } from './cookies/index.js';
-import { Readable } from 'crelte-std/stores';
+import type Crelte from './Crelte.js';
+import type CrelteRequest from './CrelteRequest.js';
+import type { Global, GlobalData } from './loadData/Globals.js';
+import type { Cookies } from './cookies/index.js';
+import type { Readable } from 'crelte-std/stores';
 
-export { Crelte, CrelteRouted };
-export type { CrelteBase };
+export { Crelte, CrelteRequest };
 
 /**
  * Get the Crelte from the current context
@@ -54,20 +52,6 @@ export function getRoute(): Readable<Route> {
  */
 export function getSite(): Readable<Site> {
 	return getRouter().site;
-}
-
-/**
- * Get the next route
- */
-export function getNextRoute(): Readable<Route> {
-	return getRouter().nextRoute;
-}
-
-/**
- * Get the next site
- */
-export function getNextSite(): Readable<Site> {
-	return getRouter().nextSite;
 }
 
 /**

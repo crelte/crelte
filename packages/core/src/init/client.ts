@@ -1,4 +1,5 @@
 import { CrelteBuilder } from '../Crelte.js';
+import CrelteRequest from '../CrelteRequest.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
 import { tick } from 'svelte';
@@ -87,7 +88,7 @@ export function main(data: MainData) {
 	// setup load Data
 
 	crelte.router._internal.onLoad = (route, site, opts) => {
-		const cr = crelte.toRouted(route, site);
+		const cr = new CrelteRequest(crelte, route, site);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery, opts);
 	};
 
@@ -132,7 +133,7 @@ export function main(data: MainData) {
 			return handleLoadError(readyForProps());
 		}
 
-		const cr = crelte.toRouted(route, site);
+		const cr = new CrelteRequest(crelte, route, site);
 
 		const startTime = data.debugTiming ? Date.now() : null;
 		let render = async () => {
@@ -149,7 +150,7 @@ export function main(data: MainData) {
 				);
 			}
 
-			crelte.router._internal.domReady(route);
+			crelte.router._internal.domReady(cr.req);
 		};
 
 		// render with view Transition if enabled and not in hydration

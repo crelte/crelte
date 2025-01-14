@@ -1,6 +1,5 @@
 <script context="module" lang="ts">
-	import { CrelteRouted } from '../index.js';
-
+	import CrelteRequest from '../CrelteRequest.js';
 	/*
 	usage:
 
@@ -47,7 +46,7 @@
 	}
 
 	export async function loadBlocksData(
-		cr: CrelteRouted,
+		cr: CrelteRequest,
 		blocks: any[],
 		modules: BlockModules,
 	): Promise<Blocks> {

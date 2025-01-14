@@ -1,6 +1,8 @@
-import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
-import History, { ClientHistory, ServerHistory } from './History.js';
+import History from './History.js';
+import { ClientHistory, ServerHistory } from './History.js';
+import Request, { isRequest } from './Request.js';
+import Route from './Route.js';
 
 export type InnerRouterOpts = {
 	preloadOnMouseOver: boolean;
@@ -19,8 +21,8 @@ export default class InnerRouter {
 	 * @param changeHistory returns a function you need to call when you are ready to
 	 update the window history (note do not call this after another onRoute call was made)
 	 */
-	onRoute: (route: Route, site: Site, changeHistory: () => void) => void;
-	onPreload: (route: Route, site: Site) => void;
+	onRoute: (route: Request, site: Site, changeHistory: () => void) => void;
+	onPreload: (route: Request, site: Site) => void;
 
 	private scrollDebounceTimeout: any | null;
 
@@ -56,7 +58,7 @@ export default class InnerRouter {
 		this.listen();
 
 		// let's first try to load from the state
-		const route = this.targetToRoute(window.location.href);
+		const route = this.targetToRequest(window.location.href);
 		route._fillFromState(window.history.state);
 
 		route.origin = 'init';
@@ -139,7 +141,7 @@ export default class InnerRouter {
 	 * @param target
 	 * @return Returns null if the url does not match our host (the protocol get's ignored)
 	 */
-	targetToRoute(target: string | URL | Route): Route {
+	targetToRequest(target: string | URL | Route | Request): Request {
 		if (typeof target === 'string') {
 			if (target.startsWith('/')) {
 				const site = this.site;
@@ -150,7 +152,11 @@ export default class InnerRouter {
 		}
 
 		if (target instanceof URL) {
-			return this.routeFromUrl(target);
+			target = this.routeFromUrl(target);
+		}
+
+		if (!isRequest(target)) {
+			return Request.fromRoute(target);
 		}
 
 		return target;
@@ -269,7 +275,7 @@ export default class InnerRouter {
 		window.addEventListener('popstate', async e => {
 			if (!('route' in e.state)) return;
 
-			const route = this.targetToRoute(window.location.href);
+			const route = this.targetToRequest(window.location.href);
 			route._fillFromState(e.state);
 			route.origin = 'pop';
 
@@ -288,12 +294,12 @@ export default class InnerRouter {
 	 * @param route a route object or an url or uri, never input the same route object again
 	 * @param pushState if true pushed the state to the window.history
 	 */
-	open(target: string | URL | Route, pushState: boolean = true) {
-		const route = this.targetToRoute(target);
+	open(target: string | URL | Route | Request, pushState: boolean = true) {
+		const req = this.targetToRequest(target);
 
 		const current = this.route;
 		if (current) {
-			// if the scrollY will still be updated we clear the timeout
+			// if the scrollY would still be updated we clear the timeout
 			// since we should have the latest scrollY
 			if (this.scrollDebounceTimeout) {
 				clearTimeout(this.scrollDebounceTimeout);
@@ -311,20 +317,20 @@ export default class InnerRouter {
 		// if the domain of the current site is different than the domain of the
 		// new site we need to do a window.location.href call
 		if (
-			(current && current.url.origin !== route.url.origin) ||
+			(current && current.url.origin !== req.url.origin) ||
 			import.meta.env.SSR
 		) {
-			this.history.open(route.url.href);
+			this.history.open(req.url.href);
 			return;
 		}
 
 		if (pushState) {
-			route.index = (current?.index ?? 0) + 1;
-			this.onRoute(route, route.site ?? this.site, () => {
-				this.pushState(route);
+			req.index = (current?.index ?? 0) + 1;
+			this.onRoute(req, req.site ?? this.site, () => {
+				this.pushState(req.toRoute());
 			});
 		} else {
-			this.setRoute(route);
+			this.setRoute(req);
 		}
 	}
 
@@ -334,13 +340,13 @@ export default class InnerRouter {
 	 * Will trigger an onRoute event but will not store any scroll progress
 	 * or modify the history
 	 *
-	 * @param route
+	 * @param req
 	 */
-	setRoute(route: Route) {
-		this.route = route;
-		if (route.site) this.site = route.site;
+	setRoute(req: Request) {
+		this.route = req.toRoute();
+		if (req.site) this.site = req.site;
 
-		this.onRoute(route, this.site, () => {});
+		this.onRoute(req, this.site, () => {});
 	}
 
 	/**
@@ -389,26 +395,29 @@ export default class InnerRouter {
 	 *
 	 * @param url
 	 */
-	preload(target: string | URL | Route) {
-		const route = this.targetToRoute(target);
+	preload(target: string | URL | Route | Request) {
+		const req = this.targetToRequest(target);
 
+		// todo, don't think this makes any sense
 		// if the domain of the current site is different than the domain of the
 		// new site id does not make sense to preload
-		if (this.site.url.origin !== route.url.origin) {
+		if (this.site.url.origin !== req.url.origin) {
 			return;
 		}
 
 		const current = this.route;
-		const site = route.site ?? this.site;
+		const site = req.site ?? this.site;
 
 		// if the origin matches, the route will be able to be load
 		// so let's preload it
-		if (current && current.url.origin === route.url.origin) {
-			this.onPreload(route, site);
+		if (current && current.url.origin === req.url.origin) {
+			this.onPreload(req, site);
 		}
 	}
 
-	domReady(route: Route) {
+	domReady(req: Request) {
+		if (req.disableScroll) return;
+
 		// scroll to target
 		let scrollTo:
 			| { top: number; behavior: ScrollBehavior }
@@ -417,7 +426,7 @@ export default class InnerRouter {
 
 		// if the route is a live preview init and we have a scrollY stored
 		// scroll to that
-		if (route.origin === 'live-preview-init') {
+		if (req.origin === 'live-preview-init') {
 			const scrollY = sessionStorage.getItem('live-preview-scroll');
 			if (scrollY) {
 				scrollTo = {
@@ -427,11 +436,11 @@ export default class InnerRouter {
 			}
 			// if we have a hash and the route was not visited
 		} else if (
-			route.hash &&
-			((route.origin === 'init' && typeof route.scrollY !== 'number') ||
-				route.origin === 'click')
+			req.hash &&
+			((req.origin === 'init' && typeof req.scrollY !== 'number') ||
+				req.origin === 'click')
 		) {
-			const el = document.getElementById(route.hash.substring(1));
+			const el = document.getElementById(req.hash.substring(1));
 			if (el) {
 				scrollTo = {
 					intoView: el,
@@ -443,11 +452,11 @@ export default class InnerRouter {
 		// restore scroll position
 		if (
 			!scrollTo &&
-			route.origin !== 'click' &&
-			typeof route.scrollY === 'number'
+			req.origin !== 'click' &&
+			typeof req.scrollY === 'number'
 		) {
 			scrollTo = {
-				top: route.scrollY,
+				top: req.scrollY,
 				behavior: 'instant',
 			};
 		}

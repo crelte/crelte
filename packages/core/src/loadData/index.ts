@@ -2,7 +2,7 @@
  *
  */
 
-import type CrelteRouted from '../CrelteRouted.js';
+import CrelteRequest from '../CrelteRequest.js';
 import { isGraphQlQuery, type GraphQlQuery } from '../graphql/GraphQl.js';
 import type Globals from './Globals.js';
 import type { Global } from './Globals.js';
@@ -10,13 +10,13 @@ import type { Global } from './Globals.js';
 export type { Globals, Global };
 
 export type LoadData<T> =
-	| ((cr: CrelteRouted, ...args: any[]) => Promise<T>)
+	| ((cr: CrelteRequest, ...args: any[]) => Promise<T>)
 	| GraphQlQuery
 	| T;
 
 export async function callLoadData(
 	ld: LoadData<unknown>,
-	cr: CrelteRouted,
+	cr: CrelteRequest,
 	...args: any[]
 ): Promise<unknown> {
 	// either we have a function
@@ -57,7 +57,7 @@ export async function callLoadData(
  * ```
  */
 export function mergeLoadData(...lds: LoadData<object>[]): LoadData<object> {
-	return async (cr: CrelteRouted, ...args: any[]) => {
+	return async (cr: CrelteRequest, ...args: any[]) => {
 		const datas = await Promise.all(
 			lds.map(ld => callLoadData(ld, cr, ...args) as Promise<object>),
 		);

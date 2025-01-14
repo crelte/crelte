@@ -1,9 +1,15 @@
+import Route from '../routing/Route.js';
 import SsrCache, { calcKey as ssrCacheCalcKey } from '../ssr/SsrCache.js';
 
 export type GraphQlErrorResponse = {
 	status?: number;
 	body?: string;
 };
+
+export interface GraphQlQuery {
+	path?: string;
+	query: string;
+}
 
 // todo improve this
 export class GraphQlError extends Error {
@@ -36,6 +42,7 @@ export type GraphQlOptions = {
 
 export type GraphQlRequestOptions = {
 	path?: string;
+	route?: Route;
 	ignoreStatusCode?: boolean;
 	previewToken?: string;
 	siteToken?: string;
@@ -72,6 +79,30 @@ export default class GraphQl {
 
 		this.loggingRequests = opts?.debug ?? false;
 		this.loggingTiming = opts?.debugTiming ?? false;
+	}
+
+	async query(
+		query: GraphQlQuery,
+		variables: Record<string, unknown> = {},
+		opts: GraphQlRequestOptions = {},
+	): Promise<unknown> {
+		if (opts.route) {
+			const search = opts.route.search;
+
+			// todo should variables contain siteId
+			// or maybe gql should detect loadData and add it there
+			// it might make export const loadData = query; easier
+
+			if (search.has('token') && search.get('x-craft-live-preview')) {
+				opts.previewToken = search.get('token')!;
+			} else if (search.has('siteToken')) {
+				opts.siteToken = search.get('siteToken')!;
+			}
+		}
+
+		opts.path = query.path;
+
+		return await this.request(query.query, variables, opts);
 	}
 
 	// returns {} or throws
@@ -219,27 +250,10 @@ export default class GraphQl {
 	}
 }
 
-export class GraphQlQuery {
-	query: string;
-	path: string;
-
-	constructor(query: string, path: string) {
-		this.query = query;
-		this.path = path;
-	}
-
-	/// doc hidden
-	__GraphQlQuery__() {
-		return true;
-	}
-}
-
 /** Returns true if the passed object is a GraphQlQuery */
 export function isGraphQlQuery(obj: any): obj is GraphQlQuery {
 	return (
-		typeof obj === 'object' &&
-		obj !== null &&
-		typeof obj.__GraphQlQuery__ === 'function'
+		typeof obj === 'object' && obj !== null && typeof obj.query === 'string'
 	);
 }
 
@@ -277,5 +291,5 @@ export function gql(
 		}
 	});
 
-	return new GraphQlQuery(query, import.meta.url);
+	return { query, path: import.meta.url };
 }
