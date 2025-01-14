@@ -1,20 +1,6 @@
 {
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ESNext",
-		"useDefineForClassFields": true,
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"baseUrl": ".",
-		"paths": {
-			"@/*": ["src/*"]
-		},
-		"allowJs": true,
-		"checkJs": false,
-		"isolatedModules": true,
-		"strict": true,
 		"outDir": "./dist"
 	},
 	"include": ["src/**/*.ts"]

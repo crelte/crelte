@@ -23,7 +23,7 @@ export async function build(opts: BuildOptions = {}) {
 	console.info('create dist');
 	try {
 		await fs.rm('dist', { force: true, recursive: true });
-	} catch (e) {
+	} catch (_e) {
 		// empty
 	}
 	await fs.mkdir('dist');
@@ -39,12 +39,12 @@ export async function build(opts: BuildOptions = {}) {
 
 	try {
 		await fs.rm('dist/public/.vite', { force: true, recursive: true });
-	} catch (e) {
+	} catch (_e) {
 		// empty
 	}
 	try {
 		await fs.rm('.dist', { force: true, recursive: true });
-	} catch (e) {
+	} catch (_e) {
 		// empty
 	}
 

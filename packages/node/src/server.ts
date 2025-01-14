@@ -81,7 +81,7 @@ export class Server {
 
 		try {
 			this.env = readEnv(await readFile(envPath));
-		} catch (e) {
+		} catch (_e) {
 			throw new Error('failed to read ' + envPath + ' file');
 		}
 

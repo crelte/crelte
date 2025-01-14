@@ -103,7 +103,7 @@ export default class PageLoader<More> {
 
 		try {
 			await this.loadFn(route, site, { setProgress: () => null });
-		} catch (e) {
+		} catch (_e) {
 			console.log('preload failed');
 			// retry at another time
 			this.preloadedUrls.delete(url);

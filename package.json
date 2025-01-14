@@ -10,10 +10,16 @@
 		"build": "npm run build --workspaces"
 	},
 	"devDependencies": {
-		"eslint": "^8.45.0",
-		"prettier": "^3.2.4",
-		"@eslint/js": "^9.4.0",
+		"@eslint/compat": "^1.2.3",
+		"@eslint/js": "^9.17.0",
 		"@types/eslint__js": "^8.42.3",
-		"typescript-eslint": "^7.11.0"
+		"eslint": "^9.7.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-svelte": "^2.46.1",
+		"globals": "^15.14.0",
+		"prettier": "^3.2.4",
+		"prettier-plugin-svelte": "^3.2.6",
+		"typescript": "^5.0.0",
+		"typescript-eslint": "^8.0.0"
 	}
 }
