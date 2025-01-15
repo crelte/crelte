@@ -9,7 +9,6 @@ export type RequestOptions = {
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
-	disableLoadData?: boolean;
 	disableScroll?: boolean;
 };
 
@@ -19,11 +18,6 @@ export type RequestOptions = {
  * in a loadGlobal function.
  */
 export default class Request extends Route {
-	/**
-	 * Todo
-	 */
-	disableLoadData: boolean;
-
 	/**
 	 * Disable scrolling for this request
 	 * @default false
@@ -43,7 +37,6 @@ export default class Request extends Route {
 	) {
 		super(url, site, opts);
 
-		this.disableLoadData = opts.disableLoadData ?? false;
 		this.disableScroll = opts.disableScroll ?? false;
 		this._renderBarrier = new RenderBarrier();
 	}
@@ -99,7 +92,6 @@ export default class Request extends Route {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
-			disableLoadData: this.disableLoadData,
 			disableScroll: this.disableScroll,
 		});
 	}

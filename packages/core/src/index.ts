@@ -1,4 +1,4 @@
-import { getContext } from 'svelte';
+import { getContext, onDestroy } from 'svelte';
 import type Route from './routing/Route.js';
 import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
@@ -127,4 +127,19 @@ export function getGlobal<T extends GlobalData>(
  */
 export function getCookies(): Cookies {
 	return getCrelte().cookies;
+}
+
+/**
+ * Listen for requests
+ *
+ * ## Note
+ * This only works during component initialisation.
+ */
+export function onRequest(fn: (cr: CrelteRequest) => void) {
+	const crelte = getCrelte();
+	const rmListener = crelte.router.onRequest((req, site) => {
+		fn(new CrelteRequest(crelte, req, site));
+	});
+
+	onDestroy(rmListener);
 }
