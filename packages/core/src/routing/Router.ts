@@ -4,7 +4,7 @@ import InnerRouter from './InnerRouter.js';
 import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { ServerHistory } from './History.js';
 import { Readable, Writable } from 'crelte-std/stores';
-import { Barrier, Listeners } from 'crelte-std/sync';
+import { Listeners } from 'crelte-std/sync';
 import Request from './Request.js';
 
 export type RouterOpts = {
@@ -58,13 +58,6 @@ export function trimSlashEnd(str: string) {
 	return str.endsWith('/') ? str.substring(0, str.length - 1) : str;
 }
 
-export type OnNextRouteOpts = {
-	/**
-	 * If you call delayRender you need to call ready or the render will never happen
-	 */
-	delayRender: () => DelayRender;
-};
-
 // Make sure route and nextRoute are not the same object as _inner.route
 export default class Router {
 	/**
@@ -93,8 +86,7 @@ export default class Router {
 
 	private _onRouteEv: Listeners<[Route, Site]>;
 
-	private _onRequest: Listeners<[Request, Site, OnNextRouteOpts]>;
-	private _renderBarrier: RenderBarrier | null;
+	private _onRequest: Listeners<[Request, Site]>;
 
 	// doc hidden
 	_internal: Internal;
@@ -122,7 +114,6 @@ export default class Router {
 		this._onRouteEv = new Listeners();
 
 		this._onRequest = new Listeners();
-		this._renderBarrier = null;
 
 		this._internal = {
 			onLoaded: () => {},
@@ -249,9 +240,7 @@ export default class Router {
 		return this._onRouteEv.add(fn);
 	}
 
-	onRequest(
-		fn: (req: Request, site: Site, opts: OnNextRouteOpts) => void,
-	): () => void {
+	onRequest(fn: (req: Request, site: Site) => void): () => void {
 		return this._onRequest.add(fn);
 	}
 
@@ -335,7 +324,7 @@ export default class Router {
 		if (this._renderBarrier) {
 			const barr = this._renderBarrier;
 			this._renderBarrier = null;
-			// make sure nobody waits forevery
+			// make sure nobody waits forever
 			barr.cancel();
 		}
 
@@ -403,52 +392,3 @@ export default class Router {
 		if (typeof progress === 'number') this._loadingProgress.set(progress);
 	}
 }
-
-class RenderBarrier {
-	inner: Barrier<unknown>;
-	cancelled: boolean;
-	root: DelayRender;
-
-	constructor() {
-		this.inner = new Barrier();
-		this.cancelled = false;
-		this.root = this.add();
-	}
-
-	add(): DelayRender {
-		const action = this.inner.add();
-
-		return {
-			ready: async () => {
-				await action.ready(null);
-				return this.cancelled;
-			},
-			remove: () => action.remove(),
-		};
-	}
-
-	cancel() {
-		this.cancelled = true;
-		this.root.remove();
-	}
-
-	// returns if the render was cancelled
-	ready(): Promise<boolean> {
-		return this.root.ready();
-	}
-}
-
-export type DelayRender = {
-	/**
-	 * Call this when you're ready for the render to happen
-	 * the promise will resolve when the render is done or was cancelled
-	 *
-	 * @returns if the render was cancelled
-	 */
-	ready: () => Promise<boolean>;
-
-	/**
-	 * If youre not interested in the render anymore
-	 */
-	remove: () => void;
-};
