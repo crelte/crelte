@@ -1,11 +1,7 @@
 import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
-import GraphQl, {
-	GraphQlOptions,
-	GraphQlQuery,
-	GraphQlRequestOptions,
-} from './graphql/GraphQl.js';
+import GraphQl, { GraphQlOptions, GraphQlQuery } from './graphql/GraphQl.js';
 import Globals, { Global, GlobalData } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
