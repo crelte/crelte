@@ -1,4 +1,6 @@
+import { Barrier } from 'crelte-std/sync';
 import Route, { RouteOrigin } from './Route.js';
+import { DelayRender } from './Router.js';
 import Site from './Site.js';
 
 export type RequestOpts = {
@@ -16,11 +18,15 @@ export default class Request extends Route {
 	// todo
 	disableScroll: boolean;
 
+	/** @hidden */
+	_renderBarrier: RenderBarrier;
+
 	constructor(url: string | URL, site: Site | null, opts: RequestOpts = {}) {
 		super(url, site, opts);
 
 		this.disableLoadData = opts.disableLoadData ?? false;
 		this.disableScroll = opts.disableScroll ?? false;
+		this._renderBarrier = new RenderBarrier();
 	}
 
 	static fromRoute(route: Route) {
@@ -29,6 +35,13 @@ export default class Request extends Route {
 			index: route.index,
 			origin: route.origin,
 		});
+	}
+
+	/**
+	 * If you call delayRender you need to call ready or the render will never happen
+	 */
+	delayRender(): DelayRender {
+		return this._renderBarrier.add();
 	}
 
 	clone() {
@@ -53,3 +66,62 @@ export default class Request extends Route {
 export function isRequest(req: any): req is Request {
 	return typeof req === 'object' && req !== null && req instanceof Request;
 }
+
+class RenderBarrier {
+	inner: Barrier<unknown>;
+	cancelled: boolean;
+	root: DelayRender;
+
+	constructor() {
+		this.inner = new Barrier();
+		this.cancelled = false;
+		this.root = this.add();
+	}
+
+	isOpen(): boolean {
+		return this.inner.isOpen();
+	}
+
+	add(): DelayRender {
+		const action = this.inner.add();
+
+		return {
+			ready: async () => {
+				if (!this.inner.isOpen()) await action.ready(null);
+				return this.cancelled;
+			},
+			remove: () => {
+				if (!this.inner.isOpen()) action.remove();
+			},
+		};
+	}
+
+	// this should only be called by router
+	cancel() {
+		if (this.inner.isOpen()) return;
+
+		this.cancelled = true;
+		this.root.remove();
+	}
+
+	// returns if the render was cancelled
+	// tis should only be called by router
+	ready(): Promise<boolean> {
+		return this.root.ready();
+	}
+}
+
+export type DelayRender = {
+	/**
+	 * Call this when you're ready for the render to happen
+	 * the promise will resolve when the render is done or was cancelled
+	 *
+	 * @returns if the render was cancelled
+	 */
+	ready: () => Promise<boolean>;
+
+	/**
+	 * If youre not interested in the render anymore
+	 */
+	remove: () => void;
+};

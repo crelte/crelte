@@ -87,8 +87,8 @@ export function main(data: MainData) {
 
 	// setup load Data
 
-	crelte.router._internal.onLoad = (route, site, opts) => {
-		const cr = new CrelteRequest(crelte, route, site);
+	crelte.router._internal.onLoad = (req, site, opts) => {
+		const cr = new CrelteRequest(crelte, req, site);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery, opts);
 	};
 
@@ -112,7 +112,7 @@ export function main(data: MainData) {
 	let firstLoad = true;
 	crelte.router._internal.onLoaded = async (
 		success,
-		route,
+		req,
 		site,
 		readyForProps,
 	) => {
@@ -133,7 +133,7 @@ export function main(data: MainData) {
 			return handleLoadError(readyForProps());
 		}
 
-		const cr = new CrelteRequest(crelte, route, site);
+		const cr = new CrelteRequest(crelte, req, site);
 
 		const startTime = data.debugTiming ? Date.now() : null;
 		let render = async () => {

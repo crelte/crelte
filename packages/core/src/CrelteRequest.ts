@@ -12,10 +12,10 @@ export default class CrelteRequest extends Crelte {
 	private innerGlobals: Map<string, any>;
 
 	/// requires a site if the route does not contain a site
-	constructor(inner: Crelte, req: Route | Request, site: Site) {
+	constructor(inner: Crelte, req: Request, site: Site) {
 		super(inner);
 
-		this.req = req instanceof Request ? req : Request.fromRoute(req);
+		this.req = req;
 		this.site = site;
 		this.innerGlobals = new Map();
 	}
@@ -34,7 +34,11 @@ export default class CrelteRequest extends Crelte {
 			site = req.site;
 		}
 
-		return new CrelteRequest(inner, req, site);
+		return new CrelteRequest(
+			inner,
+			req instanceof Request ? req : Request.fromRoute(req),
+			site,
+		);
 	}
 
 	// deprecated

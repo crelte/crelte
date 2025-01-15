@@ -4,7 +4,7 @@ import InnerRouter from './InnerRouter.js';
 import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { ServerHistory } from './History.js';
 import { Readable, Writable } from 'crelte-std/stores';
-import { Barrier, Listeners } from 'crelte-std/sync';
+import { Listeners } from 'crelte-std/sync';
 import Request from './Request.js';
 
 export type RouterOpts = {
@@ -27,7 +27,7 @@ type LoadedMore = {
 type Internal = {
 	onLoaded: (
 		success: boolean,
-		route: Route,
+		req: Request,
 		site: Site,
 		// call ready once your ready to update the dom
 		// this makes sure we trigger a route and site update
@@ -49,7 +49,7 @@ type ServerInited = {
 	success: boolean;
 	// redirect to the route url
 	redirect: boolean;
-	route: Route;
+	req: Request;
 	site: Site;
 	props: any;
 };
@@ -57,13 +57,6 @@ type ServerInited = {
 export function trimSlashEnd(str: string) {
 	return str.endsWith('/') ? str.substring(0, str.length - 1) : str;
 }
-
-export type OnNextRouteOpts = {
-	/**
-	 * If you call delayRender you need to call ready or the render will never happen
-	 */
-	delayRender: () => DelayRender;
-};
 
 // Make sure route and nextRoute are not the same object as _inner.route
 export default class Router {
@@ -93,8 +86,7 @@ export default class Router {
 
 	private _onRouteEv: Listeners<[Route, Site]>;
 
-	private _onRequest: Listeners<[Request, Site, OnNextRouteOpts]>;
-	private _renderBarrier: RenderBarrier | null;
+	private _onRequest: Listeners<[Request, Site]>;
 
 	// doc hidden
 	_internal: Internal;
@@ -122,12 +114,11 @@ export default class Router {
 		this._onRouteEv = new Listeners();
 
 		this._onRequest = new Listeners();
-		this._renderBarrier = null;
 
 		this._internal = {
 			onLoaded: () => {},
 			onLoad: () => {},
-			domReady: route => this.inner.domReady(route),
+			domReady: req => this.inner.domReady(req),
 			initClient: () => this._initClient(),
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
 		};
@@ -136,10 +127,10 @@ export default class Router {
 			this._onRoute(route, site, changeHistory);
 		this.inner.onPreload = (route, site) => this._onPreload(route, site);
 
-		this.pageLoader.onLoaded = (resp, route, site, more) =>
-			this._onLoaded(resp, route, site, more);
-		this.pageLoader.loadFn = (route, site, opts) =>
-			this._internal.onLoad(route, site, opts);
+		this.pageLoader.onLoaded = (resp, req, site, more) =>
+			this._onLoaded(resp, req, site, more);
+		this.pageLoader.loadFn = (req, site, opts) =>
+			this._internal.onLoad(req, site, opts);
 		this.pageLoader.onProgress = (loading, progress) =>
 			this._onProgress(loading, progress);
 	}
@@ -249,9 +240,7 @@ export default class Router {
 		return this._onRouteEv.add(fn);
 	}
 
-	onRequest(
-		fn: (req: Request, site: Site, opts: OnNextRouteOpts) => void,
-	): () => void {
+	onRequest(fn: (req: Request, site: Site) => void): () => void {
 		return this._onRequest.add(fn);
 	}
 
@@ -275,14 +264,14 @@ export default class Router {
 		this.inner.initServer();
 
 		const prom: Promise<ServerInited> = new Promise(resolve => {
-			this._internal.onLoaded = (success, route, site, ready) => {
+			this._internal.onLoaded = (success, req, site, ready) => {
 				const props = ready();
 				this._internal.onLoaded = () => {};
 
 				resolve({
 					success,
 					redirect: false,
-					route,
+					req,
 					site,
 					props,
 				});
@@ -300,7 +289,7 @@ export default class Router {
 			return {
 				success: true,
 				redirect: true,
-				route: new Route(site.url, site),
+				req: new Request(site.url, site),
 				site,
 				props: {},
 			};
@@ -317,7 +306,7 @@ export default class Router {
 				return {
 					success: true,
 					redirect: true,
-					route: nRoute,
+					req: Request.fromRoute(nRoute),
 					site: route.site!,
 					props: {},
 				};
@@ -332,27 +321,21 @@ export default class Router {
 
 		this._request = req;
 
-		if (this._renderBarrier) {
-			const barr = this._renderBarrier;
-			this._renderBarrier = null;
-			// make sure nobody waits forevery
-			barr.cancel();
+		const barrier = req._renderBarrier;
+		if (barrier.isOpen()) {
+			throw new Error('render barrier is already open');
 		}
 
-		const barrier = new RenderBarrier();
-		this._renderBarrier = barrier;
-
-		this._onRequest.trigger(req.clone(), site, {
-			delayRender: () => barrier.add(),
-		});
+		this._onRequest.trigger(req, site);
 
 		// route prepared
-		this.pageLoader.load(req.clone(), site, { changeHistory });
+		this.pageLoader.load(req, site, { changeHistory });
 	}
 
 	private destroyRequest() {
 		if (!this._request) return;
 
+		this._request._renderBarrier.cancel();
 		this._request = null;
 	}
 
@@ -366,13 +349,8 @@ export default class Router {
 		site: Site,
 		more: LoadedMore,
 	) {
-		// we need to wait on the renderBarrier
-		const renderBarrier = this._renderBarrier;
-		if (renderBarrier) {
-			// check if the render was cancelled
-			if (await renderBarrier.ready()) return;
-			this._renderBarrier = null;
-		}
+		// check if the render was cancelled
+		if (await req._renderBarrier.ready()) return;
 
 		// when the data is loaded let's update the route of the inner
 		// this is will only happen if no other route has been requested
@@ -391,7 +369,7 @@ export default class Router {
 			this._onRouteEv.trigger(route.clone(), site);
 		};
 
-		this._internal.onLoaded(resp.success, route, site, () => {
+		this._internal.onLoaded(resp.success, req, site, () => {
 			updateRoute();
 			return resp.data;
 		});
@@ -403,52 +381,3 @@ export default class Router {
 		if (typeof progress === 'number') this._loadingProgress.set(progress);
 	}
 }
-
-class RenderBarrier {
-	inner: Barrier<unknown>;
-	cancelled: boolean;
-	root: DelayRender;
-
-	constructor() {
-		this.inner = new Barrier();
-		this.cancelled = false;
-		this.root = this.add();
-	}
-
-	add(): DelayRender {
-		const action = this.inner.add();
-
-		return {
-			ready: async () => {
-				await action.ready(null);
-				return this.cancelled;
-			},
-			remove: () => action.remove(),
-		};
-	}
-
-	cancel() {
-		this.cancelled = true;
-		this.root.remove();
-	}
-
-	// returns if the render was cancelled
-	ready(): Promise<boolean> {
-		return this.root.ready();
-	}
-}
-
-export type DelayRender = {
-	/**
-	 * Call this when you're ready for the render to happen
-	 * the promise will resolve when the render is done or was cancelled
-	 *
-	 * @returns if the render was cancelled
-	 */
-	ready: () => Promise<boolean>;
-
-	/**
-	 * If youre not interested in the render anymore
-	 */
-	remove: () => void;
-};

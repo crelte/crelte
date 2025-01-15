@@ -65,12 +65,12 @@ export async function main(data: MainData): Promise<{
 
 	// setup load Data
 
-	crelte.router._internal.onLoad = (route, site) => {
-		const cr = new CrelteRequest(crelte, route, site);
+	crelte.router._internal.onLoad = (req, site) => {
+		const cr = new CrelteRequest(crelte, req, site);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery);
 	};
 
-	const { success, redirect, route, site, props } =
+	const { success, redirect, req, site, props } =
 		await crelte.router._internal.initServer(
 			data.serverData.url,
 			data.serverData.acceptLang,
@@ -80,7 +80,7 @@ export async function main(data: MainData): Promise<{
 	if (redirect) {
 		return {
 			status: 302,
-			location: route.url.toString(),
+			location: req.url.toString(),
 		};
 	}
 
@@ -88,7 +88,7 @@ export async function main(data: MainData): Promise<{
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 
-	pluginsBeforeRender(new CrelteRequest(crelte, route, site));
+	pluginsBeforeRender(new CrelteRequest(crelte, req, site));
 	crelte.globals._updateSiteId(site.id);
 	// eslint-disable-next-line prefer-const
 	let { html, head } = data.app.default.render(props, { context });
