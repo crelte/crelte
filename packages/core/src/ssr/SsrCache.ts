@@ -15,6 +15,12 @@ export async function calcKey(data: any) {
 	return hashHex;
 }
 
+/**
+ * A simple cache for server side rendering
+ *
+ * You can use this to store data to pass to the client or to cache data
+ * generally. Storing data and retrieving it will also work on the client.
+ */
 export default class SsrCache {
 	private store: Record<string, any>;
 
@@ -28,7 +34,9 @@ export default class SsrCache {
 		}
 	}
 
-	/// check if the value is in the cache else calls the fn
+	/**
+	 * check if the value is in the cache else calls the fn
+	 */
 	async load<T>(key: string, fn: () => Promise<T>) {
 		if (key in this.store) return this.store[key];
 		const v = await fn();
@@ -36,25 +44,30 @@ export default class SsrCache {
 		return v;
 	}
 
-	/// returns null if the data does not exists
+	/**
+	 * Get a value from the cache
+	 */
 	get<T>(key: string): T | null {
 		return this.store[key] ?? null;
 	}
 
+	/**
+	 * Set a value in the cache
+	 */
 	set<T>(key: string, val: T): T {
 		return (this.store[key] = val);
 	}
 
+	/** @hidden */
 	clear() {
 		this.store = {};
 	}
 
-	// internal
 	private exportAsJson(): string {
 		return JSON.stringify(this.store).replace(/</g, '\\u003c');
 	}
 
-	// internal
+	/** @hidden */
 	_exportToHead(): string {
 		return `\n\t\t<script>window.SSR_STORE = ${this.exportAsJson()};</script>`;
 	}

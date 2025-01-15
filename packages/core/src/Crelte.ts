@@ -9,7 +9,7 @@ import GraphQl, {
 import Globals, { Global, GlobalData } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
-import Router, { RouterOpts } from './routing/Router.js';
+import Router, { RouterOptions } from './routing/Router.js';
 import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
 
@@ -37,7 +37,7 @@ export class CrelteBuilder {
 		this.graphQl = new GraphQl(endpoint, this.ssrCache, opts);
 	}
 
-	setupRouter(sites: SiteFromGraphQl[], opts: RouterOpts = {}) {
+	setupRouter(sites: SiteFromGraphQl[], opts: RouterOptions = {}) {
 		this.router = new Router(sites, opts);
 	}
 
@@ -49,7 +49,35 @@ export class CrelteBuilder {
 		return new Crelte(this);
 	}
 }
+/**
+ * Options to configure the request
+ */
+export type QueryOptions = {
+	/**
+	 * Ignore the response status code
+	 * @default false
+	 */
+	ignoreStatusCode?: boolean;
 
+	/**
+	 * Configure caching
+	 * @default true
+	 */
+	caching?: boolean;
+
+	/**
+	 * Status code of the response
+	 * This will be set after the request if
+	 * `ignoreStatusCode` is set to `true`
+	 */
+	status?: number;
+};
+
+/**
+ * This is the main class of Crelte and can be accessed
+ * in component initialisation via `getCrelte()` and is the
+ * first parameter in `loadData`
+ */
 export default class Crelte {
 	protected _ssrCache: SsrCache;
 	protected _graphQl: GraphQl;
@@ -72,48 +100,82 @@ export default class Crelte {
 		this._cookies = builder.cookies;
 	}
 
+	/**
+	 * Get the SSR cache
+	 */
 	get ssrCache(): SsrCache {
 		return this._ssrCache;
 	}
 
+	/**
+	 * Get the GraphQl instance
+	 */
 	get graphQl(): GraphQl {
 		return this._graphQl;
 	}
 
+	/**
+	 * Get the Router instance
+	 */
 	get router(): Router {
 		return this._router;
 	}
 
+	/**
+	 * Get the Plugins instance
+	 */
 	get plugins(): Plugins {
 		return this._plugins;
 	}
 
+	/**
+	 * Get the Events instance
+	 */
 	get events(): Events {
 		return this._events;
 	}
 
+	/**
+	 * Get the Globals instance
+	 */
 	get globals(): Globals {
 		return this._globals;
 	}
 
+	/**
+	 * Get the Cookies instance
+	 */
 	get cookies(): Cookies {
 		return this._cookies;
 	}
 
+	/**
+	 * Get a Plugin by name
+	 */
 	getPlugin(name: string): Plugin | null {
 		return this.plugins.get(name);
 	}
 
 	/**
-	 * returns an env Variables, always needs to be prefixed VITE_
-	 * Except ENDPOINT_URL and CRAFT_WEB_URL
+	 * returns an env variable from the craft/.env file.
+	 * All env variables need to start with VITE_
+	 * except ENDPOINT_URL and CRAFT_WEB_URL
 	 */
+	getEnv(name: 'ENDPOINT_URL'): string;
+	getEnv(name: 'CRAFT_WEB_URL'): string;
+	getEnv(name: string): string | null;
 	getEnv(name: string): string | null {
 		return this.ssrCache.get(name);
 	}
 
-	/// calling this from loadGlobalData will always return null
-	/// this does return the resolved store
+	/**
+	 * returns a store which contains a globalSet
+	 *
+	 * ## Note
+	 * This only works in loadData, in loadGlobalData this will
+	 * always return null. In that context you should use
+	 * `CrelteRequest.getGlobalAsync`
+	 */
 	getGlobal<T extends GlobalData>(name: string): Global<T> | null {
 		return this.globals.get(name) ?? null;
 	}
@@ -121,16 +183,15 @@ export default class Crelte {
 	/**
 	 * Run a GraphQl Query
 	 *
-	 * @param query the default export from a graphql file
+	 * @param query the default export from a graphql file or the gql`query {}`
+	 * function
 	 * @param variables variables that should be passed to the
 	 * graphql query
-	 * @param options opts `{ caching: true, previewToken: string,
-	 * siteToken: string, ignoreStatusCode: false, headers: {} }`
 	 */
 	async query(
 		query: GraphQlQuery,
 		variables: Record<string, unknown> = {},
-		opts: GraphQlRequestOptions = {},
+		opts: QueryOptions = {},
 	): Promise<unknown> {
 		// this function is added as convenience
 		return this.graphQl.query(query, variables, {

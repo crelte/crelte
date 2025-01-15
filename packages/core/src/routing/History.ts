@@ -3,6 +3,7 @@ export default interface History {
 	replaceState(data: any, url?: string): void;
 	pushState(data: any, url: string): void;
 	open(url: string): void;
+	back(): void;
 }
 
 export class ClientHistory implements History {
@@ -20,6 +21,10 @@ export class ClientHistory implements History {
 
 	open(url: string): void {
 		window.location.href = url;
+	}
+
+	back(): void {
+		window.history.back();
 	}
 }
 
@@ -48,5 +53,9 @@ export class ServerHistory implements History {
 
 	open(url: string): void {
 		this.url = url;
+	}
+
+	back(): void {
+		throw new Error('Cannot go back on the server');
 	}
 }

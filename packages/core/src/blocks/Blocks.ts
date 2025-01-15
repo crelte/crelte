@@ -2,18 +2,39 @@ import { CrelteRequest } from '../index.js';
 import { callLoadData } from '../loadData/index.js';
 
 export interface Module {
-	// svelte component
+	/** Svelte component */
 	default: any;
+
+	/** Handle of the block, this only works with { eager: true } */
 	handle?: string | string[];
+
+	/** If true the typeHandle will be avaiable for this component */
 	keepTypeHandle?: boolean;
 
-	loadData?: (block: any) => Promise<any>;
+	loadData?: (
+		cr: CrelteRequest,
+		block: any,
+		opts: BlockOptions,
+	) => Promise<any>;
 }
+
+export type BlockOptions = {
+	/**
+	 * The returns the sibling block or null if it does not exist
+	 *
+	 * -1 = previous block
+	 * 0 = current block
+	 * 1 = next block
+	 */
+	getSibling: (offset: number) => Record<string, any> | null;
+};
 
 export type AsyncModule = (() => Promise<Module>) | Module;
 
 export type BlockModulesOptions = {
-	// if a block should handle multiple blocks
+	/**
+	 * If a block should handle multiple typehandles
+	 */
 	alias?: Record<string, string>;
 };
 
@@ -81,7 +102,18 @@ export class BlockModules {
 	}
 }
 
-export async function newBlocks(blocks: any[], modules: BlockModules) {
+/**
+ * Creates a new Blocks instance
+ *
+ * Consider using the Blocks component instead
+ *
+ * @param blocks the blocks data each block must have a typeHandle
+ * @param modules the modules created with `blockModules`
+ */
+export async function newBlocks(
+	blocks: any[],
+	modules: BlockModules,
+): Promise<Blocks> {
 	// define all required modules
 	const requiredModules: Set<string> = new Set();
 

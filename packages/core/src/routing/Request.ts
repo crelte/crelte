@@ -2,7 +2,10 @@ import { Barrier } from 'crelte-std/sync';
 import Route, { RouteOrigin } from './Route.js';
 import Site from './Site.js';
 
-export type RequestOpts = {
+/**
+ * Options to create a Request
+ */
+export type RequestOptions = {
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
@@ -10,17 +13,34 @@ export type RequestOpts = {
 	disableScroll?: boolean;
 };
 
+/**
+ * A Request is a Route with some extra options
+ * you get a Request from the onRequest event or
+ * in a loadGlobal function.
+ */
 export default class Request extends Route {
-	// todo
+	/**
+	 * Todo
+	 */
 	disableLoadData: boolean;
 
-	// todo
+	/**
+	 * Disable scrolling for this request
+	 * @default false
+	 */
 	disableScroll: boolean;
 
 	/** @hidden */
 	_renderBarrier: RenderBarrier;
 
-	constructor(url: string | URL, site: Site | null, opts: RequestOpts = {}) {
+	/**
+	 * Create a new Request
+	 */
+	constructor(
+		url: string | URL,
+		site: Site | null,
+		opts: RequestOptions = {},
+	) {
 		super(url, site, opts);
 
 		this.disableLoadData = opts.disableLoadData ?? false;
@@ -28,6 +48,9 @@ export default class Request extends Route {
 		this._renderBarrier = new RenderBarrier();
 	}
 
+	/**
+	 * Create a Request from a Route
+	 */
 	static fromRoute(route: Route) {
 		return new Request(route.url.href, route.site, {
 			scrollY: route.scrollY ?? undefined,
@@ -37,12 +60,40 @@ export default class Request extends Route {
 	}
 
 	/**
-	 * If you call delayRender you need to call ready or the render will never happen
+	 * With delayRender you can make sure that the render waits
+	 * until you are ready. This is useful for building page transitions.
+	 *
+	 * ## Important
+	 * If you call delayRender you need to call `ready/remove` or the render
+	 * will never happen
+	 *
+	 * ## Example
+	 * ```
+	 * import { onRequest } from 'crelte';
+	 * import { animate } from 'motion';
+	 *
+	 * onRequest(async req => {
+	 *     if (req.origin !== 'click' && req.origin !== 'manual') return;
+	 *
+	 *     const delay = req.delayRender();
+	 *
+	 *     await animate(plane, { x: '0%' });
+	 *
+	 *     // wait until the new page is ready to be rendered
+	 *     // if the render was cancelled we return
+	 *     if (await delay.ready()) return;
+	 *
+	 *     await animate(plane, { x: '100%' });
+	 * });
+	 * ```
 	 */
 	delayRender(): DelayRender {
 		return this._renderBarrier.add();
 	}
 
+	/**
+	 * Create a copy of the request
+	 */
 	clone() {
 		return new Request(this.url.href, this.site, {
 			scrollY: this.scrollY ?? undefined,
@@ -53,6 +104,9 @@ export default class Request extends Route {
 		});
 	}
 
+	/**
+	 * Create a Route from the Request
+	 */
 	toRoute() {
 		return new Route(this.url.href, this.site, {
 			scrollY: this.scrollY ?? undefined,
@@ -95,7 +149,7 @@ class RenderBarrier {
 		};
 	}
 
-	// this should only be called by router
+	/** @hidden */
 	cancel() {
 		if (this.inner.isOpen()) return;
 
@@ -104,12 +158,15 @@ class RenderBarrier {
 	}
 
 	// returns if the render was cancelled
-	// tis should only be called by router
+	/** @hidden */
 	ready(): Promise<boolean> {
 		return this.root.ready();
 	}
 }
 
+/**
+ * DelayRender is returned by `Request.delayRender`
+ */
 export type DelayRender = {
 	/**
 	 * Call this when you're ready for the render to happen
@@ -120,7 +177,7 @@ export type DelayRender = {
 	ready: () => Promise<boolean>;
 
 	/**
-	 * If youre not interested in the render anymore
+	 * If youre not interested when the render happens anymore
 	 */
 	remove: () => void;
 };

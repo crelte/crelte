@@ -6,12 +6,21 @@ export type GraphQlErrorResponse = {
 	body?: string;
 };
 
+/**
+ * A GraphQL query
+ *
+ * You should almost never create this object directly
+ * but instead import a graphql file or use the gql template.
+ */
 export interface GraphQlQuery {
 	path?: string;
 	query: string;
 }
 
 // todo improve this
+/**
+ * A GraphQL error
+ */
 export class GraphQlError extends Error {
 	resp: GraphQlErrorResponse;
 	ctx: any;
@@ -24,22 +33,41 @@ export class GraphQlError extends Error {
 		this.ctx = ctx;
 	}
 
+	/**
+	 * The status code of the response
+	 */
 	status(): number {
 		return this.resp?.status ?? 500;
 	}
 
 	__isGraphQlError__() {}
 
+	/**
+	 * The error message in string form
+	 */
 	get message(): string {
 		return 'GraphqlError: ' + JSON.stringify(this.resp);
 	}
 }
 
+/**
+ * Options for the GraphQl class
+ */
 export type GraphQlOptions = {
 	debug?: boolean;
 	debugTiming?: boolean;
 };
 
+/**
+ * Options to configure the request
+ *
+ * If you use `Crelte*.query` the following options
+ * will be set automatically:
+ * - path
+ * - route
+ * - previewToken
+ * - siteToken
+ */
 export type GraphQlRequestOptions = {
 	path?: string;
 	route?: Route;
@@ -52,6 +80,9 @@ export type GraphQlRequestOptions = {
 	status?: number;
 };
 
+/**
+ * A GraphQL client
+ */
 export default class GraphQl {
 	private endpoint: string;
 	private ssrCache: SsrCache;
@@ -64,9 +95,7 @@ export default class GraphQl {
 	private loggingTiming: boolean;
 
 	/**
-	 * Create a new GraphQL
-	 *
-	 * @param {Object} [opts={}] opts `{ debug: false, debugTiming: false }`
+	 * Create a new GraphQL client
 	 */
 	constructor(
 		endpoint: string,
@@ -81,6 +110,14 @@ export default class GraphQl {
 		this.loggingTiming = opts?.debugTiming ?? false;
 	}
 
+	/**
+	 * Run a GraphQl Query
+	 *
+	 * @param query the default export from a graphql file or the gql`query {}`
+	 * function
+	 * @param variables variables that should be passed to the
+	 * graphql query
+	 */
 	async query(
 		query: GraphQlQuery,
 		variables: Record<string, unknown> = {},
@@ -107,7 +144,7 @@ export default class GraphQl {
 
 	// returns {} or throws
 	// options: {ignoreStatusCode, previewToken, caching, headers}
-	async request(
+	private async request(
 		query: string,
 		variables: Record<string, unknown> = {},
 		options: GraphQlRequestOptions = {},
@@ -258,13 +295,14 @@ export function isGraphQlQuery(obj: any): obj is GraphQlQuery {
 }
 
 /**
- * @description Create a GraphQL query string with variables.
+ * Create a GraphQL query string with variables.
  * @param strings
  * @param keys
  *
- * @example
- *
- * const query = gql`query ($id: ID!) { page(id: $id) { id } }`
+ * ## Example
+ * ```
+ * const query = gql`query ($id: ID!) { page(id: $id) { id } }`;
+ * ```
  */
 export function gql(
 	strings: TemplateStringsArray | string[] | string,

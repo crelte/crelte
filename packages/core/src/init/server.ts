@@ -5,6 +5,7 @@ import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import CrelteRequest from '../CrelteRequest.js';
+import { gql, GraphQlQuery } from '../graphql/GraphQl.js';
 
 export type ServerData = {
 	url: string;
@@ -17,19 +18,49 @@ export type ServerData = {
 	cookies?: string;
 };
 
+/**
+ * The main function to start the server side rendering
+ */
 export type MainData = {
-	/// svelte app component
+	/** The App.svelte module */
 	app: any;
-	entryQuery: any;
-	globalQuery?: any;
+	/** The entry query from queries/entry.graphql */
+	entryQuery: GraphQlQuery;
+	/** The global query from queries/global.graphql */
+	globalQuery?: GraphQlQuery;
 
+	/** Server data provided by crelte-node */
 	serverData: ServerData;
 
 	// debug
+
+	/** Enable graphql query debugging */
 	graphQlDebug?: boolean;
+
+	/** Enable request and render timing measurement */
 	debugTiming?: boolean;
 };
 
+/**
+ * The main function to start the server side rendering
+ *
+ * ## Example
+ * ```
+ * import * as app from './App.svelte';
+ * import entryQuery from './queries/entry.graphql';
+ * import globalQuery from './queries/global.graphql';
+ * import { main } from 'crelte/server';
+ *
+ * export function render(serverData) {
+ *     return main({
+ *         app,
+ *         entryQuery,
+ *         globalQuery,
+ *         serverData,
+ *     });
+ * }
+ * ```
+ */
 export async function main(data: MainData): Promise<{
 	status: number;
 	location?: string;
@@ -126,6 +157,23 @@ export type MainErrorData = {
 	serverData: ServerData;
 };
 
+/**
+ * The main function to start the server side rendering
+ * if there was an error
+ *
+ * ## Example
+ * ```
+ * import * as errorPage from './Error.svelte';
+ *
+ * export function renderError(error, serverData) {
+ *     return mainError({
+ *         error,
+ *         errorPage,
+ *         serverData
+ *     });
+ * }
+ * ```
+ */
 export async function mainError(
 	data: MainErrorData,
 ): Promise<{ status: number; html?: string }> {
@@ -165,8 +213,19 @@ async function loadSites(builder: CrelteBuilder): Promise<SiteFromGraphQl[]> {
 		return globalThis['CRAFT_SITES_CACHED'];
 	}
 
-	const resp = (await builder.graphQl.request(
-		'query { crelteSites { id baseUrl language name handle primary } }',
+	const resp = (await builder.graphQl.query(
+		gql`
+			query {
+				crelteSites {
+					id
+					baseUrl
+					language
+					name
+					handle
+					primary
+				}
+			}
+		`,
 		{},
 		// don't cache since we cache ourself
 		{ caching: false },

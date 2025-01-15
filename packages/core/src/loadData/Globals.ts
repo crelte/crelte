@@ -25,12 +25,25 @@ export default class Globals {
 		this.prevSiteId = null;
 	}
 
+	/**
+	 * returns a store which contains a globalSet
+	 *
+	 * ## Note
+	 * This only works in loadData, in loadGlobalData this will
+	 * always return null. In that context you should use
+	 * `.getGlobalAsync`
+	 */
 	get<T extends GlobalData>(name: string): Global<T> | null {
 		return this.entries.get(name) ?? null;
 	}
 
-	// call this only in loadGlobalData when by default the global
-	// is not available
+	/**
+	 * Get a store which contains a globalSet and wait until it is loaded
+	 *
+	 * ## Note
+	 * This is only useful in loadGlobalData in all other cases
+	 * you can use `.getGlobal` which does return a Promise
+	 */
 	getAsync<T extends GlobalData>(
 		name: string,
 	): Promise<Global<T> | null> | Global<T> | null {
@@ -47,15 +60,15 @@ export default class Globals {
 		});
 	}
 
-	// hidden
+	/** @hidden */
 	_wasLoaded(): boolean {
 		return this.loaded;
 	}
 
-	// hidden
 	// data is the data from the global graphql
 	// so it contains some keys and data which should be parsed
 	// and created a store for each key
+	/** @hidden */
 	_setData(siteId: number, data: any) {
 		const wasLoaded = this.loaded;
 		this.loaded = true;
@@ -72,6 +85,7 @@ export default class Globals {
 		}
 	}
 
+	/** @hidden */
 	_globalsBySite(siteId: number): Map<string, any> {
 		const map = new Map();
 
@@ -82,6 +96,7 @@ export default class Globals {
 		return map;
 	}
 
+	/** @hidden */
 	_updateSiteId(siteId: number) {
 		// todo we should only trigger
 		if (this.prevSiteId === siteId) return;
@@ -90,11 +105,19 @@ export default class Globals {
 	}
 }
 
+/**
+ * A globalSet Data
+ *
+ * Each global query should contain the siteId
+ */
 export interface GlobalData {
 	siteId?: number;
 	[key: string]: any;
 }
 
+/**
+ * A globalSet store
+ */
 export class Global<T extends GlobalData> {
 	private inner: Writable<T>;
 	/// if languages is null this means we always have the same data
@@ -132,11 +155,20 @@ export class Global<T extends GlobalData> {
 		return this.inner.subscribe(fn);
 	}
 
+	/**
+	 * The current value
+	 */
 	get(): T {
 		return this.inner.get();
 	}
 
-	/// if you pass a siteId which comes from craft then you will never receive null
+	/**
+	 * Get the value based on the siteId
+	 *
+	 * ## Note
+	 * If you pass a siteId which comes from craft
+	 * you will never receive null
+	 */
 	bySiteId(siteId: number): T | null {
 		if (this.languages)
 			return this.languages.find(d => d.siteId === siteId) ?? null;
@@ -144,6 +176,7 @@ export class Global<T extends GlobalData> {
 		return this.inner.get();
 	}
 
+	/** @hidden */
 	_updateSiteId(siteId: number) {
 		if (!this.languages) return;
 

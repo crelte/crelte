@@ -14,11 +14,17 @@ export interface Cookies {
 
 	/**
 	 * sets the value of the cookie
+	 *
+	 * ## Note
+	 * in most cases you probably wan't to set the path to '/'
 	 */
 	set(name: string, value: string, opts?: SetOptions): void;
 
+	/**
+	 * removes the cookie
+	 */
 	remove(name: string): void;
 
-	// doc hidden
+	/** @hidden */
 	_init(cookies: string): void;
 }

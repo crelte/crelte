@@ -6,6 +6,7 @@
 	"scripts": {
 		"check": "svelte-check",
 		"check-fmt": "prettier -c .",
+		"fmt": "prettier -w .",
 		"lint": "eslint ./src",
 		"test": "vitest",
 		"build": "svelte-package -i ./src",

@@ -1,14 +1,23 @@
-import Blocks, {
-	type BlockModules,
-	type BlockModulesOptions,
-	type AsyncModule,
-	type Module,
-	blockModules,
-	loadBlocksData,
-} from './Blocks.svelte';
+import Blocks, { blockModules, loadBlocksData } from './Blocks.svelte';
+import type {
+	BlockModules,
+	BlockModulesOptions,
+	AsyncModule,
+	Module,
+	BlockOptions,
+} from './Blocks.js';
+import type BlocksInstance from './Blocks.js';
+import { newBlocks } from './Blocks.js';
 
-export type { BlockModules, BlockModulesOptions, AsyncModule, Module };
+export type {
+	BlocksInstance,
+	BlockModules,
+	BlockModulesOptions,
+	AsyncModule,
+	Module,
+	BlockOptions,
+};
 
-export { Blocks, blockModules, loadBlocksData };
+export { newBlocks, Blocks, blockModules, loadBlocksData };
 
 export default Blocks;

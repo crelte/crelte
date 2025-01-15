@@ -10,7 +10,7 @@ export type SiteFromGraphQl = {
 };
 
 /**
- * Craft Site
+ * A Craft Site
  */
 export default class Site {
 	/**

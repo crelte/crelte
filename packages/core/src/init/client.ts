@@ -1,24 +1,49 @@
 import { CrelteBuilder } from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
+import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
 import { tick } from 'svelte';
 
+/**
+ * The main function to start the client side rendering
+ */
 export type MainData = {
-	/// svelte app component
+	/** The App.svelte module */
 	app: any;
-	/// error page
+	/** The Error.svelte module */
 	errorPage: any;
-	entryQuery: any;
-	globalQuery?: any;
+	/** The entry query from queries/entry.graphql */
+	entryQuery: GraphQlQuery;
+	/** The global query from queries/global.graphql */
+	globalQuery?: GraphQlQuery;
 
 	// options
+
+	/**
+	 * Preload pages on mouse over
+	 * @default false
+	 */
 	preloadOnMouseOver?: boolean;
+
+	/**
+	 * Use view transitions
+	 * @default false
+	 */
 	viewTransition?: boolean;
+
+	/**
+	 * Play the intro animation
+	 * @default false
+	 */
 	playIntro?: boolean;
 
 	// debug
+
+	/** Enable graphql query debugging */
 	graphQlDebug?: boolean;
+
+	/** Enable request and render timing measurement */
 	debugTiming?: boolean;
 };
 
@@ -32,6 +57,25 @@ const mainDataDefault = {
 	debugTiming: false,
 };
 
+/**
+ * The main function to start the client side rendering
+ *
+ * ## Example
+ * ```
+ * import * as app from './App.svelte';
+ * import * as errorPage from './Error.svelte';
+ * import entryQuery from './queries/entry.graphql';
+ * import globalQuery from './queries/global.graphql';
+ * import { main } from 'crelte/client';
+ *
+ * main({
+ *     app,
+ *     errorPage,
+ *     entryQuery,
+ *     globalQuery,
+ * });
+ * ```
+ */
 export function main(data: MainData) {
 	data = { ...mainDataDefault, ...data };
 
@@ -58,7 +102,7 @@ export function main(data: MainData) {
 		debugTiming: data.debugTiming,
 	});
 
-	// on the client the cookies are always comming from document.cookie
+	// on the client the cookies are always coming from document.cookie
 	builder.setupCookies('');
 
 	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];

@@ -7,8 +7,10 @@ export default class Events {
 		this.inner = new Map();
 	}
 
-	/*
+	/**
 	 * Listens for an event.
+	 *
+	 * @returns a function to remove the listener
 	 */
 	// override this function to add your own function signatures
 	on(
@@ -17,7 +19,7 @@ export default class Events {
 	): () => void;
 	on(
 		ev: 'loadData',
-		fn: (cr: CrelteRequest, entry: any, data: any) => Promise<any>,
+		fn: (cr: CrelteRequest, entry: any) => Promise<any>,
 	): () => void;
 	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {
@@ -34,6 +36,9 @@ export default class Events {
 		};
 	}
 
+	/**
+	 * Remove a listener
+	 */
 	remove(ev: string, fn: any) {
 		const set = this.inner.get(ev);
 		if (!set) return;
@@ -41,6 +46,12 @@ export default class Events {
 		set.delete(fn);
 	}
 
+	/**
+	 * Trigger an event
+	 */
+	trigger(ev: 'loadGlobalData', cr: CrelteRequest): Promise<any>[];
+	trigger(ev: 'loadData', cr: CrelteRequest, entry: any): Promise<any>[];
+	trigger(ev: 'beforeRender', cr: CrelteRequest): void[];
 	trigger(ev: string, ...args: any[]): any[] {
 		const set = this.inner.get(ev);
 		if (!set) return [];

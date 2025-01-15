@@ -7,7 +7,7 @@ import { Readable, Writable } from 'crelte-std/stores';
 import { Listeners } from 'crelte-std/sync';
 import Request from './Request.js';
 
-export type RouterOpts = {
+export type RouterOptions = {
 	preloadOnMouseOver?: boolean;
 	debugTiming?: boolean;
 };
@@ -88,13 +88,13 @@ export default class Router {
 
 	private _onRequest: Listeners<[Request, Site]>;
 
-	// doc hidden
+	/** @hidden */
 	_internal: Internal;
 
 	private inner: InnerRouter;
 	private pageLoader: PageLoader<LoadedMore>;
 
-	constructor(sites: SiteFromGraphQl[], opts: RouterOpts = {}) {
+	constructor(sites: SiteFromGraphQl[], opts: RouterOptions = {}) {
 		opts = { ...defaultRouterOpts, ...opts };
 
 		this.inner = new InnerRouter(sites, {
@@ -136,16 +136,14 @@ export default class Router {
 	}
 
 	/**
-	 * The current route
-	 *
-	 * this is a svelte store
+	 * returns a store with the current route
 	 */
 	get route(): Readable<Route> {
 		return this._route.readclone();
 	}
 
 	/**
-	 * The current site
+	 * returns a store with the current site
 	 */
 	get site(): Readable<Site> {
 		return this._site.readonly();
@@ -159,15 +157,14 @@ export default class Router {
 	}
 
 	/**
-	 * The loading flag, specifies if a page is currently
-	 * getting loaded
+	 * returns a store which indicates if the a page is loading
 	 */
 	get loading(): Readable<boolean> {
 		return this._loading.readonly();
 	}
 
 	/**
-	 * The loading progress, the value is between 0 and 1
+	 * returns a store which indicates the loading progress between 0 and 1
 	 */
 	get loadingProgress(): Readable<number> {
 		return this._loadingProgress.readonly();
@@ -179,6 +176,17 @@ export default class Router {
 	 * @param target the target to open can be an url or a route
 	 * the url needs to start with http or with a / which will be considered as
 	 * the site baseUrl
+	 *
+	 * ## Example
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 * console.log(router.site.get().url.href); // 'https://example.com/de';
+	 *
+	 * router.open('/foo/bar');
+	 * // the following page will be opened https://example.com/de/foo/bar
+	 * ```
 	 */
 	open(target: string | URL | Route) {
 		this.inner.open(target);
@@ -190,7 +198,17 @@ export default class Router {
 	 * You can use this when using pagination for example change the route object
 	 * (search argument) and then call pushState
 	 *
-	 * @param route
+	 * ## Example
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const page = 1;
+	 * const route = router.route.get();
+	 * route.setSearchParam('page', page > 0 ? page : null);
+	 * router.pushState(route);
+	 * ```
 	 */
 	pushState(route: Route) {
 		this.pageLoader.discard();
@@ -201,7 +219,19 @@ export default class Router {
 	/**
 	 * This replaces the state of the route without triggering an event
 	 *
-	 * @param route
+	 * You can use this when using some filters for example a search filter
+	 *
+	 * ## Example
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const search = 'foo';
+	 * const route = router.route.get();
+	 * route.setSearchParam('search', search ? search : null);
+	 * router.replaceState(route);
+	 * ```
 	 */
 	replaceState(route: Route) {
 		this.pageLoader.discard();
@@ -220,7 +250,7 @@ export default class Router {
 	 * Go back in the history
 	 */
 	back() {
-		window.history.back();
+		this.inner.history.back();
 	}
 
 	/**
@@ -235,11 +265,20 @@ export default class Router {
 	 *
 	 * This differs from router.route.subscribe in the way that
 	 * it will only trigger if a new render / load will occur
+	 *
+	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route, site: Site) => void): () => void {
 		return this._onRouteEv.add(fn);
 	}
 
+	/**
+	 * Add a listener for the onRequest event
+	 *
+	 * This will trigger every time a new route is requested
+	 *
+	 * @returns a function to remove the listener
+	 */
 	onRequest(fn: (req: Request, site: Site) => void): () => void {
 		return this._onRequest.add(fn);
 	}

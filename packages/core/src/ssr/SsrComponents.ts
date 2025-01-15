@@ -1,3 +1,4 @@
+/** @hidden */
 export default class SsrComponents {
 	private modules: Set<string>;
 

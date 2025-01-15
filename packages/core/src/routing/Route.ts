@@ -1,7 +1,7 @@
 import { trimSlashEnd } from './Router.js';
 import Site from './Site.js';
 
-export type RouteOpts = {
+export type RouteOptions = {
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
@@ -54,16 +54,14 @@ export default class Route {
 	index: number;
 
 	/**
-	 * The origin of this route
-	 *
-	 * Might pop, click or init (non exclusive)
+	 * The origin of this route, See [[RouteOrigin]]
 	 */
 	origin: RouteOrigin;
 
 	/**
 	 * Creates a new Route
 	 */
-	constructor(url: string | URL, site: Site | null, opts: RouteOpts = {}) {
+	constructor(url: string | URL, site: Site | null, opts: RouteOptions = {}) {
 		this.url = new URL(url);
 
 		this.site = site;
@@ -76,6 +74,16 @@ export default class Route {
 	 * Returns the uri of the route
 	 *
 	 * Never ends with a slash
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/', null);
+	 * console.log(route.uri); // '/foo/bar'
+	 *
+	 * const site = _; // site with url https://example.com/foo
+	 * const route2 = new Route('https://example.com/foo/bar/?a=1', site);
+	 * console.log(route2.uri); // '/bar'
+	 * ```
 	 */
 	get uri(): string {
 		// todo check if this is correct
@@ -88,9 +96,20 @@ export default class Route {
 		return trimSlashEnd(this.url.pathname);
 	}
 
-	// todo is this correct and do we wan't it?
 	/**
+	 * Returns the base url of the route
+	 *
 	 * Never ends with a slash
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/', null);
+	 * console.log(route.baseUrl); // 'https://example.com'
+	 *
+	 * const site = _; // site with url https://example.com/foo
+	 * const route2 = new Route('https://example.com/foo/bar/', site);
+	 * console.log(route2.baseUrl); // 'https://example.com/foo'
+	 * ```
 	 */
 	get baseUrl(): string {
 		if (this.site) return trimSlashEnd(this.site.url.href);
@@ -98,14 +117,41 @@ export default class Route {
 		return this.url.origin;
 	}
 
+	/**
+	 * Returns the search params
+	 *
+	 * ## Note
+	 * You might also have a look at `getSearchParam` and `setSearchParam`
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
+	 * console.log(route.search.get('a')); // '1'
+	 * ```
+	 */
 	get search(): URLSearchParams {
 		return this.url.searchParams;
 	}
 
+	/**
+	 * Returns the hash of the route
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/#hash', null);
+	 * console.log(route.hash); // '#hash'
+	 * ```
+	 */
 	get hash(): string {
 		return this.url.hash;
 	}
 
+	/**
+	 * Checks if the route is equal to another route
+	 *
+	 * This checks all properties of the url but search params do not have to be
+	 * in the same order
+	 */
 	eq(route: Route) {
 		const searchEq = (a: URLSearchParams, b: URLSearchParams) => {
 			if (a.size !== b.size) return false;
@@ -139,6 +185,12 @@ export default class Route {
 
 	/**
 	 * Gets the search param
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
+	 * console.log(route.getSearchParam('a')); // '1'
+	 * ```
 	 */
 	getSearchParam(key: string): string | null {
 		return this.search.get(key);
@@ -146,6 +198,16 @@ export default class Route {
 
 	/**
 	 * Sets the search param or removes it if the value is null or undefined
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
+	 * route.setSearchParam('a', '3');
+	 * console.log(route.url.href); // 'https://example.com/foo/bar/?a=3&b=2'
+	 *
+	 * route.setSearchParam('a', null);
+	 * console.log(route.url.href); // 'https://example.com/foo/bar/?b=2'
+	 * ```
 	 */
 	setSearchParam(key: string, value?: string | number | null) {
 		if (typeof value !== 'undefined' && value !== null) {
@@ -155,6 +217,9 @@ export default class Route {
 		}
 	}
 
+	/**
+	 * Create a copy of the request
+	 */
 	clone() {
 		return new Route(this.url.href, this.site, {
 			scrollY: this.scrollY ?? undefined,

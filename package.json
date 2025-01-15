@@ -7,6 +7,7 @@
 	"scripts": {
 		"check": "npm run check --workspaces",
 		"check-fmt": "npm run check-fmt --workspaces",
+		"fmt": "npm run fmt --workspaces",
 		"lint": "npm run lint --workspaces",
 		"build": "npm run build --workspaces"
 	},

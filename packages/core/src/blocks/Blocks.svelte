@@ -1,21 +1,10 @@
 <script context="module" lang="ts">
 	import CrelteRequest from '../CrelteRequest.js';
+
 	/*
 	usage:
 
-	const mods = import.meta.glob('./contentDetail/*.svelte', {
-		// can either be eager loaded or not
-		eager: true,
-	});
-
-	const mods = blockModules(
-		import.meta.glob('./contentDetail/*.svelte', { eager: true }),
-		{
-			alias: {
-				'contentDetail': 'contentDetail',
-			}
-		}
-	);
+	const mods = blockModules(import.meta.glob('./contentDetail/*.svelte'));
 
 	export const loadData = {
 		blocks: (cr, entry) => loadBlocksData(cr, entry.blocks, mods)
@@ -30,14 +19,32 @@
 
 	import Blocks, {
 		type AsyncModule,
-		type Module,
 		type BlockModulesOptions,
 		BlockModules,
 		newBlocks,
 	} from './Blocks.js';
 
-	export type { BlockModules, BlockModulesOptions, AsyncModule, Module };
-
+	/**
+	 * Create a BlockModules instance from modules
+	 *
+	 * ## Example
+	 * ```ts
+	 * const mods = blockModules(
+	 *     import.meta.glob('./contentDetail/*.svelte', { eager: true })
+		);
+	 * ```
+	 *
+	 * ## Example with alias
+	 * ```ts
+	 * const mods = blockModules(
+	 *     import.meta.glob('./contentDetail/*.svelte'),
+	 *     {
+	 *         alias: {
+	 * 		       fakename: 'filename',
+	 *         }
+	 *     }
+	 * );
+	 */
 	export function blockModules(
 		modules: Record<string, AsyncModule>,
 		opts: BlockModulesOptions = {},
@@ -45,6 +52,17 @@
 		return new BlockModules(modules, opts);
 	}
 
+	/**
+	 * Load blocks data
+	 *
+	 * ## Example
+	 * ```ts
+	 * const mods = blockModules(import.meta.glob('./contentDetail/*.svelte'));
+	 *
+	 * export const loadData = {
+	 *     blocks: (cr, entry) => loadBlocksData(cr, entry.blocks, mods)
+	 * };
+	 */
 	export async function loadBlocksData(
 		cr: CrelteRequest,
 		blocks: any[],

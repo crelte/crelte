@@ -6,6 +6,7 @@
 	"scripts": {
 		"check": "tsc --noEmit",
 		"check-fmt": "prettier -c .",
+		"fmt": "prettier -w .",
 		"lint": "eslint ./src",
 		"build": "tsc",
 		"watch": "tsc -w"
