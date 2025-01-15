@@ -18,6 +18,9 @@ jobs:
         run: npm ci
 
       - name: Check prettier
+        run: npm run check-fmt
+
+      - name: Check errors
         run: npm run check
 
       - name: Run lint

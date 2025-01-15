@@ -1,6 +1,5 @@
 import { Barrier } from 'crelte-std/sync';
 import Route, { RouteOrigin } from './Route.js';
-import { DelayRender } from './Router.js';
 import Site from './Site.js';
 
 export type RequestOpts = {

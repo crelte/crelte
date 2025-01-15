@@ -318,6 +318,7 @@ export default class InnerRouter {
 		// new site we need to do a window.location.href call
 		if (
 			(current && current.url.origin !== req.url.origin) ||
+			// @ts-ignore
 			import.meta.env.SSR
 		) {
 			this.history.open(req.url.href);

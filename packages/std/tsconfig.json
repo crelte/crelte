@@ -7,5 +7,6 @@
 				"enabled": true
 			}
 		]
-	}
+	},
+	"include": ["src/**/*.ts", "src/**/*.svelte"]
 }
