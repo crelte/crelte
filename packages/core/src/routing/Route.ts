@@ -1,5 +1,5 @@
-import { trimSlashEnd } from './Router.js';
 import Site from './Site.js';
+import { trimSlashEnd } from './utils.js';
 
 export type RouteOptions = {
 	scrollY?: number;

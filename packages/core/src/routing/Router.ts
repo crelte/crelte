@@ -54,10 +54,6 @@ type ServerInited = {
 	props: any;
 };
 
-export function trimSlashEnd(str: string) {
-	return str.endsWith('/') ? str.substring(0, str.length - 1) : str;
-}
-
 // Make sure route and nextRoute are not the same object as _inner.route
 export default class Router {
 	/**

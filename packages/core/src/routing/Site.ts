@@ -1,4 +1,4 @@
-import { trimSlashEnd } from './Router.js';
+import { trimSlashEnd } from './utils.js';
 
 export type SiteFromGraphQl = {
 	id: number;
