@@ -1,0 +1,31 @@
+{
+	"name": "crelte-cli",
+	"version": "0.1.0",
+	"author": "Crelte <support@crelte.com>",
+	"type": "module",
+	"scripts": {
+		"check": "tsc --noEmit",
+		"check-fmt": "prettier -c .",
+		"fmt": "prettier -w .",
+		"lint": "eslint ./src",
+		"build": "tsc",
+		"watch": "tsc -w",
+		"dev": "node ./dist/index.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/crelte/crelte"
+	},
+	"files": [
+		"dist"
+	],
+	"bin": "./dist/index.js",
+	"exports": {
+		".": "./dist/index.js"
+	},
+	"dependencies": {
+		"@clack/prompts": "^0.9.1",
+		"commander": "^13.0.0",
+		"picocolors": "^1.1.1"
+	}
+}
