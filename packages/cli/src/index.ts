@@ -1,10 +1,12 @@
+#!/usr/bin/env node
+
 // import fs from 'node:fs';
 // import path from 'node:path';
 // import * as p from '@clack/prompts';
 import { program } from 'commander';
 import create from './create.js';
 
-program.name('crelte-cli').version('0.1.0');
+program.name('crelte-cli').version('0.1.1');
 
 program
 	.command('create')
