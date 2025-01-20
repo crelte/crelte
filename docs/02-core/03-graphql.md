@@ -1,0 +1,6 @@
+- how to call was already covered in loadData
+- show some common queries (query, for blogs)
+- show gql, and graphql files
+- fragments
+- transforms ?
+- renames / alias
