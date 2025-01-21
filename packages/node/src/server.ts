@@ -3,6 +3,7 @@ import { readFile as readFileAsync } from 'fs/promises';
 import { Connect, ViteDevServer } from 'vite';
 import { Readable } from 'node:stream';
 import * as http from 'node:http';
+import Router from './Router.js';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -34,7 +35,7 @@ export type EnvData = {
 	viteEnv: Map<string, string>;
 };
 
-async function initEnvData(): Promise<EnvData> {
+export async function initEnvData(): Promise<EnvData> {
 	const envPath = '../craft/.env';
 
 	let env;
@@ -63,6 +64,8 @@ async function initEnvData(): Promise<EnvData> {
 	};
 }
 
+type RenderFn = (req: RenderRequest) => Promise<RenderResponse>;
+
 export type RenderRequest = {
 	url: string;
 	htmlTemplate: string;
@@ -75,11 +78,45 @@ export type RenderRequest = {
 };
 
 async function modRender(
+	env: EnvData,
 	mod: any,
-	data: RenderRequest,
-): Promise<RenderResponse> {
-	return await mod.render(data);
+	template: string,
+	req: Request,
+): Promise<Response> {
+	const acceptLang = req.headers.get('accept-language') ?? null;
+	const cookies = req.headers.get('Cookie') ?? '';
+	const nHeaders = new Headers();
+
+	const { status, location, html, setCookies } = await (
+		mod.render as RenderFn
+	)({
+		url: req.url,
+		htmlTemplate: template,
+		ssrManifest: {},
+		acceptLang,
+		endpoint: env.endpointUrl,
+		craftWeb: env.craftWebUrl,
+		viteEnv: env.viteEnv,
+		cookies,
+	});
+
+	if (setCookies) {
+		setCookies.forEach(cookie => nHeaders.append('Set-Cookie', cookie));
+	}
+
+	if (status === 301 || status === 302) {
+		nHeaders.append('Location', location ?? '');
+		return new Response(null, { status, headers: nHeaders });
+	}
+
+	nHeaders.append('Content-Type', 'text/html');
+	return new Response(html, { status, headers: nHeaders });
 }
+
+type RenderErrorFn = (
+	error: { status: number; message: string },
+	req: RenderErrorRequest,
+) => Promise<RenderResponse>;
 
 export type RenderErrorRequest = {
 	url: string;
@@ -92,21 +129,51 @@ export type RenderErrorRequest = {
 };
 
 async function modRenderError(
+	env: EnvData,
 	mod: any,
-	error: any,
-	data: RenderErrorRequest,
-): Promise<RenderResponse> {
-	return await mod.renderError(error, data);
+	thrownError: Error,
+	template: string,
+	req: Request,
+): Promise<Response> {
+	const acceptLang = req.headers.get('accept-language') ?? null;
+
+	// in the case of an error let's try to render a nice Error Page
+	const error = {
+		status: 500,
+		message: thrownError.message,
+	};
+
+	if (typeof (thrownError as any).__isGraphQlError__ === 'function')
+		error.status = (thrownError as any).status();
+
+	if (error.status !== 503 && process.env.NODE_ENV === 'development') {
+		throw thrownError;
+	}
+
+	const { status, html } = await (mod.renderError as RenderErrorFn)(error, {
+		url: req.url,
+		htmlTemplate: template,
+		ssrManifest: {},
+		endpoint: env.endpointUrl,
+		craftWeb: env.craftWebUrl,
+		viteEnv: env.viteEnv,
+		acceptLang,
+	});
+
+	return new Response(html, {
+		status,
+		headers: {
+			'Content-Type': 'text/html',
+		},
+	});
 }
 
-export async function serveVite(vite: ViteDevServer) {
-	const env = await initEnvData();
-
-	vite.middlewares.use(async (req, res, next) => {
-		const url = req.originalUrl;
+export async function serveVite(env: EnvData, vite: ViteDevServer) {
+	vite.middlewares.use(async (nReq, res, next) => {
 		const protocol = vite.config.server.https ? 'https' : 'http';
-		const fullUrl = protocol + '://' + req.headers['host'] + url;
-		const acceptLang = req.headers['accept-language'] ?? null;
+		const baseUrl = protocol + '://' + nReq.headers['host'];
+
+		const req = requestToWebRequest(baseUrl, nReq);
 
 		// todo at this point we should check the routes for overrides
 
@@ -116,42 +183,34 @@ export async function serveVite(vite: ViteDevServer) {
 			fixStacktrace: true,
 		});
 
-		let template = await readFile('./index.html');
-		template = await vite.transformIndexHtml(url ?? '', template);
+		if (typeof serverMod.routes === 'function') {
+			// check if a route matches
+			const router = new Router(env.endpointUrl, env.env);
 
-		try {
-			const cookies = req.headers['Cookie'] ?? '';
+			await serverMod.routes(router);
 
-			const { status, location, html, setCookies } = await modRender(
-				serverMod,
-				{
-					url: fullUrl,
-					htmlTemplate: template,
-					ssrManifest: {},
-					acceptLang,
-					endpoint: env.endpointUrl,
-					craftWeb: env.craftWebUrl,
-					viteEnv: env.viteEnv,
-					cookies: Array.isArray(cookies)
-						? cookies.join(';')
-						: cookies,
-				},
-			);
-
-			if (setCookies) {
-				res.setHeader('Set-Cookie', setCookies);
-			}
-
-			res.statusCode = status;
-
-			if (status === 301 || status === 302) {
-				res.setHeader('Location', location ?? '');
-				res.end();
+			try {
+				const response = await router._handle(req);
+				if (response) {
+					await webResponseToResponse(response, res);
+					return;
+				}
+			} catch (e: any) {
+				vite.ssrFixStacktrace(e);
+				next(e);
 				return;
 			}
+		}
 
-			res.setHeader('Content-Type', 'text/html');
-			res.end(html);
+		let template = await readFile('./index.html');
+		template = await vite.transformIndexHtml(
+			nReq.originalUrl ?? '',
+			template,
+		);
+
+		try {
+			const response = await modRender(env, serverMod, template, req);
+			await webResponseToResponse(response, res);
 			return;
 		} catch (e: any) {
 			vite.ssrFixStacktrace(e);
@@ -161,31 +220,19 @@ export async function serveVite(vite: ViteDevServer) {
 			thrownError = e;
 		}
 
-		// in the case of an error let's try to render a nice Error Page
-		const error = {
-			status: 500,
-			message: thrownError.message,
-		};
-
-		if (typeof thrownError.__isGraphQlError__ === 'function')
-			error.status = thrownError.status();
-
-		if (error.status !== 503 && process.env.NODE_ENV === 'development')
-			return next(thrownError);
-
-		const { status, html } = await modRenderError(serverMod, error, {
-			url: fullUrl,
-			htmlTemplate: template,
-			ssrManifest: {},
-			endpoint: env.endpointUrl,
-			craftWeb: env.craftWebUrl,
-			viteEnv: env.viteEnv,
-			acceptLang,
-		});
-
-		res.statusCode = status;
-		res.setHeader('Content-Type', 'text/html');
-		res.end(html);
+		try {
+			const response = await modRenderError(
+				env,
+				serverMod,
+				thrownError,
+				template,
+				req,
+			);
+			await webResponseToResponse(response, res);
+			return;
+		} catch (e) {
+			next(e);
+		}
 	});
 }
 

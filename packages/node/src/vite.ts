@@ -1,7 +1,7 @@
 import { relative } from 'path';
 import MagicString from 'magic-string';
 import { Plugin } from 'vite';
-import { CoreServer, serveVite } from './server.js';
+import { initEnvData, serveVite } from './server.js';
 
 // todo need to replace this
 export function usedSsrComponents(dirname: string) {
@@ -86,9 +86,7 @@ export function crelte(): Plugin {
 			};
 		},
 		async configureServer(vite) {
-			const server = new CoreServer({}, false);
-
-			await server._setup();
+			const env = await initEnvData();
 
 			return () => {
 				// vite.middlewares.use((req, res) => {
@@ -98,7 +96,7 @@ export function crelte(): Plugin {
 				// });
 
 				console.log('serveVite');
-				serveVite(server, vite);
+				serveVite(env, vite);
 				// vite.watcher.add('./src/**/*.graphql');
 			};
 		},
