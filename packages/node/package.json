@@ -19,11 +19,11 @@
 		"dist",
 		"./types.d.ts"
 	],
-	"main": "dist/server.js",
-	"module": "dist/server.js",
-	"types": "dist/server.d.ts",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"exports": {
-		".": "./dist/server.js",
+		".": "./dist/index.js",
 		"./vite": "./dist/vite.js",
 		"./build": "./dist/build.js",
 		"./types": {
