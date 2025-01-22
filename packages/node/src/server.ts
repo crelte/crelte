@@ -165,81 +165,6 @@ export async function modRenderError(
 	});
 }
 
-// export async function serveExpress(server: CoreServer, app: Express) {
-// 	app.use(express.static('./dist/public'));
-
-// 	const ssrManifest = await readFile('./dist/ssr-manifest.json');
-// 	server.ssrManifest = JSON.parse(ssrManifest);
-
-// 	const template = await readFile('./dist/index.html');
-
-// 	app.use('*', async (req, res, next) => {
-// 		const url = req.originalUrl;
-// 		const fullUrl = req.protocol + '://' + req.get('host') + url;
-// 		const acceptLang = req.get('accept-language') ?? null;
-// 		let serverMod = null;
-// 		let thrownError: any = null;
-// 		try {
-// 			const distServer = path.resolve('./dist/server.js');
-// 			serverMod = await import(distServer);
-// 		} catch (e) {
-// 			return next(e);
-// 		}
-// 		try {
-// 			// render app html
-// 			const { status, location, html, setCookies } =
-// 				await server.serverModRender(
-// 					serverMod,
-// 					fullUrl,
-// 					template,
-// 					acceptLang,
-// 					req.get('Cookie') ?? '',
-// 				);
-
-// 			if (setCookies) {
-// 				res.append('Set-Cookie', setCookies);
-// 			}
-
-// 			if (status === 301 || status === 302) {
-// 				res.redirect(status, location ?? '');
-// 				return;
-// 			}
-
-// 			// Send the rendered HTML back
-// 			res.status(status).set({ 'Content-Type': 'text/html' }).end(html);
-// 			return;
-// 		} catch (e: any) {
-// 			console.log('error', e);
-
-// 			if (typeof serverMod.renderError !== 'function') return next(e);
-
-// 			thrownError = e;
-// 		}
-
-// 		// in the case of an error let's try to render a nice Error Page
-// 		const error = {
-// 			status: 500,
-// 			message: thrownError.message,
-// 		};
-
-// 		if (typeof thrownError.__isGraphQlError__ === 'function')
-// 			error.status = thrownError.status();
-
-// 		if (error.status !== 503 && process.env.NODE_ENV === 'development')
-// 			return next(thrownError);
-
-// 		const { status, html } = await server.serverModRenderError(
-// 			serverMod,
-// 			error,
-// 			fullUrl,
-// 			template,
-// 			acceptLang,
-// 		);
-
-// 		res.status(status).set({ 'Content-Type': 'text/html' }).end(html);
-// 	});
-// }
-
 /**
  * Parses an .env file
  *
@@ -270,7 +195,7 @@ export function requestToWebRequest(
 		body = Readable.toWeb(nodeReq) as BodyInit;
 	}
 
-	const url = baseUrl + (nodeReq.originalUrl ?? nodeReq.url);
+	const url = baseUrl + ((nodeReq as any).originalUrl ?? nodeReq.url);
 
 	// 4. Construct a new Request
 	return new Request(url, {

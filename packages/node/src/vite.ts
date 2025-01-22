@@ -4,6 +4,7 @@ import {
 	ConfigEnv,
 	Plugin,
 	ResolvedConfig,
+	TransformResult,
 	UserConfig,
 	build as viteBuild,
 	ViteDevServer,
@@ -24,29 +25,30 @@ async function readFile(path: string): Promise<string> {
 	return await fs.readFile(path, 'utf-8');
 }
 
-// todo need to replace this
-export function usedSsrComponents(dirname: string) {
-	if (!dirname) throw new Error('expected dirname in usedSsrComponents');
+// todo need to find a better solution
+// for reference https://github.com/sveltejs/svelte/issues/4854
+// and https://github.com/sveltejs/svelte/pull/5476
+function usedSsrComponents(
+	code: string,
+	id: string,
+	options?: { ssr?: boolean },
+): TransformResult | undefined {
+	if (!options?.ssr || !id.endsWith('.svelte')) return;
 
-	return {
-		transform(code: string, id: string, options: any) {
-			if (!options?.ssr || !id.endsWith('.svelte')) return;
+	const file = relative('.', id);
+	console.log('file');
 
-			const file = relative(dirname, id);
+	const initFnSign =
+		'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
+	let idx = code.indexOf(initFnSign);
+	if (idx < 0) return;
+	idx += initFnSign.length;
 
-			const initFnSign =
-				'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
-			let idx = code.indexOf(initFnSign);
-			if (idx < 0) return;
-			idx += initFnSign.length;
+	const s = new MagicString(code);
 
-			const s = new MagicString(code);
+	s.prepend(`import { getContext as __modulesGetContext } from 'svelte';\n`);
 
-			s.prepend(
-				`import { getContext as __modulesGetContext } from 'svelte';\n`,
-			);
-
-			const ctxAdd = `
+	const ctxAdd = `
 (() => {
 const ctx = __modulesGetContext('modules');
 if (ctx && ctx instanceof Set) {
@@ -54,17 +56,15 @@ if (ctx && ctx instanceof Set) {
 }
 })();
 `;
-			s.appendLeft(idx, ctxAdd);
+	s.appendLeft(idx, ctxAdd);
 
-			return {
-				map: s.generateMap({
-					source: id,
-					includeContent: true,
-					hires: 'boundary',
-				}),
-				code: s.toString(),
-			};
-		},
+	return {
+		map: s.generateMap({
+			source: id,
+			includeContent: true,
+			hires: 'boundary',
+		}),
+		code: s.toString(),
 	};
 }
 
@@ -72,29 +72,28 @@ if (ctx && ctx instanceof Set) {
 // crelte.query or graphQl.query
 //
 // See: https://craftcms.com/docs/4.x/graphql.html#specifying-variables
-export function graphQlFiles() {
-	return {
-		transform: async (code: string, path: string) => {
-			if (!path.endsWith('.graphql')) return;
+function graphQlFiles(
+	code: string,
+	path: string,
+): TransformResult | string | undefined {
+	if (!path.endsWith('.graphql')) return;
 
-			const json = JSON.stringify(code)
-				.replace(/\u2028/g, '\\u2028')
-				.replace(/\u2029/g, '\\u2029');
+	const json = JSON.stringify(code)
+		.replace(/\u2028/g, '\\u2028')
+		.replace(/\u2029/g, '\\u2029');
 
-			return `
+	return `
 export default {
 	path: ${JSON.stringify(path)},
 	query: ${json},
 };
 `;
-		},
-	};
 }
 
-// outside of crelte because each build executes crelte
+// outside of crelte because each build executes crelte again
 let isSsrBuild = false;
 
-export function crelte(): Plugin {
+export default function crelte(): Plugin {
 	let viteConfig: ResolvedConfig;
 	let viteConfigEnv: ConfigEnv;
 	let initialConfig: UserConfig;
@@ -109,8 +108,16 @@ export function crelte(): Plugin {
 			const isBuild = configEnv.command === 'build';
 
 			const nConfig: any = {
+				publicDir: isSsrBuild ? false : 'public',
+				base: '/',
 				server: {
 					port: 8080,
+				},
+				ssr: {
+					// embedd all our packages
+					// this ensure that if you wan't you could deploy the dist folder
+					// without the need for anything else
+					noExternal: ['crelte-std', 'crelte', 'crelte-node'],
 				},
 			};
 
@@ -140,6 +147,12 @@ export function crelte(): Plugin {
 			if (id.endsWith('/src/serverNode.js')) {
 				return `import * as server from './server.js';${''}import createServer from 'crelte-node/node';${''}createServer(server, ${Date.now()});`;
 			}
+		},
+
+		transform(code, id, options) {
+			return (
+				usedSsrComponents(code, id, options) || graphQlFiles(code, id)
+			);
 		},
 
 		async configureServer(vite) {
