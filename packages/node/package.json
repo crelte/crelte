@@ -25,7 +25,7 @@
 	"exports": {
 		".": "./dist/index.js",
 		"./vite": "./dist/vite.js",
-		"./build": "./dist/build.js",
+		"./node": "./dist/node.js",
 		"./types": {
 			"types": "./types.d.ts"
 		}

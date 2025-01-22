@@ -1,9 +1,6 @@
-// import path from 'path';
-import { readFile as readFileAsync } from 'fs/promises';
-import { Connect, ViteDevServer } from 'vite';
+import { readFile as readFileAsync } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import * as http from 'node:http';
-import Router from './Router.js';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -77,7 +74,7 @@ export type RenderRequest = {
 	cookies: string;
 };
 
-async function modRender(
+export async function modRender(
 	env: EnvData,
 	mod: any,
 	template: string,
@@ -128,7 +125,7 @@ export type RenderErrorRequest = {
 	viteEnv: Map<string, string>;
 };
 
-async function modRenderError(
+export async function modRenderError(
 	env: EnvData,
 	mod: any,
 	thrownError: Error,
@@ -165,74 +162,6 @@ async function modRenderError(
 		headers: {
 			'Content-Type': 'text/html',
 		},
-	});
-}
-
-export async function serveVite(env: EnvData, vite: ViteDevServer) {
-	vite.middlewares.use(async (nReq, res, next) => {
-		const protocol = vite.config.server.https ? 'https' : 'http';
-		const baseUrl = protocol + '://' + nReq.headers['host'];
-
-		const req = requestToWebRequest(baseUrl, nReq);
-
-		// todo at this point we should check the routes for overrides
-
-		let thrownError: any = null;
-
-		const serverMod = await vite.ssrLoadModule('./src/server.js', {
-			fixStacktrace: true,
-		});
-
-		if (typeof serverMod.routes === 'function') {
-			// check if a route matches
-			const router = new Router(env.endpointUrl, env.env);
-
-			await serverMod.routes(router);
-
-			try {
-				const response = await router._handle(req);
-				if (response) {
-					await webResponseToResponse(response, res);
-					return;
-				}
-			} catch (e: any) {
-				vite.ssrFixStacktrace(e);
-				next(e);
-				return;
-			}
-		}
-
-		let template = await readFile('./index.html');
-		template = await vite.transformIndexHtml(
-			nReq.originalUrl ?? '',
-			template,
-		);
-
-		try {
-			const response = await modRender(env, serverMod, template, req);
-			await webResponseToResponse(response, res);
-			return;
-		} catch (e: any) {
-			vite.ssrFixStacktrace(e);
-
-			if (typeof serverMod.renderError !== 'function') return next(e);
-
-			thrownError = e;
-		}
-
-		try {
-			const response = await modRenderError(
-				env,
-				serverMod,
-				thrownError,
-				template,
-				req,
-			);
-			await webResponseToResponse(response, res);
-			return;
-		} catch (e) {
-			next(e);
-		}
 	});
 }
 
@@ -330,9 +259,9 @@ function readEnv(fileCtn: string): Map<string, string> {
 	return map;
 }
 
-function requestToWebRequest(
+export function requestToWebRequest(
 	baseUrl: string,
-	nodeReq: Connect.IncomingMessage,
+	nodeReq: http.IncomingMessage,
 ): Request {
 	const method = nodeReq.method ?? 'GET';
 
