@@ -5,8 +5,8 @@ import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
-interface App<D, E, T> {
-	loadGlobalData?: LoadData<D>;
+interface App<E, T> {
+	loadGlobalData?: LoadData<null>;
 
 	// todo: add a generic
 	loadEntryData?: LoadData<any>;
@@ -60,7 +60,7 @@ export function getEntry(page: any): any {
 
 export async function loadFn<D, E, T>(
 	cr: CrelteRequest,
-	app: App<D, E, T>,
+	app: App<E, T>,
 	entryQuery: GraphQlQuery,
 	globalQuery?: GraphQlQuery,
 	loadOpts?: LoadOptions,
@@ -75,7 +75,7 @@ export async function loadFn<D, E, T>(
 	}
 
 	if (app.loadGlobalData) {
-		dataProm = callLoadData(app.loadGlobalData, cr) as any;
+		dataProm = callLoadData(app.loadGlobalData, cr, null) as any;
 	}
 
 	let globalProm: Promise<any> | null = null;
