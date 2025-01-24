@@ -17,8 +17,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build std
-        run: cd packages/std && npm run build
+      - name: Run build
+        run: npm run build
 
       - name: Check prettier
         run: npm run check-fmt
@@ -28,6 +28,3 @@ jobs:
 
       - name: Run lint
         run: npm run lint
-
-      - name: Run build
-        run: npm run build
