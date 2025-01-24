@@ -9,8 +9,22 @@ import CrelteRequest from './CrelteRequest.js';
 import type { Global, GlobalData } from './loadData/Globals.js';
 import type { Cookies } from './cookies/index.js';
 import type { Readable } from 'crelte-std/stores';
+import {
+	LoadData,
+	LoadDataArray,
+	LoadDataFn,
+	LoadDataObj,
+} from './loadData/index.js';
 
-export { Crelte, CrelteRequest, type QueryOptions };
+export {
+	Crelte,
+	CrelteRequest,
+	type QueryOptions,
+	type LoadData,
+	type LoadDataFn,
+	type LoadDataObj,
+	type LoadDataArray,
+};
 
 /**
  * Get Crelte from the current context
