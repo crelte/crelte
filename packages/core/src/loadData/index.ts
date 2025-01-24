@@ -5,6 +5,20 @@ import type { Global } from './Globals.js';
 
 export type { Globals, Global };
 
+export interface LoadDataFn<A1 = any> {
+	(cr: CrelteRequest, entryOrBlock: A1, ...args: any[]): Promise<any> | any;
+}
+
+export interface LoadDataObj<A1 = any> {
+	[key: string]: LoadData<A1>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface LoadDataArray<A1 = any> extends Array<LoadData<A1>> {}
+
+// todo link to the real docs maybe instead of showing an example
+// so we can add @type {import('crelte').LoadData}
+// maybe enabling markdown might be enough: https://jsdoc.app/plugins-markdown
 /**
  * Load data function
  *
@@ -15,8 +29,6 @@ export type { Globals, Global };
  * Each property should be a loadData type, each one is called in parallel.
  * And will be available to your component with the same name.
  * ```
- * export const loadData = {
- *
  * import entriesQuery from '@/queries/entries.graphql';
  * import { loadData as headerLoadData } from '@/layout/header.svelte';
  *
@@ -71,20 +83,30 @@ export type { Globals, Global };
  * }
  * ```
  */
-
-export type LoadData<T> =
-	| ((cr: CrelteRequest, ...args: any[]) => Promise<T>)
+export type LoadData<A1 = any> =
+	| LoadDataFn<A1>
 	| GraphQlQuery
-	| T;
+	| LoadDataObj<A1>
+	| LoadDataArray<A1>
+	| string
+	| number
+	| null
+	| undefined;
 
-export async function callLoadData(
-	ld: LoadData<unknown>,
+// export type LoadData<A1 = any, R = any> =
+// 	| ((cr: CrelteRequest, entryOrBlock: A1, ...args: any[]) => Promise<R>)
+// 	| GraphQlQuery
+// 	| Record<string, LoadData<A1, R>>;
+
+export async function callLoadData<A1 = any>(
+	ld: LoadData<A1>,
 	cr: CrelteRequest,
+	arg1: A1,
 	...args: any[]
-): Promise<unknown> {
+): Promise<any> {
 	// either we have a function
 	if (typeof ld === 'function') {
-		return await ld(cr, ...args);
+		return await ld(cr, arg1, ...args);
 	}
 
 	// or a graphql query
@@ -92,10 +114,16 @@ export async function callLoadData(
 		return await cr.query(ld);
 	}
 
+	if (ld === null || typeof ld === 'undefined') return null;
+
+	if (Array.isArray(ld)) {
+		return await mergeLoadData(...ld)(cr, arg1, ...args);
+	}
+
 	// or an object
-	if (typeof ld === 'object' && ld !== null) {
+	if (typeof ld === 'object') {
 		const data = await Promise.all(
-			Object.values(ld).map(nld => callLoadData(nld, cr, ...args)),
+			Object.values(ld).map(nld => callLoadData(nld, cr, arg1, ...args)),
 		);
 
 		return Object.fromEntries(
@@ -119,10 +147,14 @@ export async function callLoadData(
  * );
  * ```
  */
-export function mergeLoadData(...lds: LoadData<object>[]): LoadData<object> {
-	return async (cr: CrelteRequest, ...args: any[]) => {
+export function mergeLoadData<A1 = any>(
+	...lds: LoadData<A1>[]
+): LoadDataFn<A1> {
+	return async (cr: CrelteRequest, arg1, ...args: any[]) => {
 		const datas = await Promise.all(
-			lds.map(ld => callLoadData(ld, cr, ...args) as Promise<object>),
+			lds.map(
+				ld => callLoadData(ld, cr, arg1, ...args) as Promise<object>,
+			),
 		);
 
 		return datas.reduce((acc, data) => ({ ...acc, ...data }), {});
