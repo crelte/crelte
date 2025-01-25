@@ -10,6 +10,7 @@ export type RequestOptions = {
 	index?: number;
 	origin?: RouteOrigin;
 	disableScroll?: boolean;
+	statusCode?: number;
 };
 
 /**
@@ -24,6 +25,11 @@ export default class Request extends Route {
 	 */
 	disableScroll: boolean;
 
+	/**
+	 * The Status code that should be returned for a redirect
+	 */
+	statusCode: number | null;
+
 	/** @hidden */
 	_renderBarrier: RenderBarrier;
 
@@ -34,17 +40,19 @@ export default class Request extends Route {
 		super(url, site, opts);
 
 		this.disableScroll = opts.disableScroll ?? false;
+		this.statusCode = opts.statusCode ?? null;
 		this._renderBarrier = new RenderBarrier();
 	}
 
 	/**
 	 * Create a Request from a Route
 	 */
-	static fromRoute(route: Route) {
+	static fromRoute(route: Route, opts: RequestOptions = {}) {
 		return new Request(route.url.href, route.site, {
 			scrollY: route.scrollY ?? undefined,
 			index: route.index,
 			origin: route.origin,
+			...opts,
 		});
 	}
 
@@ -89,6 +97,7 @@ export default class Request extends Route {
 			index: this.index,
 			origin: this.origin,
 			disableScroll: this.disableScroll,
+			statusCode: this.statusCode ?? undefined,
 		});
 	}
 
@@ -101,6 +110,15 @@ export default class Request extends Route {
 			index: this.index,
 			origin: this.origin,
 		});
+	}
+
+	/** @hidden */
+	_updateOpts(opts: RequestOptions = {}) {
+		this.scrollY = opts.scrollY ?? this.scrollY;
+		this.index = opts.index ?? this.index;
+		this.origin = opts.origin ?? this.origin;
+		this.disableScroll = opts.disableScroll ?? this.disableScroll;
+		this.statusCode = opts.statusCode ?? this.statusCode;
 	}
 }
 

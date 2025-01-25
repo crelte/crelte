@@ -1,8 +1,8 @@
 import Site, { SiteFromGraphQl } from './Site.js';
 import History from './History.js';
 import { ClientHistory, ServerHistory } from './History.js';
-import Request, { isRequest } from './Request.js';
-import Route from './Route.js';
+import Request, { isRequest, RequestOptions } from './Request.js';
+import Route, { RouteOptions } from './Route.js';
 
 export type InnerRouterOpts = {
 	preloadOnMouseOver: boolean;
@@ -73,7 +73,7 @@ export default class InnerRouter {
 
 		window.history.scrollRestoration = 'manual';
 
-		this.open(req, false);
+		this.open(req, {}, false);
 	}
 
 	/**
@@ -144,7 +144,10 @@ export default class InnerRouter {
 	 * @param target
 	 * @return Returns null if the url does not match our host (the protocol get's ignored)
 	 */
-	targetToRequest(target: string | URL | Route | Request): Request {
+	targetToRequest(
+		target: string | URL | Route | Request,
+		opts: RequestOptions = {},
+	): Request {
 		if (typeof target === 'string') {
 			if (target.startsWith('/')) {
 				// todo should we use the language matching or throw if the route does not
@@ -161,9 +164,10 @@ export default class InnerRouter {
 		}
 
 		if (!isRequest(target)) {
-			return Request.fromRoute(target);
+			return Request.fromRoute(target, opts);
 		}
 
+		target._updateOpts(opts);
 		return target;
 	}
 
@@ -291,7 +295,7 @@ export default class InnerRouter {
 			// route since it is now already the new route
 			this.route = null;
 
-			this.open(route, false);
+			this.open(route, {}, false);
 		});
 	}
 
@@ -301,8 +305,12 @@ export default class InnerRouter {
 	 * @param route a route object or an url or uri, never input the same route object again
 	 * @param pushState if true pushed the state to the window.history
 	 */
-	open(target: string | URL | Route | Request, pushState: boolean = true) {
-		const req = this.targetToRequest(target);
+	open(
+		target: string | URL | Route | Request,
+		opts: RouteOptions = {},
+		pushState: boolean = true,
+	) {
+		const req = this.targetToRequest(target, opts);
 
 		const current = this.route;
 		if (current) {
@@ -328,7 +336,7 @@ export default class InnerRouter {
 			// @ts-ignore
 			import.meta.env.SSR
 		) {
-			this.history.open(req.url.href);
+			this.history.open(req);
 			return;
 		}
 

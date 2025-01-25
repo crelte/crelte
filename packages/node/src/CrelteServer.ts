@@ -1,6 +1,5 @@
 import { QueryOptions } from 'crelte';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
-import { Route } from 'crelte/routing';
 
 export default class CrelteServer {
 	private _env: Map<string, string>;
@@ -66,22 +65,8 @@ export default class CrelteServer {
 	): Promise<unknown> {
 		// this function is added as convenience
 		return this.graphQl.query(query, variables, {
-			route: this._getRoute() ?? undefined,
+			route: this._req ? new URL(this._req.url) : undefined,
 			...opts,
 		});
 	}
-
-	private _getRoute(): Route | null {
-		if (!this._req) return null;
-
-		return new Route(this._req.url, null, {
-			origin: 'init',
-		});
-	}
-
-	// /** @hidden */
-	// _setRequest(req: Request, params: Record<string, string>) {
-	// 	this._req = req;
-	// 	this._params = params;
-	// }
 }

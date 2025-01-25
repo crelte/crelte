@@ -5,7 +5,7 @@ import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
 import { ServerHistory } from './History.js';
 import { Readable, Writable } from 'crelte-std/stores';
 import { Listeners } from 'crelte-std/sync';
-import Request from './Request.js';
+import Request, { RequestOptions } from './Request.js';
 
 export type RouterOptions = {
 	preloadOnMouseOver?: boolean;
@@ -182,8 +182,8 @@ export default class Router {
 	 * // the following page will be opened https://example.com/de/foo/bar
 	 * ```
 	 */
-	open(target: string | URL | Route) {
-		this.inner.open(target);
+	open(target: string | URL | Route, opts: RequestOptions = {}) {
+		this.inner.open(target, opts);
 	}
 
 	/**
@@ -332,8 +332,8 @@ export default class Router {
 		const resp = await prom;
 
 		const hist = this.inner.history as ServerHistory;
-		if (hist.url) {
-			const nReq = this.inner.targetToRequest(hist.url);
+		if (hist.url || hist.req) {
+			const nReq = this.inner.targetToRequest(hist.req ?? hist.url!);
 			if (!route.eq(nReq)) {
 				return {
 					success: true,

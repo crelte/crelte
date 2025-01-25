@@ -70,7 +70,9 @@ export type GraphQlOptions = {
  */
 export type GraphQlRequestOptions = {
 	path?: string;
-	route?: Route;
+	// !! the route here might not contain a site even if the types
+	// says it does. CrelteServer does not know about site
+	route?: Route | URL;
 	ignoreStatusCode?: boolean;
 	previewToken?: string;
 	siteToken?: string;
@@ -124,7 +126,8 @@ export default class GraphQl {
 		opts: GraphQlRequestOptions = {},
 	): Promise<unknown> {
 		if (opts.route) {
-			const search = opts.route.search;
+			const search =
+				(opts.route as URL).searchParams ?? opts.route.search;
 
 			// todo should variables contain siteId
 			// or maybe gql should detect loadData and add it there

@@ -1,8 +1,10 @@
+import Request from './Request.js';
+
 export default interface History {
 	scrollY(): number | null;
 	replaceState(data: any, url?: string): void;
 	pushState(data: any, url: string): void;
-	open(url: string): void;
+	open(req: Request): void;
 	back(): void;
 }
 
@@ -19,8 +21,8 @@ export class ClientHistory implements History {
 		history.pushState(data, '', url);
 	}
 
-	open(url: string): void {
-		window.location.href = url;
+	open(req: Request): void {
+		window.location.href = req.url.href;
 	}
 
 	back(): void {
@@ -31,10 +33,12 @@ export class ClientHistory implements History {
 export class ServerHistory implements History {
 	state: any | null;
 	url: string | null;
+	req: Request | null;
 
 	constructor() {
 		this.state = null;
 		this.url = null;
+		this.req = null;
 	}
 
 	scrollY(): number | null {
@@ -44,15 +48,18 @@ export class ServerHistory implements History {
 	replaceState(data: any, url?: string): void {
 		this.state = data;
 		this.url = url ?? null;
+		this.req = null;
 	}
 
 	pushState(data: any, url: string): void {
 		this.state = data;
 		this.url = url;
+		this.req = null;
 	}
 
-	open(url: string): void {
-		this.url = url;
+	open(req: Request): void {
+		this.req = req;
+		this.url = null;
 	}
 
 	back(): void {

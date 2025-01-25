@@ -110,7 +110,7 @@ export async function main(data: MainData): Promise<{
 
 	if (redirect) {
 		return {
-			status: 302,
+			status: req.statusCode ?? 302,
 			location: req.url.toString(),
 		};
 	}
