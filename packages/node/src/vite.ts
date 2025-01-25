@@ -36,7 +36,6 @@ function usedSsrComponents(
 	if (!options?.ssr || !id.endsWith('.svelte')) return;
 
 	const file = relative('.', id);
-	console.log('file');
 
 	const initFnSign =
 		'create_ssr_component(($$result, $$props, $$bindings, slots) => {';

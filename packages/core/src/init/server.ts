@@ -16,6 +16,8 @@ export type ServerData = {
 	craftWeb: string;
 	viteEnv: Map<string, string>;
 	cookies?: string;
+	readSitesCache?: () => Promise<any>;
+	writeSitesCache?: (data: any) => Promise<void>;
 };
 
 /**
@@ -85,7 +87,7 @@ export async function main(data: MainData): Promise<{
 	const cookies = data.serverData.cookies ?? '';
 	builder.setupCookies(cookies);
 
-	const csites = await loadSites(builder);
+	const csites = await loadSites(builder, data.serverData);
 	builder.ssrCache.set('crelteSites', csites);
 	builder.setupRouter(csites);
 
@@ -206,12 +208,26 @@ export async function mainError(
 }
 
 // requires, GraphQl, SsrCache
-async function loadSites(builder: CrelteBuilder): Promise<SiteFromGraphQl[]> {
+async function loadSites(
+	builder: CrelteBuilder,
+	serverData: ServerData,
+): Promise<SiteFromGraphQl[]> {
 	if (!builder.graphQl) throw new Error();
 
 	if ('CRAFT_SITES_CACHED' in globalThis) {
-		// @ts-ignore
-		return globalThis['CRAFT_SITES_CACHED'];
+		return (globalThis as any)['CRAFT_SITES_CACHED'];
+	}
+
+	if (import.meta.env.PROD && serverData.readSitesCache) {
+		try {
+			const sites =
+				(await serverData.readSitesCache()) as SiteFromGraphQl[];
+			// @ts-ignore
+			globalThis['CRAFT_SITES_CACHED'] = sites;
+			return sites;
+		} catch (_e: any) {
+			// ignore
+		}
 	}
 
 	const resp = (await builder.graphQl.query(
@@ -234,5 +250,8 @@ async function loadSites(builder: CrelteBuilder): Promise<SiteFromGraphQl[]> {
 
 	// @ts-ignore
 	globalThis['CRAFT_SITES_CACHED'] = resp.crelteSites;
+	if (import.meta.env.PROD && serverData.writeSitesCache) {
+		await serverData.writeSitesCache(resp.crelteSites);
+	}
 	return resp.crelteSites;
 }

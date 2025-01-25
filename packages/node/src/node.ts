@@ -1,6 +1,7 @@
 import http, { IncomingMessage, ServerResponse } from 'node:http';
-import path from 'node:path';
+import path, { join } from 'node:path';
 import fs from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import {
 	initEnvData,
 	modRender,
@@ -9,18 +10,37 @@ import {
 	webResponseToResponse,
 } from './server.js';
 import Router from './Router.js';
-import { createReadStream } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
 	return await fs.readFile(path, 'utf-8');
 }
 
+async function writeFile(path: string, data: string): Promise<void> {
+	// maybe not necessary
+	return await fs.writeFile(path, data, 'utf-8');
+}
+
+function localDir(...args: string[]) {
+	return join(path.dirname(fileURLToPath(import.meta.url)), ...args);
+}
+
+async function readSitesCache(): Promise<any> {
+	return JSON.parse(await readFile(localDir('sites.json')));
+}
+
+async function writeSitesCache(data: any): Promise<void> {
+	return await writeFile(localDir('sites.json'), JSON.stringify(data));
+}
+
 export default async function createServer(serverMod: any, buildTime: string) {
 	const env = await initEnvData();
-	const template = await readFile('./dist/index.html');
+	const template = await readFile(localDir('index.html'));
 	const globalEtag = '"' + buildTime + '"';
-	// const ssrManifest = await readFile('./ssr-manifest.json');
+	const ssrManifest = JSON.parse(
+		await readFile(localDir('ssr-manifest.json')),
+	);
 
 	let router: Router | null = null;
 	if (typeof serverMod.routes === 'function') {
@@ -28,12 +48,16 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		await serverMod.routes(router);
 	}
 
-	const publicDir = path.join(process.cwd(), 'dist/public');
+	const publicDir = localDir('public');
 
 	http.createServer(async (nReq, res) => {
 		if (await servePublic(nReq, res, publicDir, globalEtag)) return;
 
-		const baseUrl = 'https://' + nReq.headers['host'];
+		// todo this is not safe if we are not in a trusted environment
+		const baseUrl =
+			(nReq.headers['x-forwarded-proto'] ?? 'http') +
+			'://' +
+			nReq.headers['host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
@@ -48,14 +72,17 @@ export default async function createServer(serverMod: any, buildTime: string) {
 				}
 			}
 
-			const response = await modRender(env, serverMod, template, req);
+			const response = await modRender(env, serverMod, template, req, {
+				ssrManifest,
+				writeSitesCache,
+				readSitesCache,
+			});
 			await webResponseToResponse(response, res);
 			return;
 		} catch (e: any) {
 			if (typeof serverMod.renderError !== 'function') {
 				console.log('error', e);
 				throw e;
-				return;
 			}
 
 			thrownError = e;
@@ -68,6 +95,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 				thrownError,
 				template,
 				req,
+				{ ssrManifest, writeSitesCache, readSitesCache },
 			);
 			await webResponseToResponse(response, res);
 			return;
@@ -106,7 +134,7 @@ async function servePublic(
 ): Promise<boolean> {
 	if (!req.url || req.url === '/' || req.method !== 'GET') return false;
 
-	let filePath = path.join(publicDir, req.url);
+	let filePath = join(publicDir, req.url);
 	filePath = path.normalize(filePath);
 
 	if (!filePath.startsWith(publicDir)) {

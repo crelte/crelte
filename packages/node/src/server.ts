@@ -61,8 +61,15 @@ export async function initEnvData(): Promise<EnvData> {
 	};
 }
 
+export type ModRenderOptions = {
+	ssrManifest?: Record<string, string>;
+	readSitesCache?: () => Promise<any>;
+	writeSitesCache?: (data: any) => Promise<void>;
+};
+
 type RenderFn = (req: RenderRequest) => Promise<RenderResponse>;
 
+// todo better typing
 export type RenderRequest = {
 	url: string;
 	htmlTemplate: string;
@@ -72,6 +79,8 @@ export type RenderRequest = {
 	craftWeb: string;
 	viteEnv: Map<string, string>;
 	cookies: string;
+	readSitesCache?: () => Promise<any>;
+	writeSitesCache?: (data: any) => Promise<void>;
 };
 
 export async function modRender(
@@ -79,6 +88,7 @@ export async function modRender(
 	mod: any,
 	template: string,
 	req: Request,
+	opts: ModRenderOptions = {},
 ): Promise<Response> {
 	const acceptLang = req.headers.get('accept-language') ?? null;
 	const cookies = req.headers.get('Cookie') ?? '';
@@ -95,6 +105,7 @@ export async function modRender(
 		craftWeb: env.craftWebUrl,
 		viteEnv: env.viteEnv,
 		cookies,
+		...opts,
 	});
 
 	if (setCookies) {
@@ -115,6 +126,7 @@ type RenderErrorFn = (
 	req: RenderErrorRequest,
 ) => Promise<RenderResponse>;
 
+// todo better typing
 export type RenderErrorRequest = {
 	url: string;
 	htmlTemplate: string;
@@ -123,6 +135,8 @@ export type RenderErrorRequest = {
 	endpoint: string;
 	craftWeb: string;
 	viteEnv: Map<string, string>;
+	readSitesCache?: () => Promise<any>;
+	writeSitesCache?: (data: any) => Promise<void>;
 };
 
 export async function modRenderError(
@@ -131,6 +145,7 @@ export async function modRenderError(
 	thrownError: Error,
 	template: string,
 	req: Request,
+	opts: ModRenderOptions = {},
 ): Promise<Response> {
 	const acceptLang = req.headers.get('accept-language') ?? null;
 
@@ -155,6 +170,7 @@ export async function modRenderError(
 		craftWeb: env.craftWebUrl,
 		viteEnv: env.viteEnv,
 		acceptLang,
+		...opts,
 	});
 
 	return new Response(html, {
