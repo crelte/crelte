@@ -13,16 +13,21 @@ export type InnerRouterOpts = {
  */
 export default class InnerRouter {
 	sites: Site[];
+	/**
+	 * The current route
+	 *
+	 * ## Null
+	 * It might be null on the first targetToRequest, open, and routeFromUrl call
+	 */
 	route: Route | null;
-	site: Site;
 	history: History;
 	preloadOnMouseOver: boolean;
 	/**
 	 * @param changeHistory returns a function you need to call when you are ready to
 	 update the window history (note do not call this after another onRoute call was made)
 	 */
-	onRoute: (route: Request, site: Site, changeHistory: () => void) => void;
-	onPreload: (route: Request, site: Site) => void;
+	onRoute: (route: Request, changeHistory: () => void) => void;
+	onPreload: (route: Request) => void;
 
 	private scrollDebounceTimeout: any | null;
 
@@ -36,7 +41,6 @@ export default class InnerRouter {
 		this.sites = sites.map(s => new Site(s));
 
 		this.route = null;
-		this.site = this.defaultSite();
 		// @ts-ignore
 		this.history = import.meta.env.SSR
 			? new ServerHistory()
@@ -58,18 +62,18 @@ export default class InnerRouter {
 		this.listen();
 
 		// let's first try to load from the state
-		const route = this.targetToRequest(window.location.href);
-		route._fillFromState(window.history.state);
+		const req = this.targetToRequest(window.location.href);
+		req._fillFromState(window.history.state);
 
-		route.origin = 'init';
+		req.origin = 'init';
 
-		if (route.search.get('x-craft-live-preview')) {
-			route.origin = 'live-preview-init';
+		if (req.search.get('x-craft-live-preview')) {
+			req.origin = 'live-preview-init';
 		}
 
 		window.history.scrollRestoration = 'manual';
 
-		this.open(route, false);
+		this.open(req, false);
 	}
 
 	/**
@@ -80,8 +84,7 @@ export default class InnerRouter {
 	/**
 	 * Get a site and if possible use the accept lang header.
 	 *
-	 * @param {(string|null)} [acceptLang=null] Accept Language header.
-	 * @return {Site}
+	 * @param acceptLang Accept Language header.
 	 */
 	siteByAcceptLang(acceptLang: string | null = null): Site {
 		if (!acceptLang) return this.defaultSite();
@@ -125,7 +128,7 @@ export default class InnerRouter {
 	 * Get the default site
 	 */
 	defaultSite(): Site {
-		return this.sites[0];
+		return this.sites.find(s => s.primary) ?? this.sites[0];
 	}
 
 	/**
@@ -144,7 +147,9 @@ export default class InnerRouter {
 	targetToRequest(target: string | URL | Route | Request): Request {
 		if (typeof target === 'string') {
 			if (target.startsWith('/')) {
-				const site = this.site;
+				// todo should we use the language matching or throw if the route does not
+				// exists
+				const site = this.route?.site ?? this.defaultSite();
 				target = new URL(site.uri + target, site.url);
 			} else {
 				target = new URL(target);
@@ -170,7 +175,7 @@ export default class InnerRouter {
 	 */
 	routeFromUrl(fullUrl: URL): Route {
 		// strip stuff we dont need from url
-		const route = new Route(fullUrl, null);
+		const route = new Route(fullUrl, null!);
 		const url = route.url;
 
 		let site: Site | null = null;
@@ -193,7 +198,9 @@ export default class InnerRouter {
 			site = s;
 		}
 
-		route.site = site;
+		// todo should we throw if we can't find a site
+		// or use the site which matches the language
+		route.site = site ?? this.defaultSite();
 
 		return route;
 	}
@@ -327,7 +334,7 @@ export default class InnerRouter {
 
 		if (pushState) {
 			req.index = (current?.index ?? 0) + 1;
-			this.onRoute(req, req.site ?? this.site, () => {
+			this.onRoute(req, () => {
 				this.pushState(req.toRoute());
 			});
 		} else {
@@ -345,9 +352,8 @@ export default class InnerRouter {
 	 */
 	setRoute(req: Request) {
 		this.route = req.toRoute();
-		if (req.site) this.site = req.site;
 
-		this.onRoute(req, this.site, () => {});
+		this.onRoute(req, () => {});
 	}
 
 	/**
@@ -368,7 +374,6 @@ export default class InnerRouter {
 		);
 
 		this.route = route;
-		if (route.site) this.site = route.site;
 	}
 
 	/**
@@ -386,7 +391,6 @@ export default class InnerRouter {
 		);
 
 		this.route = route;
-		if (route.site) this.site = route.site;
 	}
 
 	/**
@@ -398,21 +402,12 @@ export default class InnerRouter {
 	 */
 	preload(target: string | URL | Route | Request) {
 		const req = this.targetToRequest(target);
-
-		// todo, don't think this makes any sense
-		// if the domain of the current site is different than the domain of the
-		// new site id does not make sense to preload
-		if (this.site.url.origin !== req.url.origin) {
-			return;
-		}
-
 		const current = this.route;
-		const site = req.site ?? this.site;
 
 		// if the origin matches, the route will be able to be load
 		// so let's preload it
 		if (current && current.url.origin === req.url.origin) {
-			this.onPreload(req, site);
+			this.onPreload(req);
 		}
 	}
 

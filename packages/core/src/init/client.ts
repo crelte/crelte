@@ -131,8 +131,8 @@ export function main(data: MainData) {
 
 	// setup load Data
 
-	crelte.router._internal.onLoad = (req, site, opts) => {
-		const cr = new CrelteRequest(crelte, req, site);
+	crelte.router._internal.onLoad = (req, opts) => {
+		const cr = new CrelteRequest(crelte, req);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery, opts);
 	};
 
@@ -154,12 +154,7 @@ export function main(data: MainData) {
 	};
 
 	let firstLoad = true;
-	crelte.router._internal.onLoaded = async (
-		success,
-		req,
-		site,
-		readyForProps,
-	) => {
+	crelte.router._internal.onLoaded = async (success, req, readyForProps) => {
 		const isFirstLoad = firstLoad;
 		firstLoad = false;
 
@@ -177,13 +172,13 @@ export function main(data: MainData) {
 			return handleLoadError(readyForProps());
 		}
 
-		const cr = new CrelteRequest(crelte, req, site);
+		const cr = new CrelteRequest(crelte, req);
 
 		const startTime = data.debugTiming ? Date.now() : null;
 		let render = async () => {
 			// we should trigger the route update here
 			pluginsBeforeRender(cr);
-			crelte.globals._updateSiteId(site.id);
+			crelte.globals._updateSiteId(cr.site.id);
 			updateAppProps(readyForProps());
 
 			await tick();

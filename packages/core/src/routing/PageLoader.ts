@@ -1,5 +1,4 @@
 import Request from './Request.js';
-import Site from './Site.js';
 
 export type PageLoaderOptions = {
 	debugTiming: boolean;
@@ -10,11 +9,7 @@ export type LoadResponse = {
 	data: any;
 };
 
-export type LoadFn = (
-	req: Request,
-	site: Site,
-	opts: LoadOptions,
-) => Promise<any> | any;
+export type LoadFn = (req: Request, opts: LoadOptions) => Promise<any> | any;
 
 export type LoadOptions = {
 	setProgress: (num: number) => void;
@@ -29,12 +24,7 @@ export default class PageLoader<More> {
 
 	private loadingVersion: number;
 
-	onLoaded: (
-		resp: LoadResponse,
-		req: Request,
-		site: Site,
-		more: More,
-	) => void;
+	onLoaded: (resp: LoadResponse, req: Request, more: More) => void;
 	onProgress: (loading: boolean, progress?: number) => void;
 	loadFn: LoadFn;
 
@@ -62,7 +52,7 @@ export default class PageLoader<More> {
 		this.onProgress(false);
 	}
 
-	async load(req: Request, site: Site, more: More) {
+	async load(req: Request, more: More) {
 		this.onProgress(true);
 
 		const version = ++this.loadingVersion;
@@ -76,7 +66,7 @@ export default class PageLoader<More> {
 
 		const resp: LoadResponse = { success: false, data: null };
 		try {
-			resp.data = await this.loadFn(req, site, { setProgress });
+			resp.data = await this.loadFn(req, { setProgress });
 			resp.success = true;
 		} catch (e) {
 			resp.success = false;
@@ -91,18 +81,18 @@ export default class PageLoader<More> {
 			return console.log('route changed quickly, ignoring response');
 
 		this.onProgress(false);
-		this.onLoaded(resp, req, site, more);
+		this.onLoaded(resp, req, more);
 	}
 
 	// you don't need to wait on this call
-	async preload(req: Request, site: Site) {
+	async preload(req: Request) {
 		const url = req.url.origin + req.url.pathname;
 		if (this.preloadedUrls.has(url)) return;
 
 		this.preloadedUrls.add(url);
 
 		try {
-			await this.loadFn(req, site, { setProgress: () => null });
+			await this.loadFn(req, { setProgress: () => null });
 		} catch (_e) {
 			console.log('preload failed');
 			// retry at another time

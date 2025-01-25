@@ -96,12 +96,12 @@ export async function main(data: MainData): Promise<{
 
 	// setup load Data
 
-	crelte.router._internal.onLoad = (req, site) => {
-		const cr = new CrelteRequest(crelte, req, site);
+	crelte.router._internal.onLoad = req => {
+		const cr = new CrelteRequest(crelte, req);
 		return loadFn(cr, data.app, data.entryQuery, data.globalQuery);
 	};
 
-	const { success, redirect, req, site, props } =
+	const { success, redirect, req, props } =
 		await crelte.router._internal.initServer(
 			data.serverData.url,
 			data.serverData.acceptLang,
@@ -119,8 +119,9 @@ export async function main(data: MainData): Promise<{
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 
-	pluginsBeforeRender(new CrelteRequest(crelte, req, site));
-	crelte.globals._updateSiteId(site.id);
+	const cr = new CrelteRequest(crelte, req);
+	pluginsBeforeRender(cr);
+	crelte.globals._updateSiteId(cr.site.id);
 	// eslint-disable-next-line prefer-const
 	let { html, head } = data.app.default.render(props, { context });
 
@@ -128,7 +129,7 @@ export async function main(data: MainData): Promise<{
 	head += crelte.ssrCache._exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
-	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', site.language);
+	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', cr.site.language);
 
 	const finalHtml = htmlTemplate
 		.replace('</head>', head + '\n\t</head>')

@@ -11,19 +11,12 @@ export default class CrelteRequest extends Crelte {
 	 */
 	req: Request;
 
-	/**
-	 * The current site
-	 */
-	site: Site;
-
 	private innerGlobals: Map<string, any>;
 
-	/// requires a site if the route does not contain a site
-	constructor(inner: Crelte, req: Request, site: Site) {
+	constructor(inner: Crelte, req: Request) {
 		super(inner);
 
 		this.req = req;
-		this.site = site;
 		this.innerGlobals = new Map();
 	}
 
@@ -37,24 +30,14 @@ export default class CrelteRequest extends Crelte {
 	 * If you provide a route it must contain a site or you must
 	 * provide one,
 	 */
-	static fromCrelte(
-		inner: Crelte,
-		req?: Route | Request,
-		site?: Site,
-	): CrelteRequest {
+	static fromCrelte(inner: Crelte, req?: Route | Request): CrelteRequest {
 		if (!req) {
 			req = inner.router.route.get();
-		}
-
-		if (!site) {
-			if (!req.site) throw new Error('site is required');
-			site = req.site;
 		}
 
 		return new CrelteRequest(
 			inner,
 			req instanceof Request ? req : Request.fromRoute(req),
-			site,
 		);
 	}
 
@@ -64,6 +47,18 @@ export default class CrelteRequest extends Crelte {
 	 */
 	get route(): Request {
 		return this.req;
+	}
+
+	/**
+	 * Easy access to this.req.site
+	 *
+	 * ## Note
+	 * The site might not always match with the current route
+	 * but be the site default site or one that matches the
+	 * users language.
+	 */
+	get site(): Site {
+		return this.req.site;
 	}
 
 	/**

@@ -151,8 +151,8 @@ export function getCookies(): Cookies {
  */
 export function onRequest(fn: (cr: CrelteRequest) => void) {
 	const crelte = getCrelte();
-	const rmListener = crelte.router.onRequest((req, site) => {
-		fn(new CrelteRequest(crelte, req, site));
+	const rmListener = crelte.router.onRequest(req => {
+		fn(new CrelteRequest(crelte, req));
 	});
 
 	onDestroy(rmListener);

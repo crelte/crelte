@@ -30,11 +30,7 @@ export default class Request extends Route {
 	/**
 	 * Create a new Request
 	 */
-	constructor(
-		url: string | URL,
-		site: Site | null,
-		opts: RequestOptions = {},
-	) {
+	constructor(url: string | URL, site: Site, opts: RequestOptions = {}) {
 		super(url, site, opts);
 
 		this.disableScroll = opts.disableScroll ?? false;

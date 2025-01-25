@@ -38,9 +38,16 @@ export default class Route {
 	url: URL;
 
 	/**
-	 * The site of the route if it could be defined
+	 * The site of the route
+	 *
+	 * ## Note
+	 * The site might not always match with the current route
+	 * but be the site default site or one that matches the
+	 * users language.
+	 *
+	 * If that is important call `route.siteMatches()` to verify
 	 */
-	site: Site | null;
+	site: Site;
 
 	/**
 	 * The scroll position of the current route
@@ -61,7 +68,7 @@ export default class Route {
 	/**
 	 * Creates a new Route
 	 */
-	constructor(url: string | URL, site: Site | null, opts: RouteOptions = {}) {
+	constructor(url: string | URL, site: Site, opts: RouteOptions = {}) {
 		this.url = new URL(url);
 
 		this.site = site;
@@ -77,17 +84,17 @@ export default class Route {
 	 *
 	 * ## Example
 	 * ```
-	 * const route = new Route('https://example.com/foo/bar/', null);
-	 * console.log(route.uri); // '/foo/bar'
+	 * const site = _; // site with url https://example.com/fo
+	 * const route = new Route('https://example.com/foo/bar/', site);
+	 * console.log(route.uri); // '/bar'
 	 *
-	 * const site = _; // site with url https://example.com/foo
-	 * const route2 = new Route('https://example.com/foo/bar/?a=1', site);
-	 * console.log(route2.uri); // '/bar'
+	 * const site2 = _; // site with url https://example.com/other
+	 * const route2 = new Route('https://example.com/foo/bar/?a=1', site2);
+	 * console.log(route2.uri); // '/foo/bar'
 	 * ```
 	 */
 	get uri(): string {
-		// todo check if this is correct
-		if (this.site) {
+		if (this.siteMatches()) {
 			return trimSlashEnd(
 				this.url.pathname.substring(this.site.uri.length),
 			);
@@ -103,16 +110,17 @@ export default class Route {
 	 *
 	 * ## Example
 	 * ```
-	 * const route = new Route('https://example.com/foo/bar/', null);
-	 * console.log(route.baseUrl); // 'https://example.com'
-	 *
 	 * const site = _; // site with url https://example.com/foo
-	 * const route2 = new Route('https://example.com/foo/bar/', site);
-	 * console.log(route2.baseUrl); // 'https://example.com/foo'
+	 * const route = new Route('https://example.com/foo/bar/', null);
+	 * console.log(route.baseUrl); // 'https://example.com/foo'
+	 *
+	 * const site2 = _; // site with url https://example.com/other
+	 * const route2 = new Route('https://example.com/foo/bar/', site2);
+	 * console.log(route2.baseUrl); // 'https://example.com'
 	 * ```
 	 */
 	get baseUrl(): string {
-		if (this.site) return trimSlashEnd(this.site.url.href);
+		if (this.siteMatches()) return trimSlashEnd(this.site.url.href);
 
 		return this.url.origin;
 	}
@@ -144,6 +152,22 @@ export default class Route {
 	 */
 	get hash(): string {
 		return this.url.hash;
+	}
+
+	/**
+	 * Returns if the site matches the url
+	 */
+	siteMatches(): boolean {
+		if (this.url.origin !== this.site.url.origin) return false;
+
+		// now we need to validate the pathname we should make sure both end with a slash
+		// todo can we do this better?
+
+		// make sure that urls like pathname: /abcbc and site: /abc don't match
+		return (this.url.pathname + '/').startsWith(
+			// uri never returns a slash at the end
+			this.site.uri + '/',
+		);
 	}
 
 	/**

@@ -28,7 +28,6 @@ type Internal = {
 	onLoaded: (
 		success: boolean,
 		req: Request,
-		site: Site,
 		// call ready once your ready to update the dom
 		// this makes sure we trigger a route and site update
 		// almost at the same moment and probably the same tick
@@ -50,7 +49,6 @@ type ServerInited = {
 	// redirect to the route url
 	redirect: boolean;
 	req: Request;
-	site: Site;
 	props: any;
 };
 
@@ -80,9 +78,9 @@ export default class Router {
 	 */
 	private _loadingProgress: Writable<number>;
 
-	private _onRouteEv: Listeners<[Route, Site]>;
+	private _onRouteEv: Listeners<[Route]>;
 
-	private _onRequest: Listeners<[Request, Site]>;
+	private _onRequest: Listeners<[Request]>;
 
 	/** @hidden */
 	_internal: Internal;
@@ -119,14 +117,14 @@ export default class Router {
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
 		};
 
-		this.inner.onRoute = (route, site, changeHistory) =>
-			this._onRoute(route, site, changeHistory);
-		this.inner.onPreload = (route, site) => this._onPreload(route, site);
+		this.inner.onRoute = (route, changeHistory) =>
+			this._onRoute(route, changeHistory);
+		this.inner.onPreload = route => this._onPreload(route);
 
-		this.pageLoader.onLoaded = (resp, req, site, more) =>
-			this._onLoaded(resp, req, site, more);
-		this.pageLoader.loadFn = (req, site, opts) =>
-			this._internal.onLoad(req, site, opts);
+		this.pageLoader.onLoaded = (resp, req, more) =>
+			this._onLoaded(resp, req, more);
+		this.pageLoader.loadFn = (req, opts) =>
+			this._internal.onLoad(req, opts);
 		this.pageLoader.onProgress = (loading, progress) =>
 			this._onProgress(loading, progress);
 	}
@@ -209,6 +207,7 @@ export default class Router {
 	pushState(route: Route) {
 		this.pageLoader.discard();
 		this.inner.pushState(route);
+		this.destroyRequest();
 		this.setNewRoute(route);
 	}
 
@@ -232,6 +231,7 @@ export default class Router {
 	replaceState(route: Route) {
 		this.pageLoader.discard();
 		this.inner.replaceState(route);
+		this.destroyRequest();
 		this.setNewRoute(route);
 	}
 
@@ -264,7 +264,7 @@ export default class Router {
 	 *
 	 * @returns a function to remove the listener
 	 */
-	onRoute(fn: (route: Route, site: Site) => void): () => void {
+	onRoute(fn: (route: Route) => void): () => void {
 		return this._onRouteEv.add(fn);
 	}
 
@@ -275,17 +275,16 @@ export default class Router {
 	 *
 	 * @returns a function to remove the listener
 	 */
-	onRequest(fn: (req: Request, site: Site) => void): () => void {
+	onRequest(fn: (req: Request) => void): () => void {
 		return this._onRequest.add(fn);
 	}
 
 	private setNewRoute(route: Route) {
-		this.destroyRequest();
-
 		this._route.setSilent(route);
-		if (route.site) this._site.setSilent(route.site);
+		const siteChanged = this.site.get()?.id !== route.site.id;
+		this._site.setSilent(route.site);
 		this._route.notify();
-		if (route.site) this._site.notify();
+		if (siteChanged) this._site.notify();
 	}
 
 	private async _initClient() {
@@ -299,7 +298,7 @@ export default class Router {
 		this.inner.initServer();
 
 		const prom: Promise<ServerInited> = new Promise(resolve => {
-			this._internal.onLoaded = (success, req, site, ready) => {
+			this._internal.onLoaded = (success, req, ready) => {
 				const props = ready();
 				this._internal.onLoaded = () => {};
 
@@ -307,7 +306,6 @@ export default class Router {
 					success,
 					redirect: false,
 					req,
-					site,
 					props,
 				});
 			};
@@ -318,14 +316,13 @@ export default class Router {
 
 		// let's see if the url matches any route and site
 		// if not let's redirect to the site which matches the acceptLang
-		if (!route.site) {
+		if (!route.siteMatches()) {
 			const site = this.inner.siteByAcceptLang(acceptLang);
 
 			return {
 				success: true,
 				redirect: true,
 				req: new Request(site.url, site),
-				site,
 				props: {},
 			};
 		}
@@ -336,13 +333,12 @@ export default class Router {
 
 		const hist = this.inner.history as ServerHistory;
 		if (hist.url) {
-			const nRoute = new Route(hist.url, null);
-			if (!route.eq(nRoute)) {
+			const nReq = this.inner.targetToRequest(hist.url);
+			if (!route.eq(nReq)) {
 				return {
 					success: true,
 					redirect: true,
-					req: Request.fromRoute(nRoute),
-					site: route.site!,
+					req: nReq,
 					props: {},
 				};
 			}
@@ -351,7 +347,7 @@ export default class Router {
 		return resp;
 	}
 
-	private _onRoute(req: Request, site: Site, changeHistory: () => void) {
+	private _onRoute(req: Request, changeHistory: () => void) {
 		this.destroyRequest();
 
 		this._request = req;
@@ -361,10 +357,10 @@ export default class Router {
 			throw new Error('render barrier is already open');
 		}
 
-		this._onRequest.trigger(req, site);
+		this._onRequest.trigger(req);
 
 		// route prepared
-		this.pageLoader.load(req, site, { changeHistory });
+		this.pageLoader.load(req, { changeHistory });
 	}
 
 	private destroyRequest() {
@@ -374,14 +370,13 @@ export default class Router {
 		this._request = null;
 	}
 
-	private _onPreload(req: Request, site: Site) {
-		this.pageLoader.preload(req, site);
+	private _onPreload(req: Request) {
+		this.pageLoader.preload(req);
 	}
 
 	private async _onLoaded(
 		resp: LoadResponse,
 		req: Request,
-		site: Site,
 		more: LoadedMore,
 	) {
 		// check if the render was cancelled
@@ -395,16 +390,12 @@ export default class Router {
 		const route = req.toRoute();
 
 		const updateRoute = () => {
-			this._route.setSilent(route);
-			const siteChanged = this.site.get()?.id !== site.id;
-			this._site.setSilent(site);
-			this._route.notify();
-			if (siteChanged) this._site.notify();
+			this.setNewRoute(route);
 
-			this._onRouteEv.trigger(route.clone(), site);
+			this._onRouteEv.trigger(route.clone());
 		};
 
-		this._internal.onLoaded(resp.success, req, site, () => {
+		this._internal.onLoaded(resp.success, req, () => {
 			updateRoute();
 			return resp.data;
 		});
