@@ -41,17 +41,19 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # we build each package so all dependencies are met
+      - name: Build
+        run: npm run build
+
+      - name: Check errors
+        run: |
+          cd ${PACKAGE_FOLDER}
+          npm run check
+
       - name: Run lint
         run: |
           cd ${PACKAGE_FOLDER}
           npm run lint
-
-      - name: Build Package
-        run: |
-          cd ${PACKAGE_FOLDER} # Navigate to the correct package folder
-          echo "Building package from ${PACKAGE_FOLDER}"
-          cp ../../LICENSE.md .
-          npm run build
 
       - name: Publish to npm
         run: |
