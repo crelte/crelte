@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// import fs from 'node:fs';
-// import path from 'node:path';
-// import * as p from '@clack/prompts';
 import { program } from 'commander';
 import create from './create.js';
 
@@ -12,6 +9,10 @@ program
 	.command('create')
 	.description('Create a new Crelte Project')
 	.argument('[cwd]', 'The directory to create the project in')
-	.action(cwd => create(cwd));
+	.option(
+		'--template <string>',
+		'the template to use: default, or a url to clone',
+	)
+	.action((cwd, a, b) => create(cwd, a, b));
 
 program.parse();
