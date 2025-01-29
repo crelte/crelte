@@ -204,6 +204,15 @@ export function main(data: MainData) {
 		await render();
 	};
 
+	crelte.router._internal.onNothingLoaded = async (req, ready) => {
+		crelte.globals._updateSiteId(req.site.id);
+		ready();
+
+		await tick();
+
+		crelte.router._internal.domReady(req);
+	};
+
 	crelte.router._internal.initClient();
 }
 

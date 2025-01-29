@@ -143,6 +143,15 @@ export function getCookies(): Cookies {
 	return getCrelte().cookies;
 }
 
+export function onRoute(fn: (route: Route, crelte: Crelte) => void) {
+	const crelte = getCrelte();
+	const rmListener = crelte.router.onRoute(route => {
+		fn(route, crelte);
+	});
+
+	onDestroy(rmListener);
+}
+
 /**
  * Listen for requests
  *

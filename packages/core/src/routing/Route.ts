@@ -13,23 +13,25 @@ export type RouteOptions = {
  *
  * - `'init'`: is set on the first page load
  * - `'manual'`: is set when a route is triggered manually via `Router.open`
- * - `'live-preview-init'`: is set on the first page load in live preview mode
  * - `'click'`: is set when a route is triggered by a click event
  * - `'pop'`: is set when a route is triggered by a popstate event (back/forward)
+ * - `'replace'`: is set when a route is replaced via `Router.replaceState`
+ * - `'push'`: is set when a route is pushed via `Router.pushState`
+ *
+ * ## Note
+ * `replace` and `push` will not call loadData
  */
 export type RouteOrigin =
 	| 'init'
-	| 'live-preview-init'
 	| 'manual'
 	| 'click'
-	| 'pop';
+	| 'pop'
+	| 'replace'
+	| 'push';
 
 /**
  * A Route contains information about the current page for example the url and
- * the site id
- *
- * ## Note
- * Never update the route directly, clone it before
+ * the site
  */
 export default class Route {
 	/**
@@ -51,6 +53,13 @@ export default class Route {
 
 	/**
 	 * The scroll position of the current route
+	 *
+	 * ## Note
+	 * This does not have to represent the current scroll position
+	 * should more be used internally.
+	 *
+	 * It might be useful for a new request to specify the wanted
+	 * scroll position
 	 */
 	scrollY: number | null;
 
@@ -155,52 +164,6 @@ export default class Route {
 	}
 
 	/**
-	 * Returns if the site matches the url
-	 */
-	siteMatches(): boolean {
-		if (this.url.origin !== this.site.url.origin) return false;
-
-		// now we need to validate the pathname we should make sure both end with a slash
-		// todo can we do this better?
-
-		// make sure that urls like pathname: /abcbc and site: /abc don't match
-		return (this.url.pathname + '/').startsWith(
-			// uri never returns a slash at the end
-			this.site.uri + '/',
-		);
-	}
-
-	/**
-	 * Checks if the route is equal to another route
-	 *
-	 * This checks all properties of the url but search params do not have to be
-	 * in the same order
-	 */
-	eq(route: Route) {
-		const searchEq = (a: URLSearchParams, b: URLSearchParams) => {
-			if (a.size !== b.size) return false;
-
-			a.sort();
-			b.sort();
-
-			const aEntries = Array.from(a.entries());
-			const bEntries = Array.from(b.entries());
-
-			return aEntries
-				.map((a, i) => [a, bEntries[i]])
-				.every(([[ak, av], [bk, bv]]) => ak === bk && av === bv);
-		};
-
-		return (
-			route &&
-			this.url.pathname === route.url.pathname &&
-			this.url.origin === route.url.origin &&
-			searchEq(this.search, route.search) &&
-			this.hash === route.hash
-		);
-	}
-
-	/**
 	 * Checks if there are previous routes which would allow it to go back
 	 */
 	canGoBack(): boolean {
@@ -239,6 +202,82 @@ export default class Route {
 		} else {
 			this.search.delete(key);
 		}
+	}
+
+	inLivePreview(): boolean {
+		return !!this.search.get('x-craft-live-preview');
+	}
+
+	/**
+	 * Returns if the site matches the url
+	 */
+	siteMatches(): boolean {
+		if (this.url.origin !== this.site.url.origin) return false;
+
+		// now we need to validate the pathname we should make sure both end with a slash
+		// todo can we do this better?
+
+		// make sure that urls like pathname: /abcbc and site: /abc don't match
+		return (this.url.pathname + '/').startsWith(
+			// uri never returns a slash at the end
+			this.site.uri + '/',
+		);
+	}
+
+	/**
+	 * Checks if the route is equal to another route
+	 *
+	 * This checks all properties of the url but search params do not have to be
+	 * in the same order
+	 */
+	eq(route: Route | null) {
+		return (
+			route &&
+			this.eqUrl(route) &&
+			this.eqSearch(route) &&
+			this.eqHash(route)
+		);
+	}
+
+	/**
+	 * Checks if the route is equal to another route
+	 *
+	 * This does not check the search params or hash
+	 */
+	eqUrl(route: Route | null) {
+		return (
+			route &&
+			this.url.pathname === route.url.pathname &&
+			this.url.origin === route.url.origin
+		);
+	}
+
+	/**
+	 * Checks if the search params are equal to another route
+	 */
+	eqSearch(route: Route | null) {
+		const searchEq = (a: URLSearchParams, b: URLSearchParams) => {
+			if (a.size !== b.size) return false;
+
+			a.sort();
+			b.sort();
+
+			const aEntries = Array.from(a.entries());
+			const bEntries = Array.from(b.entries());
+
+			return aEntries
+				.map((a, i) => [a, bEntries[i]])
+				.every(([[ak, av], [bk, bv]]) => ak === bk && av === bv);
+		};
+
+		return route && searchEq(this.search, route.search);
+	}
+
+	/**
+	 * Checks if the hash is equal to another route
+	 */
+	eqHash(route: Route | null) {
+		return route && this.hash === route.hash;
 	}
 
 	/**

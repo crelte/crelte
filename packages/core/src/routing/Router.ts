@@ -35,6 +35,17 @@ type Internal = {
 		ready: () => any,
 	) => void;
 
+	// onNothingLoaded get's called if the request did not load new Data
+	// since maybe a push or replace was called
+	onNothingLoaded: (
+		req: Request,
+		// call ready once your ready to update the dom
+		// this makes sure we trigger a route and site update
+		// almost at the same moment and probably the same tick
+		// to make sure we don't have any flickering
+		ready: () => void,
+	) => void;
+
 	onLoad: LoadFn;
 
 	domReady: (req: Request) => void;
@@ -78,8 +89,6 @@ export default class Router {
 	 */
 	private _loadingProgress: Writable<number>;
 
-	private _onRouteEv: Listeners<[Route]>;
-
 	private _onRequest: Listeners<[Request]>;
 
 	/** @hidden */
@@ -105,12 +114,11 @@ export default class Router {
 		this._loading = new Writable(false);
 		this._loadingProgress = new Writable(0);
 
-		this._onRouteEv = new Listeners();
-
 		this._onRequest = new Listeners();
 
 		this._internal = {
 			onLoaded: () => {},
+			onNothingLoaded: () => {},
 			onLoad: () => {},
 			domReady: req => this.inner.domReady(req),
 			initClient: () => this._initClient(),
@@ -167,9 +175,12 @@ export default class Router {
 	/**
 	 * Open a new route
 	 *
-	 * @param target the target to open can be an url or a route
+	 * @param target the target to open can be an url, a route or a request
 	 * the url needs to start with http or with a / which will be considered as
 	 * the site baseUrl
+	 *
+	 * ## Note
+	 * The origin will always be set to 'manual'
 	 *
 	 * ## Example
 	 * ```
@@ -182,15 +193,24 @@ export default class Router {
 	 * // the following page will be opened https://example.com/de/foo/bar
 	 * ```
 	 */
-	open(target: string | URL | Route, opts: RequestOptions = {}) {
-		this.inner.open(target, opts);
+	open(target: string | URL | Route | Request, opts: RequestOptions = {}) {
+		const req = this.inner.targetToRequest(target, {
+			...opts,
+			origin: 'manual',
+		});
+		this.inner.open(req);
 	}
 
 	/**
-	 * This pushes the state of the route without triggering an event
+	 * This pushes the new route without triggering a new pageload
 	 *
 	 * You can use this when using pagination for example change the route object
 	 * (search argument) and then call pushState
+	 *
+	 * ## Note
+	 * This will always set the origin to 'push'
+	 * And will clear the scrollY value if you not provide a new one via the `opts`
+	 * This will disableLoadData by default if you not provide an override via the `opts`
 	 *
 	 * ## Example
 	 * ```
@@ -204,17 +224,36 @@ export default class Router {
 	 * router.pushState(route);
 	 * ```
 	 */
-	pushState(route: Route) {
+	push(route: Route | Request, opts: RequestOptions = {}) {
+		// cancel previous request
 		this.pageLoader.discard();
-		this.inner.pushState(route);
+		const req = this.inner.targetToRequest(route, {
+			...opts,
+			origin: 'push',
+			scrollY: opts.scrollY ?? undefined,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
+		this.inner.push(req);
 		this.destroyRequest();
 		this.setNewRoute(route);
+	}
+
+	/**
+	 * @deprecated use push instead
+	 */
+	pushState(route: Route | Request) {
+		this.push(route);
 	}
 
 	/**
 	 * This replaces the state of the route without triggering an event
 	 *
 	 * You can use this when using some filters for example a search filter
+	 *
+	 * ## Note
+	 * This will always set the origin to 'replace'
+	 * And will clear the scrollY value if you not provide a new one via the `opts`
+	 * This will disableLoadData by default if you not provide an override via the `opts`
 	 *
 	 * ## Example
 	 * ```
@@ -228,11 +267,24 @@ export default class Router {
 	 * router.replaceState(route);
 	 * ```
 	 */
-	replaceState(route: Route) {
+	replace(route: Route | Request, opts: RequestOptions = {}) {
+		// cancel previous request
 		this.pageLoader.discard();
-		this.inner.replaceState(route);
+		const req = this.inner.targetToRequest(route, {
+			origin: 'replace',
+			scrollY: opts.scrollY ?? undefined,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
+		this.inner.replace(req);
 		this.destroyRequest();
-		this.setNewRoute(route);
+		this.setNewRoute(req);
+	}
+
+	/**
+	 * @deprecated use replace instead
+	 */
+	replaceState(route: Route | Request) {
+		this.replace(route);
 	}
 
 	/**
@@ -259,13 +311,13 @@ export default class Router {
 	/**
 	 * Add a listener for the onRoute event
 	 *
-	 * This differs from router.route.subscribe in the way that
-	 * it will only trigger if a new render / load will occur
+	 * This will trigger every time a new route is set
+	 * and is equivalent to router.route.subscribe(fn)
 	 *
 	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route) => void): () => void {
-		return this._onRouteEv.add(fn);
+		return this.route.subscribe(fn);
 	}
 
 	/**
@@ -296,6 +348,10 @@ export default class Router {
 		acceptLang?: string,
 	): Promise<ServerInited> {
 		this.inner.initServer();
+
+		this._internal.onNothingLoaded = (_req, ready) => {
+			ready();
+		};
 
 		const prom: Promise<ServerInited> = new Promise(resolve => {
 			this._internal.onLoaded = (success, req, ready) => {
@@ -360,7 +416,11 @@ export default class Router {
 		this._onRequest.trigger(req);
 
 		// route prepared
-		this.pageLoader.load(req, { changeHistory });
+		if (!req.disableLoadData) {
+			this.pageLoader.load(req, { changeHistory });
+		} else {
+			this._onNothingLoaded(req, { changeHistory });
+		}
 	}
 
 	private destroyRequest() {
@@ -389,15 +449,28 @@ export default class Router {
 
 		const route = req.toRoute();
 
-		const updateRoute = () => {
-			this.setNewRoute(route);
-
-			this._onRouteEv.trigger(route.clone());
-		};
-
+		// call the client or server saying we are ready for a new render
 		this._internal.onLoaded(resp.success, req, () => {
-			updateRoute();
+			this.setNewRoute(route);
 			return resp.data;
+		});
+	}
+
+	private async _onNothingLoaded(req: Request, more: LoadedMore) {
+		// check if the render was cancelled
+		if (await req._renderBarrier.ready()) return;
+
+		// when the data is loaded let's update the route of the inner
+		// this is will only happen if no other route has been requested
+		// in the meantime
+		more.changeHistory();
+
+		const route = req.toRoute();
+
+		// call the client or server saying there was an update in the route
+		// but no new data was loaded so no render should happen
+		this._internal.onNothingLoaded(req, () => {
+			this.setNewRoute(route);
 		});
 	}
 

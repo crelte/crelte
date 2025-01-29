@@ -2,7 +2,7 @@ import Site, { SiteFromGraphQl } from './Site.js';
 import History from './History.js';
 import { ClientHistory, ServerHistory } from './History.js';
 import Request, { isRequest, RequestOptions } from './Request.js';
-import Route, { RouteOptions } from './Route.js';
+import Route from './Route.js';
 
 export type InnerRouterOpts = {
 	preloadOnMouseOver: boolean;
@@ -66,14 +66,9 @@ export default class InnerRouter {
 		req._fillFromState(window.history.state);
 
 		req.origin = 'init';
-
-		if (req.search.get('x-craft-live-preview')) {
-			req.origin = 'live-preview-init';
-		}
-
 		window.history.scrollRestoration = 'manual';
 
-		this.open(req, {}, false);
+		this.setRoute(req);
 	}
 
 	/**
@@ -139,9 +134,10 @@ export default class InnerRouter {
 	}
 
 	/**
-	 * Resolve a url or Route and convert it to a Route
+	 * Resolve a url or Route and convert it to a Request
 	 *
 	 * @param target
+	 * @param opts, any option present will override the value in target
 	 * @return Returns null if the url does not match our host (the protocol get's ignored)
 	 */
 	targetToRequest(
@@ -221,12 +217,20 @@ export default class InnerRouter {
 
 			e.preventDefault();
 
-			const route = this.routeFromUrl(link.href);
-			if (this.route?.eq(route)) return;
+			const req = this.targetToRequest(link.href, { origin: 'click' });
+			const routeEq =
+				this.route && this.route.eqUrl(req) && this.route.eqSearch(req);
+			// the route is the same don't do anything
+			// or maybe scroll the page to the hash? todo
+			if (routeEq && this.route?.eqHash(req)) return;
 
-			route.origin = 'click';
+			// this means the hash did not match, so we wan't to just scroll but not load
+			// data
+			if (routeEq) {
+				req.disableLoadData = true;
+			}
 
-			this.open(route);
+			this.open(req);
 		});
 
 		if (this.preloadOnMouseOver) {
@@ -270,7 +274,7 @@ export default class InnerRouter {
 					// use the latest state
 					this.history.replaceState(this.route._toState());
 
-					if (current.origin === 'live-preview-init') {
+					if (current.inLivePreview()) {
 						sessionStorage.setItem(
 							'live-preview-scroll',
 							// use the latest scrollY
@@ -286,31 +290,28 @@ export default class InnerRouter {
 		window.addEventListener('popstate', async e => {
 			if (!('route' in e.state)) return;
 
-			const route = this.targetToRequest(window.location.href);
-			route._fillFromState(e.state);
-			route.origin = 'pop';
+			const req = this.targetToRequest(window.location.href);
+			req._fillFromState(e.state);
+			req.origin = 'pop';
 
-			// since the pop event replaced our state we can't replace the state
-			// for the scrollY in our open call so we just clear the current
-			// route since it is now already the new route
-			this.route = null;
-
-			this.open(route, {}, false);
+			this.setRoute(req);
 		});
 	}
 
 	/**
-	 * Open's a route
+	 * Open a new route
 	 *
 	 * @param route a route object or an url or uri, never input the same route object again
 	 * @param pushState if true pushed the state to the window.history
+	 *
+	 * ## Important
+	 * Make sure a req always has the correct origin,
+	 * `push` and `replace` will cause this function to throw an error
 	 */
-	open(
-		target: string | URL | Route | Request,
-		opts: RouteOptions = {},
-		pushState: boolean = true,
-	) {
-		const req = this.targetToRequest(target, opts);
+	open(req: Request) {
+		if (['push', 'replace'].includes(req.origin)) {
+			throw new Error('Do not use open with push or replace');
+		}
 
 		const current = this.route;
 		if (current) {
@@ -340,14 +341,10 @@ export default class InnerRouter {
 			return;
 		}
 
-		if (pushState) {
-			req.index = (current?.index ?? 0) + 1;
-			this.onRoute(req, () => {
-				this.pushState(req.toRoute());
-			});
-		} else {
-			this.setRoute(req);
-		}
+		req.index = (current?.index ?? 0) + 1;
+		this.onRoute(req, () => {
+			this.push(req, true);
+		});
 	}
 
 	/**
@@ -358,47 +355,70 @@ export default class InnerRouter {
 	 *
 	 * @param req
 	 */
-	setRoute(req: Request) {
+	setRoute(req: Request, preventOnRoute = false) {
 		this.route = req.toRoute();
 
-		this.onRoute(req, () => {});
+		if (!preventOnRoute) this.onRoute(req, () => {});
 	}
 
 	/**
-	 * This pushes the state of the route without triggering a currentRoute
-	 * or currentSiteId change
+	 * This pushes a new route to the history
 	 *
-	 * You can use when using pagination for example change the route object
-	 * (search argument) and then call pushState
+	 * @param req, never input the same route object again
 	 *
-	 * @param route, never input the same route object again
+	 * ## Important
+	 * Make sure the route has the correct origin
 	 */
-	pushState(route: Route) {
-		const url = route.url;
+	push(req: Request, preventOnRoute = false) {
+		const url = req.url;
+		// todo a push should also store the previous scrollY
+
+		let nReq = req;
+		if (req.scrollY === null) {
+			// if there is no scrollY stored we store the current scrollY
+			// since a push does not cause a scroll top
+			// todo: probably should refactor something probably
+			// should not be here
+			nReq = req.clone();
+			nReq.scrollY = this.history.scrollY();
+		}
 
 		this.history.pushState(
-			route._toState(),
+			nReq._toState(),
 			url.pathname + url.search + url.hash,
 		);
 
-		this.route = route;
+		this.setRoute(req, preventOnRoute);
 	}
 
 	/**
-	 * This replaces the state of the route without triggering a currentRoute
-	 * or currentSiteId change
+	 * This replaces the current route
 	 *
-	 * @param route, never input the same route object again
+	 * @param req, never input the same route object again
+	 *
+	 * ## Important
+	 * Make sure the route has the correct origin
 	 */
-	replaceState(route: Route) {
-		const url = route.url;
+	replace(req: Request) {
+		const url = req.url;
+
+		let nReq = req;
+		if (req.scrollY === null) {
+			// if there is no scrollY stored we store the current scrollY
+			// since a replace does not cause a scrollTo and we wan't
+			// history back to work as intended
+			// todo: probably should refactor something probably
+			// should not be here
+			nReq = req.clone();
+			nReq.scrollY = this.history.scrollY();
+		}
 
 		this.history.replaceState(
-			route._toState(),
+			nReq._toState(),
 			url.pathname + url.search + url.hash,
 		);
 
-		this.route = route;
+		this.setRoute(req);
 	}
 
 	/**
@@ -430,7 +450,7 @@ export default class InnerRouter {
 
 		// if the route is a live preview init and we have a scrollY stored
 		// scroll to that
-		if (req.origin === 'live-preview-init') {
+		if (req.inLivePreview()) {
 			const scrollY = sessionStorage.getItem('live-preview-scroll');
 			if (scrollY) {
 				scrollTo = {
@@ -464,6 +484,10 @@ export default class InnerRouter {
 				behavior: 'instant',
 			};
 		}
+
+		// make sure push and replace don't cause a scroll if it is not intended
+		if (!scrollTo && (req.origin === 'push' || req.origin === 'replace'))
+			return;
 
 		// scroll to the top if nothing else matches
 		if (!scrollTo) {

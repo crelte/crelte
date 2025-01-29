@@ -10,6 +10,7 @@ export type RequestOptions = {
 	index?: number;
 	origin?: RouteOrigin;
 	disableScroll?: boolean;
+	disableLoadData?: boolean;
 	statusCode?: number;
 };
 
@@ -26,6 +27,12 @@ export default class Request extends Route {
 	disableScroll: boolean;
 
 	/**
+	 * Disable loading data
+	 * @default false
+	 */
+	disableLoadData: boolean;
+
+	/**
 	 * The Status code that should be returned for a redirect
 	 */
 	statusCode: number | null;
@@ -40,6 +47,7 @@ export default class Request extends Route {
 		super(url, site, opts);
 
 		this.disableScroll = opts.disableScroll ?? false;
+		this.disableLoadData = opts.disableLoadData ?? false;
 		this.statusCode = opts.statusCode ?? null;
 		this._renderBarrier = new RenderBarrier();
 	}
