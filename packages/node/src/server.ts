@@ -215,6 +215,9 @@ export function requestToWebRequest(
 
 	// 4. Construct a new Request
 	return new Request(url, {
+		// we need this to be able to listen on the request body
+		// @ts-ignore
+		duplex: 'half',
 		method,
 		headers: nodeReq.headers as Record<string, string>,
 		body,
