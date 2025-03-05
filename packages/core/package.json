@@ -1,6 +1,6 @@
 {
 	"name": "crelte",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
@@ -59,6 +59,10 @@
 		"./cookies": {
 			"types": "./dist/cookies/index.d.ts",
 			"default": "./dist/cookies/index.js"
+		},
+		"./cookies/internal": {
+			"types": "./dist/cookies/internal.d.ts",
+			"default": "./dist/cookies/internal.js"
 		},
 		"./blocks": {
 			"types": "./dist/blocks/index.d.ts",

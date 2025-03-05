@@ -1,6 +1,10 @@
 import { Cookies, SetOptions } from './index.js';
 import { parseCookies, type SetCookie, setCookieToString } from './utils.js';
 
+/**
+ * ## Warning
+ * This is not stable and should only be used internally by crelte
+ */
 export default class ServerCookies implements Cookies {
 	requestCookies: Map<string, string>;
 	setCookies: Map<string, SetCookie>;
