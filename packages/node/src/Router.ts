@@ -89,7 +89,10 @@ export default class Router {
 
 		for (const handler of handlers) {
 			const res = await handler(crelte, req);
-			if (res) return res;
+			if (res) {
+				crelte._finishResponse(res);
+				return res;
+			}
 		}
 
 		return null;

@@ -1,4 +1,6 @@
 import { QueryOptions } from 'crelte';
+import { Cookies } from 'crelte/cookies';
+import { ServerCookies } from 'crelte/cookies/internal';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 
 export default class CrelteServer {
@@ -6,6 +8,7 @@ export default class CrelteServer {
 	private _graphQl: GraphQl;
 	private _req: Request | null;
 	private _params: Record<string, string>;
+	cookies: Cookies;
 
 	constructor(
 		env: Map<string, string>,
@@ -17,6 +20,8 @@ export default class CrelteServer {
 		this._graphQl = graphQl;
 		this._req = req;
 		this._params = params;
+		this.cookies = new ServerCookies();
+		this.cookies._init(req?.headers.get('Cookie') ?? '');
 	}
 
 	/**
@@ -68,5 +73,12 @@ export default class CrelteServer {
 			route: this._req ? new URL(this._req.url) : undefined,
 			...opts,
 		});
+	}
+
+	/** @hidden */
+	_finishResponse(resp: Response) {
+		(this.cookies as ServerCookies)
+			._getSetCookiesHeaders()
+			.forEach(cookie => resp.headers.append('Set-Cookie', cookie));
 	}
 }

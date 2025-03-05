@@ -117,9 +117,9 @@ export default class Router {
 		this._onRequest = new Listeners();
 
 		this._internal = {
-			onLoaded: () => { },
-			onNothingLoaded: () => { },
-			onLoad: () => { },
+			onLoaded: () => {},
+			onNothingLoaded: () => {},
+			onLoad: () => {},
 			domReady: req => this.inner.domReady(req),
 			initClient: () => this._initClient(),
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
@@ -356,7 +356,7 @@ export default class Router {
 		const prom: Promise<ServerInited> = new Promise(resolve => {
 			this._internal.onLoaded = (success, req, ready) => {
 				const props = ready();
-				this._internal.onLoaded = () => { };
+				this._internal.onLoaded = () => {};
 
 				resolve({
 					success,
