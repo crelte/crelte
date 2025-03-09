@@ -70,12 +70,15 @@ export type GraphQlOptions = {
  */
 export type GraphQlRequestOptions = {
 	path?: string;
-	// !! the route here might not contain a site even if the types
-	// says it does. CrelteServer does not know about site
+	/**
+	 * !! the route here might not contain a site even if the types
+	 * says it does. CrelteServer does not know about site
+	 */
 	route?: Route | URL;
 	ignoreStatusCode?: boolean;
 	previewToken?: string;
 	siteToken?: string;
+	bearerToken?: string;
 	caching?: boolean;
 	headers?: Record<string, string>;
 	// will be set by the request function
@@ -219,6 +222,9 @@ export default class GraphQl {
 
 		const headers = opts?.headers ?? {};
 		headers['Content-Type'] = 'application/json';
+
+		if (opts?.bearerToken)
+			headers['Authorization'] = 'Bearer ' + opts.bearerToken;
 
 		if (this.loggingRequests) {
 			console.log('query to ', url, variables, opts);
