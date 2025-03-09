@@ -27,6 +27,8 @@ export default class CrelteRequest extends Crelte {
 	 * provide one,
 	 */
 	static fromCrelte(inner: Crelte, req?: Route | Request): CrelteRequest {
+		if (inner instanceof CrelteRequest) return inner;
+
 		if (!req) {
 			req = inner.router.route.get();
 		}
@@ -42,6 +44,7 @@ export default class CrelteRequest extends Crelte {
 	 * @deprecated
 	 */
 	get route(): Request {
+		console.warn('CrelteRequest.route is deprecated, use .req instead');
 		return this.req;
 	}
 

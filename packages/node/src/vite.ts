@@ -144,7 +144,11 @@ export default function crelte(): Plugin {
 
 		load(id) {
 			if (id.endsWith('/src/serverNode.js')) {
-				return `import * as server from './server.js';${''}import createServer from 'crelte-node/node';${''}createServer(server, ${Date.now()});`;
+				return (
+					`import * as server from './server.js';` +
+					`import createServer from 'crelte-node/node';` +
+					`createServer(server, ${Date.now()});`
+				);
 			}
 		},
 

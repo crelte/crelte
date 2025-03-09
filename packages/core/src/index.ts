@@ -141,6 +141,13 @@ export function getCookies(): Cookies {
 	return getCrelte().cookies;
 }
 
+/**
+ * A function to make sure you have a CrelteRequest
+ */
+export function toCrelteRequest(crelte: Crelte | CrelteRequest): CrelteRequest {
+	return CrelteRequest.fromCrelte(crelte);
+}
+
 export function onRoute(fn: (route: Route, crelte: Crelte) => void) {
 	const crelte = getCrelte();
 	const rmListener = crelte.router.onRoute(route => {
