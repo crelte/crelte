@@ -34,6 +34,12 @@ export type MainData = {
 	/** Server data provided by crelte-node */
 	serverData: ServerData;
 
+	/**
+	 * Enable X-Craft-Site Header
+	 * @default false
+	 */
+	XCraftSiteHeader?: boolean;
+
 	// debug
 
 	/** Enable graphql query debugging */
@@ -80,6 +86,7 @@ export async function main(data: MainData): Promise<{
 	builder.ssrCache.set('ENDPOINT_URL', endpoint);
 	builder.ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
 	builder.setupGraphQl(endpoint, {
+		XCraftSiteHeader: data.XCraftSiteHeader,
 		debug: data.graphQlDebug,
 		debugTiming: data.debugTiming,
 	});

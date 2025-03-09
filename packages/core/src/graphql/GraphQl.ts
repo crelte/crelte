@@ -54,6 +54,7 @@ export class GraphQlError extends Error {
  * Options for the GraphQl class
  */
 export type GraphQlOptions = {
+	XCraftSiteHeader?: boolean;
 	debug?: boolean;
 	debugTiming?: boolean;
 };
@@ -96,6 +97,7 @@ export default class GraphQl {
 		[(resp: unknown) => void, (error: unknown) => void][]
 	>;
 
+	private XCraftSiteHeader: boolean;
 	private loggingRequests: boolean;
 	private loggingTiming: boolean;
 
@@ -111,6 +113,7 @@ export default class GraphQl {
 		this.ssrCache = ssrCache;
 		this.listeners = new Map();
 
+		this.XCraftSiteHeader = opts?.XCraftSiteHeader ?? false;
 		this.loggingRequests = opts?.debug ?? false;
 		this.loggingTiming = opts?.debugTiming ?? false;
 	}
@@ -141,6 +144,12 @@ export default class GraphQl {
 			// if the siteId is not set we set it as an argument for
 			// convenience
 			if ((opts.route as Route).site) {
+				if (this.XCraftSiteHeader && !opts.headers?.['X-Craft-Site']) {
+					opts.headers = opts.headers ?? {};
+					opts.headers['X-Craft-Site'] =
+						(opts.route as Route).site.id + '';
+				}
+
 				if (typeof variables.siteId === 'undefined') {
 					variables.siteId = (opts.route as Route).site.id;
 				}

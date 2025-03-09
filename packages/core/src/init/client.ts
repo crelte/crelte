@@ -38,6 +38,12 @@ export type MainData = {
 	 */
 	playIntro?: boolean;
 
+	/**
+	 * Enable X-Craft-Site Header
+	 * @default false
+	 */
+	XCraftSiteHeader?: boolean;
+
 	// debug
 
 	/** Enable graphql query debugging */
@@ -51,6 +57,7 @@ const mainDataDefault = {
 	preloadOnMouseOver: false,
 	viewTransition: false,
 	playIntro: false,
+	XCraftSiteHeader: false,
 
 	// will be passed down to ClientRenderer
 	graphQlDebug: false,
@@ -98,6 +105,7 @@ export function main(data: MainData) {
 	const builder = new CrelteBuilder();
 	const endpoint = builder.ssrCache.get('ENDPOINT_URL') as string;
 	builder.setupGraphQl(endpoint, {
+		XCraftSiteHeader: data.XCraftSiteHeader,
 		debug: data.graphQlDebug,
 		debugTiming: data.debugTiming,
 	});
