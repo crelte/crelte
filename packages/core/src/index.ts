@@ -154,6 +154,12 @@ export function toCrelteRequest(crelte: Crelte | CrelteRequest): CrelteRequest {
 	return CrelteRequest.fromCrelte(crelte);
 }
 
+/**
+ * Listen for route changes
+ *
+ * ## Note
+ * This only works during component initialisation.
+ */
 export function onRoute(fn: (route: Route, crelte: Crelte) => void) {
 	const crelte = getCrelte();
 	const rmListener = crelte.router.onRoute(route => {

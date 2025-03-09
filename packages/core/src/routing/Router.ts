@@ -329,11 +329,13 @@ export default class Router {
 	 *
 	 * This will trigger every time a new route is set
 	 * and is equivalent to router.route.subscribe(fn)
+	 * expect that it will not trigger instantly
 	 *
 	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route) => void): () => void {
-		return this.route.subscribe(r => r && fn(r));
+		let first = true;
+		return this.route.subscribe(r => (first ? (first = false) : fn(r!)));
 	}
 
 	/**
