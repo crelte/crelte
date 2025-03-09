@@ -17,40 +17,6 @@ export type MainData = {
 	entryQuery: GraphQlQuery;
 	/** The global query from queries/global.graphql */
 	globalQuery?: GraphQlQuery;
-
-	// options
-
-	/**
-	 * Preload pages on mouse over
-	 * @default false
-	 */
-	preloadOnMouseOver?: boolean;
-
-	/**
-	 * Use view transitions
-	 * @default false
-	 */
-	viewTransition?: boolean;
-
-	/**
-	 * Play the intro animation
-	 * @default false
-	 */
-	playIntro?: boolean;
-
-	/**
-	 * Enable X-Craft-Site Header
-	 * @default false
-	 */
-	XCraftSiteHeader?: boolean;
-
-	// debug
-
-	/** Enable graphql query debugging */
-	graphQlDebug?: boolean;
-
-	/** Enable request and render timing measurement */
-	debugTiming?: boolean;
 };
 
 const mainDataDefault = {
@@ -102,21 +68,15 @@ export function main(data: MainData) {
 
 	// construct Crelte
 
-	const builder = new CrelteBuilder();
+	const builder = new CrelteBuilder(data.app.config ?? {});
 	const endpoint = builder.ssrCache.get('ENDPOINT_URL') as string;
-	builder.setupGraphQl(endpoint, {
-		XCraftSiteHeader: data.XCraftSiteHeader,
-		debug: data.graphQlDebug,
-		debugTiming: data.debugTiming,
-	});
+	builder.setupGraphQl(endpoint);
 
 	// on the client the cookies are always coming from document.cookie
 	builder.setupCookies('');
 
 	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];
-	builder.setupRouter(csites, {
-		preloadOnMouseOver: data.preloadOnMouseOver,
-	});
+	builder.setupRouter(csites);
 
 	const crelte = builder.build();
 
@@ -154,7 +114,7 @@ export function main(data: MainData) {
 				props,
 				hydrate: true,
 				context: crelte._getContext(),
-				intro: data.playIntro,
+				intro: builder.config.playIntro,
 			});
 		} else {
 			appInstance.$set(props);
@@ -183,7 +143,7 @@ export function main(data: MainData) {
 
 		const cr = new CrelteRequest(crelte, req);
 
-		const startTime = data.debugTiming ? Date.now() : null;
+		const startTime = builder.config.debugTiming ? Date.now() : null;
 		let render = async () => {
 			// we should trigger the route update here
 			pluginsBeforeRender(cr);
@@ -203,7 +163,7 @@ export function main(data: MainData) {
 
 		// render with view Transition if enabled and not in hydration
 		if (
-			data.viewTransition &&
+			builder.config.viewTransition &&
 			appInstance &&
 			(document as any).startViewTransition
 		) {

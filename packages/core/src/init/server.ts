@@ -33,20 +33,6 @@ export type MainData = {
 
 	/** Server data provided by crelte-node */
 	serverData: ServerData;
-
-	/**
-	 * Enable X-Craft-Site Header
-	 * @default false
-	 */
-	XCraftSiteHeader?: boolean;
-
-	// debug
-
-	/** Enable graphql query debugging */
-	graphQlDebug?: boolean;
-
-	/** Enable request and render timing measurement */
-	debugTiming?: boolean;
 };
 
 /**
@@ -75,7 +61,7 @@ export async function main(data: MainData): Promise<{
 	html?: string;
 	setCookies?: string[];
 }> {
-	const builder = new CrelteBuilder();
+	const builder = new CrelteBuilder(data.app.config ?? {});
 
 	// setup viteEnv
 	data.serverData.viteEnv.forEach((v, k) => {
@@ -85,11 +71,7 @@ export async function main(data: MainData): Promise<{
 	const endpoint = data.serverData.endpoint;
 	builder.ssrCache.set('ENDPOINT_URL', endpoint);
 	builder.ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
-	builder.setupGraphQl(endpoint, {
-		XCraftSiteHeader: data.XCraftSiteHeader,
-		debug: data.graphQlDebug,
-		debugTiming: data.debugTiming,
-	});
+	builder.setupGraphQl(endpoint);
 
 	const cookies = data.serverData.cookies ?? '';
 	builder.setupCookies(cookies);

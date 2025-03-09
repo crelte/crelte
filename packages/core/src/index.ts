@@ -4,7 +4,7 @@ import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
-import Crelte, { type QueryOptions } from './Crelte.js';
+import Crelte, { type QueryOptions, type Config } from './Crelte.js';
 import CrelteRequest from './CrelteRequest.js';
 import type { Global } from './loadData/Globals.js';
 import type { Cookies } from './cookies/index.js';
@@ -19,6 +19,7 @@ import {
 export {
 	Crelte,
 	CrelteRequest,
+	type Config,
 	type QueryOptions,
 	type LoadData,
 	type LoadDataFn,

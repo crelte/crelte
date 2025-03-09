@@ -1,15 +1,65 @@
 import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
-import GraphQl, { GraphQlOptions, GraphQlQuery } from './graphql/GraphQl.js';
+import GraphQl, { GraphQlQuery } from './graphql/GraphQl.js';
 import Globals, { Global } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
-import Router, { RouterOptions } from './routing/Router.js';
+import Router from './routing/Router.js';
 import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
 
+export type Config = {
+	/**
+	 * Preload pages on mouse over
+	 * @default false
+	 */
+	preloadOnMouseOver?: boolean;
+
+	/**
+	 * Use view transitions
+	 * @default false
+	 */
+	viewTransition?: boolean;
+
+	/**
+	 * Play the intro animation
+	 * @default false
+	 */
+	playIntro?: boolean;
+
+	/**
+	 * Enable X-Craft-Site Header
+	 * @default false
+	 */
+	XCraftSiteHeader?: boolean;
+
+	// debug
+
+	/**
+	 * Enable graphql query debugging
+	 * @default false
+	 */
+	debugGraphQl?: boolean;
+
+	/**
+	 * Enable request and render timing measurement
+	 * @default false
+	 */
+	debugTiming?: boolean;
+};
+
+const defaultConfig: Config = {
+	preloadOnMouseOver: false,
+	viewTransition: false,
+	playIntro: false,
+	XCraftSiteHeader: false,
+	debugGraphQl: false,
+	debugTiming: false,
+};
+
 export class CrelteBuilder {
+	config: Config;
 	ssrCache: SsrCache;
 	plugins: Plugins;
 	events: Events;
@@ -18,7 +68,9 @@ export class CrelteBuilder {
 	globals: Globals;
 	cookies: Cookies;
 
-	constructor() {
+	constructor(config: Config) {
+		this.config = { ...defaultConfig, ...config };
+
 		this.ssrCache = new SsrCache();
 		this.plugins = new Plugins();
 		this.events = new Events();
@@ -29,12 +81,19 @@ export class CrelteBuilder {
 			: new ClientCookies();
 	}
 
-	setupGraphQl(endpoint: string, opts: GraphQlOptions = {}) {
-		this.graphQl = new GraphQl(endpoint, this.ssrCache, opts);
+	setupGraphQl(endpoint: string) {
+		this.graphQl = new GraphQl(endpoint, this.ssrCache, {
+			XCraftSiteHeader: this.config.XCraftSiteHeader,
+			debug: this.config.debugGraphQl,
+			debugTiming: this.config.debugTiming,
+		});
 	}
 
-	setupRouter(sites: SiteFromGraphQl[], opts: RouterOptions = {}) {
-		this.router = new Router(sites, opts);
+	setupRouter(sites: SiteFromGraphQl[]) {
+		this.router = new Router(sites, {
+			preloadOnMouseOver: this.config.preloadOnMouseOver,
+			debugTiming: this.config.debugTiming,
+		});
 	}
 
 	setupCookies(cookies: string) {
