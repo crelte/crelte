@@ -6,7 +6,7 @@ import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
 import Crelte, { type QueryOptions } from './Crelte.js';
 import CrelteRequest from './CrelteRequest.js';
-import type { Global, GlobalData } from './loadData/Globals.js';
+import type { Global } from './loadData/Globals.js';
 import type { Cookies } from './cookies/index.js';
 import type { Readable } from 'crelte-std/stores';
 import {
@@ -127,10 +127,8 @@ export function getLoadingProgress(): Readable<number> {
  * ## Note
  * This only works during component initialisation.
  */
-export function getGlobal<T extends GlobalData>(
-	name: string,
-): Global<T> | null {
-	return getCrelte().globals.get(name) ?? null;
+export function getGlobal<T = any>(name: string): Global<T> | null {
+	return getCrelte().globals.getStore(name);
 }
 
 /**

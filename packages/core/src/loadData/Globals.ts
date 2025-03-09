@@ -4,25 +4,30 @@ const emergency = getGlobal('emergency');
 
 // returns the data based on the current site (no store)
 cr.getGlobal('emergency')
+
 */
 
 import { Writable } from 'crelte-std/stores';
 
-export type GlobalWaiters = [(g: Global<any> | null) => void];
+export type GlobalWaiters<T> = [(g: T | null) => void];
 
 export default class Globals {
 	// while the globals are not loaded if somebody calls
-	// getOrWait then we need to store the waiters
-	private waiters: Map<string, GlobalWaiters>;
-	private entries: Map<string, Global<any>>;
-	private loaded: boolean;
-	private prevSiteId: number | null;
+	// getAsync then we need to store the waiters
+	private waiters: Map<number, Map<string, GlobalWaiters<any>>>;
+	private data: Map<number, Map<string, any>>;
+	private stores: Map<string, Global<any>>;
+	private currentSiteId: number | null;
 
 	constructor() {
 		this.waiters = new Map();
-		this.entries = new Map();
-		this.loaded = false;
-		this.prevSiteId = null;
+		this.data = new Map();
+		this.stores = new Map();
+		this.currentSiteId = null;
+	}
+
+	get<T = any>(name: string, siteId: number): T | null {
+		return this.data.get(siteId)?.get(name) ?? null;
 	}
 
 	/**
@@ -31,10 +36,10 @@ export default class Globals {
 	 * ## Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * always return null. In that context you should use
-	 * `.getGlobalAsync`
+	 * `.getAsync`
 	 */
-	get<T extends GlobalData>(name: string): Global<T> | null {
-		return this.entries.get(name) ?? null;
+	getStore<T = any>(name: string): Global<T> | null {
+		return this.stores.get(name) ?? null;
 	}
 
 	/**
@@ -44,15 +49,20 @@ export default class Globals {
 	 * This is only useful in loadGlobalData in all other cases
 	 * you can use `.getGlobal` which does return a Promise
 	 */
-	getAsync<T extends GlobalData>(
-		name: string,
-	): Promise<Global<T> | null> | Global<T> | null {
-		if (this.loaded) return this.get(name);
+	getAsync<T = any>(name: string, siteId: number): Promise<T | null> {
+		if (this._wasLoaded(siteId))
+			return Promise.resolve(this.get(name, siteId));
 
-		let waiter = this.waiters.get(name);
+		let listeners = this.waiters.get(siteId);
+		if (!listeners) {
+			listeners = new Map();
+			this.waiters.set(siteId, listeners);
+		}
+
+		let waiter = listeners.get(name);
 		if (!waiter) {
 			waiter = [] as any;
-			this.waiters.set(name, waiter!);
+			listeners.set(name, waiter!);
 		}
 
 		return new Promise(resolve => {
@@ -61,88 +71,73 @@ export default class Globals {
 	}
 
 	/** @hidden */
-	_wasLoaded(): boolean {
-		return this.loaded;
+	_wasLoaded(siteId: number): boolean {
+		return this.data.has(siteId);
 	}
 
 	// data is the data from the global graphql
 	// so it contains some keys and data which should be parsed
 	// and created a store for each key
+	// do not call this if _wasLoaded returns true with the same siteId
 	/** @hidden */
 	_setData(siteId: number, data: any) {
-		const wasLoaded = this.loaded;
-		this.loaded = true;
+		const map = new Map(Object.entries(data));
+		this.data.set(siteId, map);
 
-		for (const [key, value] of Object.entries(data)) {
-			this.entries.set(key, new Global(key, value as any, siteId));
-		}
-
-		if (!wasLoaded) {
-			this.waiters.forEach((waiters, key) => {
-				waiters.forEach(waiter => waiter(this.get(key)));
-			});
-			this.waiters.clear();
-		}
-	}
-
-	/** @hidden */
-	_globalsBySite(siteId: number): Map<string, any> {
-		const map = new Map();
-
-		for (const [key, global] of this.entries) {
-			map.set(key, global.bySiteId(siteId));
-		}
-
-		return map;
+		this.waiters.get(siteId)?.forEach((waiters, key) => {
+			waiters.forEach(waiter => waiter(map.get(key)));
+		});
+		this.waiters.delete(siteId);
 	}
 
 	/** @hidden */
 	_updateSiteId(siteId: number) {
-		// todo we should only trigger
-		if (this.prevSiteId === siteId) return;
+		if (this.currentSiteId === siteId) return;
 
-		this.entries.forEach(global => global._updateSiteId(siteId));
+		const data = this.data.get(siteId) ?? new Map();
+
+		// we set all global data to null via setSilent
+		// then set them all with the new data
+		// and update all of them
+
+		this.stores.forEach(global => global._setSilent(null));
+
+		data.forEach((value, key) => {
+			let global = this.stores.get(key);
+			if (global) {
+				global._setSilent(value);
+			} else {
+				global = new Global(key, value);
+				this.stores.set(key, global);
+			}
+		});
+
+		this.stores.forEach(global => global._notify());
 	}
-}
-
-/**
- * A globalSet Data
- *
- * Each global query should contain the siteId
- */
-export interface GlobalData {
-	siteId?: number;
-	[key: string]: any;
 }
 
 /**
  * A globalSet store
  */
-export class Global<T extends GlobalData> {
+export class Global<T = any> {
+	/** @hidden */
 	private inner: Writable<T>;
-	/// if languages is null this means we always have the same data
-	private languages: T[] | null;
 
-	constructor(name: string, data: T[] | T, siteId: number) {
-		this.languages = null;
-
-		let inner: T;
-		if (Array.isArray(data)) {
-			// make sure the data contains an object with the property
-			// siteId
-			this.languages = data;
-			inner = data.find(d => d.siteId === siteId)!;
-
-			if (!inner?.siteId) {
-				throw new Error(
-					`The global query ${name} does not contain the required siteId property`,
-				);
-			}
-		} else {
-			inner = data;
+	constructor(name: string, data: T) {
+		// todo remove in v1.0
+		// In v0.2, we queried the global data for all sites.
+		// We now check if the siteId is present and notify the user to remove it.
+		if (
+			typeof (data as any).siteId === 'number' ||
+			(Array.isArray(data) && typeof data[0]?.siteId === 'number')
+		) {
+			throw new Error(
+				`The global query ${name} should not include the siteId` +
+					` property. Instead, use the siteId as a parameter.`,
+			);
 		}
 
-		this.inner = new Writable(inner);
+		this.inner = new Writable(data);
 	}
 
 	/**
@@ -162,25 +157,13 @@ export class Global<T extends GlobalData> {
 		return this.inner.get();
 	}
 
-	/**
-	 * Get the value based on the siteId
-	 *
-	 * ## Note
-	 * If you pass a siteId which comes from craft
-	 * you will never receive null
-	 */
-	bySiteId(siteId: number): T | null {
-		if (this.languages)
-			return this.languages.find(d => d.siteId === siteId) ?? null;
-
-		return this.inner.get();
+	/** @hidden */
+	_setSilent(value: T) {
+		this.inner.setSilent(value);
 	}
 
 	/** @hidden */
-	_updateSiteId(siteId: number) {
-		if (!this.languages) return;
-
-		const inner = this.languages.find(d => d.siteId === siteId);
-		this.inner.set(inner!);
+	_notify() {
+		this.inner.notify();
 	}
 }

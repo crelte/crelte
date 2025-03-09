@@ -3,7 +3,6 @@ import { GraphQlQuery } from './graphql/GraphQl.js';
 import Site from './routing/Site.js';
 import Request from './routing/Request.js';
 import Route from './routing/Route.js';
-import { GlobalData } from './loadData/Globals.js';
 
 export default class CrelteRequest extends Crelte {
 	/**
@@ -11,13 +10,10 @@ export default class CrelteRequest extends Crelte {
 	 */
 	req: Request;
 
-	private innerGlobals: Map<string, any>;
-
 	constructor(inner: Crelte, req: Request) {
 		super(inner);
 
 		this.req = req;
-		this.innerGlobals = new Map();
 	}
 
 	/**
@@ -69,8 +65,8 @@ export default class CrelteRequest extends Crelte {
 	 * always return null. In that context you should use
 	 * `.getGlobalAsync`
 	 */
-	getGlobal<T extends GlobalData>(name: string): T | null {
-		return this.innerGlobals.get(name) ?? null;
+	getGlobal<T = any>(name: string): T | null {
+		return this.globals.get(name, this.site.id);
 	}
 
 	/**
@@ -80,16 +76,8 @@ export default class CrelteRequest extends Crelte {
 	 * This is only useful in loadGlobalData in all other cases
 	 * you can use `.getGlobal` which does return a Promise
 	 */
-	async getGlobalAsync<T extends GlobalData>(
-		name: string,
-	): Promise<T | null> {
-		const global = this.innerGlobals.get(name);
-		if (global) return global;
-
-		const r = await this.globals.getAsync<T>(name);
-		if (!r) return null;
-
-		return r.bySiteId(this.site.id);
+	async getGlobalAsync<T = any>(name: string): Promise<T | null> {
+		return this.globals.getAsync(name, this.site.id);
 	}
 
 	/**
@@ -110,10 +98,5 @@ export default class CrelteRequest extends Crelte {
 			route: this.req,
 			...opts,
 		});
-	}
-
-	/** @hidden */
-	_globalDataLoaded() {
-		this.innerGlobals = this.globals._globalsBySite(this.site.id);
 	}
 }

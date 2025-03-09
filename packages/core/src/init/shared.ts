@@ -79,27 +79,29 @@ export async function loadFn<D, E, T>(
 	}
 
 	let globalProm: Promise<any> | null = null;
-	if (globalQuery && !cr.globals._wasLoaded()) {
+	if (globalQuery && !cr.globals._wasLoaded(cr.site.id)) {
 		globalProm = (async () => {
-			const res = await cr.query(globalQuery);
+			const res = await cr.query(globalQuery, {
+				siteId: cr.site.id,
+			});
 			// we need to do this sorcery here and can't wait until all
 			// globals functions are done, because some global function
 			// might want to use globals, and for that the function
-			// getOrWait exists on Globals
+			// getAsync exists on Globals
 			cr.globals._setData(cr.site.id, res);
 			return res;
 		})();
 	}
 
 	let pageProm = null;
-	if (cr.req.site) {
+	if (cr.req.siteMatches()) {
 		let uri = decodeURI(cr.req.uri);
 		if (uri.startsWith('/')) uri = uri.substring(1);
 		if (uri === '' || uri === '/') uri = '__home__';
 
 		pageProm = cr.query(entryQuery, {
 			uri,
-			siteId: cr.req.site.id,
+			siteId: cr.site.id,
 		});
 	}
 
@@ -117,14 +119,11 @@ export async function loadFn<D, E, T>(
 
 	if (global) {
 		cr.globals._setData(cr.site.id, global);
-	} else if (!cr.globals._wasLoaded()) {
+	} else if (!cr.globals._wasLoaded(cr.site.id)) {
 		// we need to set the global data to an empty object
 		// so any waiters get's triggered
 		cr.globals._setData(cr.site.id, {});
 	}
-
-	// allow cr to get the global data
-	cr._globalDataLoaded();
 
 	const entry = getEntry(page);
 

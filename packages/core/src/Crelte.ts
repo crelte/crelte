@@ -71,8 +71,11 @@ export type QueryOptions = {
 
 /**
  * This is the main class of Crelte and can be accessed
- * in component initialisation via `getCrelte()` and is the
- * first parameter in `loadData`
+ * in component initialisation via `getCrelte()`
+ *
+ * Crelte is stateless, which means it is not associated with
+ * a specific route or site. If you need a statefull crelte
+ * use the function `toCrelteRequest`
  */
 export default class Crelte {
 	protected _ssrCache: SsrCache;
@@ -172,8 +175,8 @@ export default class Crelte {
 	 * always return null. In that context you should use
 	 * `CrelteRequest.getGlobalAsync`
 	 */
-	getGlobal<T extends GlobalData>(name: string): Global<T> | null {
-		return this.globals.get(name) ?? null;
+	getGlobalStore<T = any>(name: string): Global<T> | null {
+		return this.globals.getStore(name) ?? null;
 	}
 
 	/**
