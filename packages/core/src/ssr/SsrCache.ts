@@ -1,7 +1,12 @@
 export async function calcKey(data: any) {
+	const json = JSON.stringify(data);
+	// this should only happen in an unsecure context
+	// specifically in the craft preview locally
+	if (!crypto?.subtle) return json;
+
 	// Convert the string data to an ArrayBuffer
 	const encoder = new TextEncoder();
-	const dataBuffer = encoder.encode(JSON.stringify(data));
+	const dataBuffer = encoder.encode(json);
 
 	// Use the Web Crypto API to hash the data with SHA-1
 	const hashBuffer = await crypto.subtle.digest('SHA-1', dataBuffer);
