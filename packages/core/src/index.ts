@@ -1,5 +1,6 @@
 import { getContext, onDestroy } from 'svelte';
 import type Route from './routing/Route.js';
+import type Request from './routing/Request.js';
 import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
@@ -151,8 +152,11 @@ export function getCookies(): Cookies {
 /**
  * A function to make sure you have a CrelteRequest
  */
-export function toCrelteRequest(crelte: Crelte | CrelteRequest): CrelteRequest {
-	return CrelteRequest.fromCrelte(crelte);
+export function toCrelteRequest(
+	crelte: Crelte | CrelteRequest,
+	req?: Route | Request,
+): CrelteRequest {
+	return CrelteRequest.fromCrelte(crelte, req);
 }
 
 /**

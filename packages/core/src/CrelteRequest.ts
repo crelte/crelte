@@ -26,8 +26,11 @@ export default class CrelteRequest extends Crelte {
 	 * If you provide a route it must contain a site or you must
 	 * provide one,
 	 */
-	static fromCrelte(inner: Crelte, req?: Route | Request): CrelteRequest {
-		if (inner instanceof CrelteRequest) return inner;
+	static fromCrelte(
+		inner: Crelte | CrelteRequest,
+		req?: Route | Request,
+	): CrelteRequest {
+		if (inner instanceof CrelteRequest && !req) return inner;
 
 		if (!req) {
 			req = inner.router.route.get() ?? undefined;
