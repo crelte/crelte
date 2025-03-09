@@ -150,6 +150,8 @@ export default class InnerRouter {
 				// exists
 				const site = this.route?.site ?? this.defaultSite();
 				target = new URL(site.uri + target, site.url);
+			} else if (!target) {
+				throw new Error('the url is not allowed to be empty');
 			} else {
 				target = new URL(target);
 			}
@@ -242,7 +244,11 @@ export default class InnerRouter {
 				if (currentMouseOver && link === currentMouseOver) return;
 				if (link && link.target.toLowerCase() === '_blank') return;
 
-				if (link && !link.hasAttribute('data-no-preload')) {
+				if (
+					link &&
+					!link.hasAttribute('data-no-preload') &&
+					link.href
+				) {
 					this.preload(link.href);
 				}
 
