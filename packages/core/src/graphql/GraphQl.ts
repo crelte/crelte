@@ -132,14 +132,18 @@ export default class GraphQl {
 			const search =
 				(opts.route as URL).searchParams ?? opts.route.search;
 
-			// todo should variables contain siteId
-			// or maybe gql should detect loadData and add it there
-			// it might make export const loadData = query; easier
-
 			if (search.has('token') && search.get('x-craft-live-preview')) {
 				opts.previewToken = search.get('token')!;
 			} else if (search.has('siteToken')) {
 				opts.siteToken = search.get('siteToken')!;
+			}
+
+			// if the siteId is not set we set it as an argument for
+			// convenience
+			if ((opts.route as Route).site) {
+				if (typeof variables.siteId === 'undefined') {
+					variables.siteId = (opts.route as Route).site.id;
+				}
 			}
 		}
 
