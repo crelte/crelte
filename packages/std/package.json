@@ -1,6 +1,6 @@
 {
 	"name": "crelte-std",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {

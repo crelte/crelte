@@ -1,4 +1,4 @@
-import { Cloneable } from '../index.js';
+import { CloneableOrPrimitive } from '../index.js';
 import { Listeners } from '../sync/index.js';
 import Readable from './Readable.js';
 import Readclone from './Readclone.js';
@@ -65,7 +65,9 @@ export default class Writable<T> {
 		return new Readable(this);
 	}
 
-	readclone(this: Writable<T & Cloneable>): Readclone<T & Cloneable> {
+	readclone<U extends T & CloneableOrPrimitive>(
+		this: Writable<U>,
+	): Readclone<U> {
 		return new Readclone(this);
 	}
 }

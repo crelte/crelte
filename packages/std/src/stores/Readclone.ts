@@ -1,11 +1,13 @@
-import { Cloneable } from '../index.js';
+import { clone, CloneableOrPrimitive } from '../index.js';
 import Readable from './Readable.js';
 import type Writable from './Writable.js';
 
 /**
  * A svelte store
  */
-export default class Readclone<T extends Cloneable> extends Readable<T> {
+export default class Readclone<
+	T extends CloneableOrPrimitive,
+> extends Readable<T> {
 	/**
 	 * Creates a new Writable
 	 *
@@ -22,13 +24,13 @@ export default class Readclone<T extends Cloneable> extends Readable<T> {
 	 * @return a function which should be called to unsubscribe
 	 */
 	subscribe(fn: (val: T) => void): () => void {
-		return super.subscribe(t => fn(t.clone()));
+		return super.subscribe(t => fn(clone(t)));
 	}
 
 	/**
 	 * Get the current value
 	 */
 	get(): T {
-		return super.get().clone();
+		return clone(super.get());
 	}
 }
