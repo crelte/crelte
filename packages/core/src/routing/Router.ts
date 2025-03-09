@@ -258,6 +258,7 @@ export default class Router {
 	 * @deprecated use push instead
 	 */
 	pushState(route: Route | Request) {
+		console.warn('pushState is deprecated, use push instead');
 		this.push(route);
 	}
 
@@ -300,6 +301,7 @@ export default class Router {
 	 * @deprecated use replace instead
 	 */
 	replaceState(route: Route | Request) {
+		console.warn('replaceState is deprecated, use replace instead');
 		this.replace(route);
 	}
 
@@ -347,6 +349,20 @@ export default class Router {
 	 */
 	onRequest(fn: (req: Request) => void): () => void {
 		return this._onRequest.add(fn);
+	}
+
+	/**
+	 * Resolve a url or Route and convert it to a Request
+	 *
+	 * @param target
+	 * @param opts, any option present will override the value in target
+	 * @return Returns null if the url does not match our host (the protocol get's ignored)
+	 */
+	targetToRequest(
+		target: string | URL | Route | Request,
+		opts: RequestOptions = {},
+	): Request {
+		return this.inner.targetToRequest(target, opts);
 	}
 
 	private setNewRoute(route: Route) {

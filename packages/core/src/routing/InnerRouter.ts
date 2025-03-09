@@ -133,6 +133,7 @@ export default class InnerRouter {
 		return this.sites.find(s => s.id === id) ?? null;
 	}
 
+	// keep this doc in sync with Router.targetToRequest
 	/**
 	 * Resolve a url or Route and convert it to a Request
 	 *
