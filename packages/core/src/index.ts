@@ -73,7 +73,10 @@ export function getGraphQl(): GraphQl {
  * This only works during component initialisation.
  */
 export function getRoute(): Readable<Route> {
-	return getRouter().route;
+	// the route will never be null because it is only null in the
+	// first loadData call and that happens before any component
+	// initialisation
+	return getRouter().route as Readable<Route>;
 }
 
 /**
@@ -83,7 +86,10 @@ export function getRoute(): Readable<Route> {
  * This only works during component initialisation.
  */
 export function getSite(): Readable<Site> {
-	return getRouter().site;
+	// the site will never be null because it is only null in the
+	// first loadData call and that happens before any component
+	// initialisation
+	return getRouter().site as Readable<Site>;
 }
 
 /**

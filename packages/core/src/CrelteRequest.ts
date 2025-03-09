@@ -30,7 +30,9 @@ export default class CrelteRequest extends Crelte {
 		if (inner instanceof CrelteRequest) return inner;
 
 		if (!req) {
-			req = inner.router.route.get();
+			req = inner.router.route.get() ?? undefined;
+			// this will only occur in the first loadData call
+			if (!req) throw new Error('router does not contain a route');
 		}
 
 		return new CrelteRequest(

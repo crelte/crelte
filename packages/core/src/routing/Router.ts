@@ -67,13 +67,19 @@ type ServerInited = {
 export default class Router {
 	/**
 	 * The current route
+	 *
+	 * ## Note
+	 * Will always contain a route expect in the first loadData call
 	 */
-	private _route: Writable<Route>;
+	private _route: Writable<Route | null>;
 
 	/**
 	 * The current site
+	 *
+	 * ## Note
+	 * Will always contain a site expect in the first loadData call
 	 */
-	private _site: Writable<Site>;
+	private _site: Writable<Site | null>;
 
 	// the next request, just here to destroy it
 	private _request: Request | null;
@@ -139,15 +145,25 @@ export default class Router {
 
 	/**
 	 * returns a store with the current route
+	 *
+	 * ## Note
+	 * Will always contain a route expect in the first loadData call
+	 *
+	 * Consider to use CrelteRequest instead
 	 */
-	get route(): Readable<Route> {
+	get route(): Readable<Route | null> {
 		return this._route.readclone();
 	}
 
 	/**
 	 * returns a store with the current site
+	 *
+	 * ## Note
+	 * Will always contain a site expect in the first loadData call
+	 *
+	 * Consider to use CrelteRequest instead
 	 */
-	get site(): Readable<Site> {
+	get site(): Readable<Site | null> {
 		return this._site.readonly();
 	}
 
@@ -317,7 +333,7 @@ export default class Router {
 	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route) => void): () => void {
-		return this.route.subscribe(fn);
+		return this.route.subscribe(r => r && fn(r));
 	}
 
 	/**

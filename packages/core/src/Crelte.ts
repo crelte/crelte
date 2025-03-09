@@ -199,7 +199,7 @@ export default class Crelte {
 	): Promise<unknown> {
 		// this function is added as convenience
 		return this.graphQl.query(query, variables, {
-			route: this.router.route.get(),
+			route: this.router.route.get() ?? undefined,
 			...opts,
 		});
 	}
