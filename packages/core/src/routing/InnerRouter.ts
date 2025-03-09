@@ -288,7 +288,7 @@ export default class InnerRouter {
 		}
 
 		window.addEventListener('popstate', async e => {
-			if (!('route' in e.state)) return;
+			if (!e.state?.route) return;
 
 			const req = this.targetToRequest(window.location.href);
 			req._fillFromState(e.state);
