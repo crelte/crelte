@@ -240,9 +240,15 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 
 		let thrownError: any = null;
 
-		const serverMod = await vite.ssrLoadModule('./src/server.js', {
-			fixStacktrace: true,
-		});
+		let serverMod;
+		try {
+			serverMod = await vite.ssrLoadModule('./src/server.js', {
+				fixStacktrace: true,
+			});
+		} catch (e: any) {
+			next(e);
+			return;
+		}
 
 		if (typeof serverMod.routes === 'function') {
 			// check if a route matches
