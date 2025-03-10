@@ -184,7 +184,8 @@ export default class Route {
 	}
 
 	/**
-	 * Sets the search param or removes it if the value is null or undefined
+	 * Sets the search param or removes it if the value is null, undefined or an
+	 * empty string
 	 *
 	 * ## Example
 	 * ```
@@ -197,7 +198,12 @@ export default class Route {
 	 * ```
 	 */
 	setSearchParam(key: string, value?: string | number | null) {
-		if (typeof value !== 'undefined' && value !== null) {
+		const deleteValue =
+			typeof value === 'undefined' ||
+			value === null ||
+			(typeof value === 'string' && value === '');
+
+		if (!deleteValue) {
 			this.search.set(key, value as string);
 		} else {
 			this.search.delete(key);
