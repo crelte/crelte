@@ -2,9 +2,12 @@ import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
 import GraphQl, { GraphQlQuery } from './graphql/GraphQl.js';
+import { CrelteRequest } from './index.js';
 import Globals, { Global } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
+import type Route from './routing/Route.js';
+import type Request from './routing/Request.js';
 import Router from './routing/Router.js';
 import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
@@ -241,6 +244,18 @@ export default class Crelte {
 	 */
 	getGlobalStore<T = any>(name: string): Global<T> | null {
 		return this.globals.getStore(name) ?? null;
+	}
+
+	/**
+	 * returns a new CrelteRequest instance either with the current
+	 * route or a provided one
+	 *
+	 * ## Note
+	 * This is useful if you want to create a stateful crelte
+	 * to use in loadData context
+	 */
+	toRequest(req?: Route | Request): CrelteRequest {
+		return CrelteRequest.fromCrelte(this, req);
 	}
 
 	/**

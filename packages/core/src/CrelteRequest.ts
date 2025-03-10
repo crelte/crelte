@@ -21,10 +21,6 @@ export default class CrelteRequest extends Crelte {
 	 *
 	 * If you don't provide a route or request the current route
 	 * will be used.
-	 *
-	 * ## Note
-	 * If you provide a route it must contain a site or you must
-	 * provide one,
 	 */
 	static fromCrelte(
 		inner: Crelte | CrelteRequest,

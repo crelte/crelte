@@ -150,16 +150,6 @@ export function getCookies(): Cookies {
 }
 
 /**
- * A function to make sure you have a CrelteRequest
- */
-export function toCrelteRequest(
-	crelte: Crelte | CrelteRequest,
-	req?: Route | Request,
-): CrelteRequest {
-	return CrelteRequest.fromCrelte(crelte, req);
-}
-
-/**
  * Listen for route changes
  *
  * ## Note
