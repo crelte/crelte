@@ -236,8 +236,6 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
-		// todo at this point we should check the routes for overrides
-
 		let thrownError: any = null;
 
 		let serverMod;
