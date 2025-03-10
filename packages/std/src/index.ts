@@ -12,6 +12,9 @@ export interface Cloneable {
 	clone(): this;
 }
 
+/**
+ * A type that represents a value that can be cloned.
+ */
 export type CloneableOrPrimitive =
 	| Cloneable
 	| string
