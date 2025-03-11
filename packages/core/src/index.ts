@@ -1,6 +1,5 @@
 import { getContext, onDestroy } from 'svelte';
 import type Route from './routing/Route.js';
-import type Request from './routing/Request.js';
 import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
