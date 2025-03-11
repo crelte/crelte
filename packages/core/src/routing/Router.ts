@@ -221,7 +221,7 @@ export default class Router {
 	 * This pushes the new route without triggering a new pageload
 	 *
 	 * You can use this when using pagination for example change the route object
-	 * (search argument) and then call pushState
+	 * (search argument) and then call push
 	 *
 	 * ## Note
 	 * This will always set the origin to 'push'
@@ -237,7 +237,7 @@ export default class Router {
 	 * const page = 1;
 	 * const route = router.route.get();
 	 * route.setSearchParam('page', page > 0 ? page : null);
-	 * router.pushState(route);
+	 * router.push(route);
 	 * ```
 	 */
 	push(route: Route | Request, opts: RequestOptions = {}) {
@@ -250,8 +250,6 @@ export default class Router {
 			disableLoadData: opts.disableLoadData ?? true,
 		});
 		this.inner.push(req);
-		this.destroyRequest();
-		this.setNewRoute(route);
 	}
 
 	/**
@@ -293,8 +291,6 @@ export default class Router {
 			disableLoadData: opts.disableLoadData ?? true,
 		});
 		this.inner.replace(req);
-		this.destroyRequest();
-		this.setNewRoute(req);
 	}
 
 	/**
@@ -401,12 +397,12 @@ export default class Router {
 			};
 		});
 
-		const route = this.inner.targetToRequest(url);
-		route.origin = 'init';
+		const req = this.inner.targetToRequest(url);
+		req.origin = 'init';
 
 		// let's see if the url matches any route and site
 		// if not let's redirect to the site which matches the acceptLang
-		if (!route.siteMatches()) {
+		if (!req.siteMatches()) {
 			const site = this.inner.siteByAcceptLang(acceptLang);
 
 			return {
@@ -417,14 +413,15 @@ export default class Router {
 			};
 		}
 
-		this.inner.setRoute(route);
+		this.inner.route = req.toRoute();
+		this.inner.onRoute(req, () => {});
 
 		const resp = await prom;
 
 		const hist = this.inner.history as ServerHistory;
 		if (hist.url || hist.req) {
 			const nReq = this.inner.targetToRequest(hist.req ?? hist.url!);
-			if (!route.eq(nReq)) {
+			if (!req.eq(nReq)) {
 				return {
 					success: true,
 					redirect: true,

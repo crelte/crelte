@@ -68,7 +68,10 @@ export default class InnerRouter {
 		req.origin = 'init';
 		window.history.scrollRestoration = 'manual';
 
-		this.setRoute(req);
+		// we set it now instead of waiting for the onRoute call
+		// because the window.history is already set
+		this.route = req.toRoute();
+		this.onRoute(req, () => {});
 	}
 
 	/**
@@ -301,7 +304,10 @@ export default class InnerRouter {
 			req._fillFromState(e.state);
 			req.origin = 'pop';
 
-			this.setRoute(req);
+			// we set it now instead of waiting for the onRoute call
+			// because the window.history was already modified
+			this.route = req.toRoute();
+			this.onRoute(req, () => {});
 		});
 	}
 
@@ -350,22 +356,13 @@ export default class InnerRouter {
 
 		req.index = (current?.index ?? 0) + 1;
 		this.onRoute(req, () => {
-			this.push(req, true);
+			const url = req.url;
+			this.history.pushState(
+				req._toState(),
+				url.pathname + url.search + url.hash,
+			);
+			this.route = req.toRoute();
 		});
-	}
-
-	/**
-	 * Sets a route
-	 *
-	 * Will trigger an onRoute event but will not store any scroll progress
-	 * or modify the history
-	 *
-	 * @param req
-	 */
-	setRoute(req: Request, preventOnRoute = false) {
-		this.route = req.toRoute();
-
-		if (!preventOnRoute) this.onRoute(req, () => {});
 	}
 
 	/**
@@ -376,7 +373,7 @@ export default class InnerRouter {
 	 * ## Important
 	 * Make sure the route has the correct origin
 	 */
-	push(req: Request, preventOnRoute = false) {
+	push(req: Request) {
 		const url = req.url;
 		// todo a push should also store the previous scrollY
 
@@ -390,12 +387,13 @@ export default class InnerRouter {
 			nReq.scrollY = this.history.scrollY();
 		}
 
-		this.history.pushState(
-			nReq._toState(),
-			url.pathname + url.search + url.hash,
-		);
-
-		this.setRoute(req, preventOnRoute);
+		this.onRoute(req, () => {
+			this.history.pushState(
+				req._toState(),
+				url.pathname + url.search + url.hash,
+			);
+			this.route = req.toRoute();
+		});
 	}
 
 	/**
@@ -420,12 +418,13 @@ export default class InnerRouter {
 			nReq.scrollY = this.history.scrollY();
 		}
 
-		this.history.replaceState(
-			nReq._toState(),
-			url.pathname + url.search + url.hash,
-		);
-
-		this.setRoute(req);
+		this.onRoute(req, () => {
+			this.history.replaceState(
+				req._toState(),
+				url.pathname + url.search + url.hash,
+			);
+			this.route = req.toRoute();
+		});
 	}
 
 	/**
