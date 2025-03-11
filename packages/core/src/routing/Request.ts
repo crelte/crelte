@@ -1,6 +1,7 @@
 import { Barrier } from 'crelte-std/sync';
 import Route, { RouteOrigin } from './Route.js';
 import Site from './Site.js';
+import { objClone } from '../utils.js';
 
 /**
  * Options to create a Request
@@ -9,6 +10,8 @@ export type RequestOptions = {
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
+	state?: Record<string, any>;
+	context?: Record<string, any>;
 	disableScroll?: boolean;
 	disableLoadData?: boolean;
 	statusCode?: number;
@@ -60,6 +63,8 @@ export default class Request extends Route {
 			scrollY: route.scrollY ?? undefined,
 			index: route.index,
 			origin: route.origin,
+			state: route._state,
+			context: route._context,
 			...opts,
 		});
 	}
@@ -104,6 +109,8 @@ export default class Request extends Route {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
+			state: objClone(this._state),
+			context: this._context,
 			disableScroll: this.disableScroll,
 			statusCode: this.statusCode ?? undefined,
 		});
@@ -117,6 +124,8 @@ export default class Request extends Route {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
+			state: objClone(this._state),
+			context: this._context,
 		});
 	}
 
@@ -125,6 +134,8 @@ export default class Request extends Route {
 		this.scrollY = opts.scrollY ?? this.scrollY;
 		this.index = opts.index ?? this.index;
 		this.origin = opts.origin ?? this.origin;
+		this._state = opts.state ?? this._state;
+		this._context = opts.context ?? this._context;
 		this.disableScroll = opts.disableScroll ?? this.disableScroll;
 		this.statusCode = opts.statusCode ?? this.statusCode;
 	}

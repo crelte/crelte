@@ -1,3 +1,4 @@
+import { objClone } from '../utils.js';
 import Site from './Site.js';
 import { trimSlashEnd } from './utils.js';
 
@@ -5,6 +6,8 @@ export type RouteOptions = {
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
+	state?: Record<string, any>;
+	context?: Record<string, any>;
 };
 
 /**
@@ -75,6 +78,25 @@ export default class Route {
 	origin: RouteOrigin;
 
 	/**
+	 * @hidden
+	 * State data that can be used to store additional information
+	 */
+	_state: Record<string, any>;
+
+	/**
+	 * @hidden
+	 * Any data that should be passed to onRoute and onRequest handlers
+	 * or exchanged between loadData's
+	 * This context is not persistant and should be considered "valid"
+	 * only for the current request / route
+	 *
+	 * ## Note
+	 * Consider using state instead. This will not be cloned in the clone
+	 * call so will always be the same object
+	 */
+	_context: Record<string, any>;
+
+	/**
 	 * Creates a new Route
 	 */
 	constructor(url: string | URL, site: Site, opts: RouteOptions = {}) {
@@ -84,6 +106,8 @@ export default class Route {
 		this.scrollY = opts.scrollY ?? null;
 		this.index = opts.index ?? 0;
 		this.origin = opts.origin ?? 'manual';
+		this._state = opts.state ?? {};
+		this._context = opts.context ?? {};
 	}
 
 	/**
@@ -210,6 +234,57 @@ export default class Route {
 		}
 	}
 
+	/**
+	 * Returns a state value if it exists.
+	 */
+	getState<T = any>(key: string): T | null {
+		return this._state[key] ?? null;
+	}
+
+	/**
+	 * Sets a state value.
+	 * If the value is null or undefined, the key will be removed.
+	 *
+	 * ## When to use state
+	 * State is used to store additional information that persists across route changes.
+	 * The State is only available in the client code since it is stored using window.history.
+	 *
+	 * Consider using setSearchParam instead to enable server side rendering.
+	 */
+	setState<T>(key: string, value: T | null | undefined) {
+		if (typeof value === 'undefined' || value === null) {
+			delete this._state[key];
+		} else {
+			this._state[key] = value;
+		}
+	}
+
+	/**
+	 * Returns a context value if it exists.
+	 */
+	getContext<T = any>(key: string): T | null {
+		return this._context[key] ?? null;
+	}
+
+	/**
+	 * Sets a context value.
+	 * If the value is null or undefined, the key will be removed.
+	 *
+	 * ## When to use context
+	 * Context is used to pass data to onRoute and onRequest handlers or exchange data between loadData calls.
+	 * This context is not persistent and should be considered valid only for the current request/route.
+	 * The context is not cloned in the clone call and will be the same object.
+	 */
+	setContext<T>(key: string, value: T | null | undefined) {
+		if (typeof value === 'undefined' || value === null) {
+			delete this._context[key];
+		} else {
+			this._context[key] = value;
+		}
+	}
+	/**
+	 * Returns true if the route is in live preview mode
+	 */
 	inLivePreview(): boolean {
 		return !!this.search.get('x-craft-live-preview');
 	}
@@ -235,6 +310,9 @@ export default class Route {
 	 *
 	 * This checks all properties of the url but search params do not have to be
 	 * in the same order
+	 *
+	 * ## Note
+	 * This does not check the state or context
 	 */
 	eq(route: Route | null) {
 		return (
@@ -294,6 +372,8 @@ export default class Route {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
+			state: objClone(this._state),
+			context: this._context,
 		});
 	}
 
@@ -304,6 +384,10 @@ export default class Route {
 
 		if (typeof state?.route?.index === 'number')
 			this.index = state.route.index;
+
+		if (typeof state?.state === 'object' && state.state !== null) {
+			this._state = state.state;
+		}
 	}
 
 	/** @hidden */
@@ -313,6 +397,7 @@ export default class Route {
 				scrollY: this.scrollY,
 				index: this.index,
 			},
+			state: this._state,
 		};
 	}
 }
