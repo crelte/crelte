@@ -1,11 +1,14 @@
 import { Pattern, Trouter } from 'trouter';
-import { CrelteRequest, Entry } from '../index.js';
+import { Crelte, CrelteRequest, Entry } from '../index.js';
 
 export type EntryRouteHandler = (
 	cr: CrelteRequest,
 ) => Promise<Entry | null | undefined> | Entry | null | undefined;
 
-export type EntryRoutes = (router: EntryRouter) => Promise<void> | void;
+export type EntryRoutes = (
+	crelte: Crelte,
+	router: EntryRouter,
+) => Promise<void> | void;
 
 export default class EntryRouter {
 	private inner: Trouter<EntryRouteHandler>;

@@ -178,7 +178,8 @@ async function queryEntry<E, T>(
 	if (typeof app.entryRoutes === 'function') {
 		const entryRouter = new EntryRouter();
 		// the user might have a entryRoute which matches
-		await app.entryRoutes(entryRouter);
+		// todo this should only be called once, not on every request
+		await app.entryRoutes(cr, entryRouter);
 
 		const entry = await entryRouter._handle(cr);
 		if (entry) return entry;
