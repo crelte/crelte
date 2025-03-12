@@ -27,6 +27,12 @@ export {
 	type LoadDataArray,
 };
 
+export type Entry = {
+	sectionHandle: string;
+	typeHandle: string;
+	[key: string]: any;
+};
+
 /**
  * Get Crelte from the current context
  *

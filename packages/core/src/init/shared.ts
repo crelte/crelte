@@ -3,6 +3,7 @@ import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
+import EntryRouter, { EntryRoutes } from '../routing/EntryRouter.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
 interface App<E, T> {
@@ -12,6 +13,8 @@ interface App<E, T> {
 	loadEntryData?: LoadData<any>;
 
 	templates?: Record<string, LazyTemplateModule<E, T>>;
+
+	entryRoutes?: EntryRoutes;
 }
 
 interface TemplateModule<E, T> {
@@ -93,39 +96,25 @@ export async function loadFn<D, E, T>(
 		})();
 	}
 
-	let pageProm = null;
-	if (cr.req.siteMatches()) {
-		let uri = decodeURI(cr.req.uri);
-		if (uri.startsWith('/')) uri = uri.substring(1);
-		if (uri === '' || uri === '/') uri = '__home__';
-
-		pageProm = cr.query(entryQuery, {
-			uri,
-			siteId: cr.site.id,
-		});
-	}
+	const entryProm = queryEntry(cr, app, entryQuery);
 
 	const pluginsLoadGlobalData = cr.events.trigger('loadGlobalData', cr);
 
 	// loading progress is at 20%
 	loadOpts?.setProgress(0.2);
 
-	const [data, global, page] = await Promise.all([
+	const [data, global, entry] = await Promise.all([
 		dataProm,
 		globalProm,
-		pageProm,
+		entryProm,
 		...pluginsLoadGlobalData,
 	]);
 
-	if (global) {
-		cr.globals._setData(cr.site.id, global);
-	} else if (!cr.globals._wasLoaded(cr.site.id)) {
-		// we need to set the global data to an empty object
-		// so any waiters get's triggered
-		cr.globals._setData(cr.site.id, {});
+	// global is only set if !wasLoaded but we need to store something
+	// even if no globalQuery exists
+	if (global || !cr.globals._wasLoaded(cr.site.id)) {
+		cr.globals._setData(cr.site.id, global ?? {});
 	}
-
-	const entry = getEntry(page);
 
 	let template;
 	if (app.templates) {
@@ -178,6 +167,37 @@ function parseFilename(path: string): [string, string] {
 	const ext = filename.substring(extPos + 1);
 
 	return [name, ext];
+}
+
+async function queryEntry<E, T>(
+	cr: CrelteRequest,
+	app: App<E, T>,
+	entryQuery: GraphQlQuery,
+): Promise<any | null> {
+	// check
+	if (typeof app.entryRoutes === 'function') {
+		const entryRouter = new EntryRouter();
+		// the user might have a entryRoute which matches
+		await app.entryRoutes(entryRouter);
+
+		const entry = await entryRouter._handle(cr);
+		if (entry) return entry;
+	}
+
+	if (cr.req.siteMatches()) {
+		let uri = decodeURI(cr.req.uri);
+		if (uri.startsWith('/')) uri = uri.substring(1);
+		if (uri === '' || uri === '/') uri = '__home__';
+
+		const page = await cr.query(entryQuery, {
+			uri,
+			siteId: cr.site.id,
+		});
+
+		return getEntry(page);
+	}
+
+	return null;
 }
 
 async function loadTemplate<E, T>(
