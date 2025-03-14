@@ -17,6 +17,18 @@ const defaultRouterOpts = {
 	debugTiming: false,
 };
 
+/**
+ * Allows to easely modify a Request
+ *
+ * If you return `false` the request will be aborted
+ *
+ * ## Example
+ * ```
+ * router.replace(req => (req.hash = ''));
+ * ```
+ */
+export type UpdateRequest = (req: Request) => boolean | null | undefined | void;
+
 type LoadedMore = {
 	changeHistory: () => void;
 };
@@ -122,6 +134,8 @@ export default class Router {
 
 		this._onRequest = new Listeners();
 
+		// these functions are exposed to the init "module"
+		// but should not be used by anybody else
 		this._internal = {
 			onLoaded: () => {},
 			onNothingLoaded: () => {},
@@ -209,11 +223,15 @@ export default class Router {
 	 * // the following page will be opened https://example.com/de/foo/bar
 	 * ```
 	 */
-	open(target: string | URL | Route | Request, opts: RequestOptions = {}) {
-		const req = this.inner.targetToRequest(target, {
-			...opts,
+	open(
+		target: string | URL | Route | Request | UpdateRequest,
+		opts: RequestOptions = {},
+	) {
+		const req = this.targetOrUpdateToRequest(target, opts, {
 			origin: 'manual',
 		});
+		if (!req) return;
+
 		this.inner.open(req);
 	}
 
@@ -228,7 +246,17 @@ export default class Router {
 	 * And will clear the scrollY value if you not provide a new one via the `opts`
 	 * This will disableLoadData by default if you not provide an override via the `opts`
 	 *
-	 * ## Example
+	 * ## Example using the update function
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const page = 1;
+	 * router.push(req => req.setSearchParam('page', page || null));
+	 * ```
+	 *
+	 * ## Example using the route object
 	 * ```
 	 * import { getRouter } from 'crelte';
 	 *
@@ -240,15 +268,16 @@ export default class Router {
 	 * router.push(route);
 	 * ```
 	 */
-	push(route: Route | Request, opts: RequestOptions = {}) {
-		// cancel previous request
-		this.pageLoader.discard();
-		const req = this.inner.targetToRequest(route, {
-			...opts,
+	push(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
+		// theoretically string and URL also work but we might
+		// change that in the future
+		const req = this.targetOrUpdateToRequest(route, opts, {
 			origin: 'push',
 			scrollY: opts.scrollY ?? undefined,
 			disableLoadData: opts.disableLoadData ?? true,
 		});
+		if (!req) return;
+
 		this.inner.push(req);
 	}
 
@@ -261,16 +290,26 @@ export default class Router {
 	}
 
 	/**
-	 * This replaces the state of the route without triggering an event
+	 * This replaces the state of the route without triggering a new pageload
 	 *
 	 * You can use this when using some filters for example a search filter
 	 *
 	 * ## Note
 	 * This will always set the origin to 'replace'
-	 * And will clear the scrollY value if you not provide a new one via the `opts`
-	 * This will disableLoadData by default if you not provide an override via the `opts`
+	 * And will clear the scrollY value if you don't provide a new one via the `opts`
+	 * This will disableLoadData by default if you don't provide an override via the `opts`
 	 *
-	 * ## Example
+	 * ## Example using the update function
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const search = 'foo';
+	 * router.replace(req => req.setSearchParam('search', search));
+	 * ```
+	 *
+	 * ## Example using the route object
 	 * ```
 	 * import { getRouter } from 'crelte';
 	 *
@@ -278,18 +317,20 @@ export default class Router {
 	 *
 	 * const search = 'foo';
 	 * const route = router.route.get();
-	 * route.setSearchParam('search', search ? search : null);
-	 * router.replaceState(route);
+	 * route.setSearchParam('search', search);
+	 * router.replace(route);
 	 * ```
 	 */
-	replace(route: Route | Request, opts: RequestOptions = {}) {
-		// cancel previous request
-		this.pageLoader.discard();
-		const req = this.inner.targetToRequest(route, {
+	replace(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
+		// theoretically string and URL also work but we might
+		// change that in the future
+		const req = this.targetOrUpdateToRequest(route, opts, {
 			origin: 'replace',
 			scrollY: opts.scrollY ?? undefined,
 			disableLoadData: opts.disableLoadData ?? true,
 		});
+		if (!req) return;
+
 		this.inner.replace(req);
 	}
 
@@ -434,6 +475,7 @@ export default class Router {
 		return resp;
 	}
 
+	// gets called by the InnerRouter when a new route is requested
 	private _onRoute(req: Request, changeHistory: () => void) {
 		this.destroyRequest();
 
@@ -450,6 +492,7 @@ export default class Router {
 		if (!req.disableLoadData) {
 			this.pageLoader.load(req, { changeHistory });
 		} else {
+			this.pageLoader.discard();
 			this._onNothingLoaded(req, { changeHistory });
 		}
 	}
@@ -465,6 +508,7 @@ export default class Router {
 		this.pageLoader.preload(req);
 	}
 
+	// gets called by the pageLoader when teh loadData completes
 	private async _onLoaded(
 		resp: LoadResponse,
 		req: Request,
@@ -474,7 +518,7 @@ export default class Router {
 		if (await req._renderBarrier.ready()) return;
 
 		// when the data is loaded let's update the route of the inner
-		// this is will only happen if no other route has been requested
+		// this will only happen if no other route has been requested
 		// in the meantime
 		more.changeHistory();
 
@@ -487,6 +531,7 @@ export default class Router {
 		});
 	}
 
+	// this gets called if loadData is not called
 	private async _onNothingLoaded(req: Request, more: LoadedMore) {
 		// check if the render was cancelled
 		if (await req._renderBarrier.ready()) return;
@@ -505,9 +550,46 @@ export default class Router {
 		});
 	}
 
+	// this is called by the pageLoader if we get a progress update
 	private _onProgress(loading: boolean, progress?: number): void {
 		if (this._loading.get() !== loading) this._loading.set(loading);
 
 		if (typeof progress === 'number') this._loadingProgress.set(progress);
+	}
+
+	/**
+	 * Transforms a target to a request
+	 *
+	 * returns null if the request was canceled by the update request
+	 */
+	private targetOrUpdateToRequest(
+		target: string | URL | Route | Request | UpdateRequest,
+		opts: RequestOptions = {},
+		forcedOpts: RequestOptions = {},
+	): Request | null {
+		// we have an update request
+		if (typeof target === 'function') {
+			const route = this.route.get();
+			if (!route) {
+				throw new Error(
+					'route to update missing in first loadData call',
+				);
+			}
+
+			// first get a req
+			const req = this.inner.targetToRequest(route, opts);
+			// check if the request was canceled by the update request
+			if (target(req) === false) return null;
+
+			// now we add the forcedOpts
+			req._updateOpts(forcedOpts);
+
+			return req;
+		}
+
+		return this.inner.targetToRequest(target, {
+			...opts,
+			...forcedOpts,
+		});
 	}
 }

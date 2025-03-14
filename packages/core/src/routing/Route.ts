@@ -188,6 +188,20 @@ export default class Route {
 	}
 
 	/**
+	 * Set the hash of the route
+	 *
+	 * ## Example
+	 * ```
+	 * const route = new Route('https://example.com/foo/bar/', null);
+	 * route.hash = '#hash';
+	 * console.log(route.url.href); // 'https://example.com/foo/bar/#hash'
+	 * ```
+	 */
+	set hash(hash: string) {
+		this.url.hash = hash;
+	}
+
+	/**
 	 * Checks if there are previous routes which would allow it to go back
 	 */
 	canGoBack(): boolean {
