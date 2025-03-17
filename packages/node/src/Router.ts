@@ -1,28 +1,25 @@
 import { Methods, Pattern, Trouter } from 'trouter';
 import CrelteServer from './CrelteServer.js';
-import { GraphQl } from 'crelte/graphql';
+import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import { SsrCache } from 'crelte/ssr';
+import ServerRequest from './Request.js';
+import { QueryOptions } from 'crelte';
+import CrelteServerRequest from './CrelteServer.js';
 
 export type Handler = (
-	cr: CrelteServer,
-	req: Request,
+	csr: CrelteServerRequest,
 ) => Promise<Response | null | undefined> | Response | null | undefined;
 
 export default class Router {
 	private endpointUrl: string;
 	private env: Map<string, string>;
-	private crelteServer: CrelteServer;
+	private _graphQl: GraphQl;
 	private inner: Trouter<Handler>;
 
 	constructor(endpointUrl: string, env: Map<string, string>) {
 		this.endpointUrl = endpointUrl;
 		this.env = env;
-		this.crelteServer = new CrelteServer(
-			env,
-			new GraphQl(endpointUrl, new SsrCache()),
-			null,
-			{},
-		);
+		this._graphQl = new GraphQl(endpointUrl, new SsrCache());
 		this.inner = new Trouter();
 
 		this.all = this.add.bind(this, '' as Methods);
@@ -35,14 +32,6 @@ export default class Router {
 		this.trace = this.add.bind(this, 'TRACE');
 		this.post = this.add.bind(this, 'POST');
 		this.put = this.add.bind(this, 'PUT');
-	}
-
-	/**
-	 * Returns a CrelteServer instance if you wan't to run a query in the routes
-	 * setup for example
-	 */
-	get crelte(): CrelteServer {
-		return this.crelteServer;
 	}
 
 	add(method: Methods, pattern: Pattern, ...handlers: Handler[]): this {
@@ -68,7 +57,24 @@ export default class Router {
 	getEnv(name: 'CRAFT_WEB_URL'): string;
 	getEnv(name: string): string | null;
 	getEnv(name: string): string | null {
-		return this.crelte.getEnv(name) ?? null;
+		return this.env.get(name) ?? null;
+	}
+
+	/**
+	 * Run a GraphQl Query
+	 *
+	 * @param query the default export from a graphql file or the gql`query {}`
+	 * function
+	 * @param variables variables that should be passed to the
+	 * graphql query
+	 */
+	async query(
+		query: GraphQlQuery,
+		variables: Record<string, unknown> = {},
+		opts: QueryOptions = {},
+	): Promise<unknown> {
+		// this function is added as convenience
+		return this._graphQl.query(query, variables, opts);
 	}
 
 	/** @hidden */
@@ -78,19 +84,20 @@ export default class Router {
 			new URL(req.url).pathname,
 		);
 
+		const nReq = new ServerRequest(req, new Map(Object.entries(params)));
+
 		if (!handlers.length) return null;
 
-		const crelte = new CrelteServer(
+		const csr = new CrelteServer(
 			this.env,
 			new GraphQl(this.getEnv('ENDPOINT_URL')!, new SsrCache()),
-			req,
-			params,
+			nReq,
 		);
 
 		for (const handler of handlers) {
-			const res = await handler(crelte, req);
+			const res = await handler(csr);
 			if (res) {
-				crelte._finishResponse(res);
+				csr._finishResponse(res);
 				return res;
 			}
 		}

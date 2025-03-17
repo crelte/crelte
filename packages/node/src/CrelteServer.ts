@@ -2,26 +2,28 @@ import { QueryOptions } from 'crelte';
 import { Cookies } from 'crelte/cookies';
 import { ServerCookies } from 'crelte/cookies/internal';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
+import ServerRequest from './Request.js';
 
-export default class CrelteServer {
+export default class CrelteServerRequest {
+	/**
+	 * The current request
+	 */
+	req: ServerRequest;
+
 	private _env: Map<string, string>;
 	private _graphQl: GraphQl;
-	private _req: Request | null;
-	private _params: Record<string, string>;
-	cookies: Cookies;
+	protected _cookies: Cookies;
 
 	constructor(
 		env: Map<string, string>,
 		graphQl: GraphQl,
-		req: Request | null,
-		params: Record<string, string>,
+		req: ServerRequest,
 	) {
 		this._env = env;
 		this._graphQl = graphQl;
-		this._req = req;
-		this._params = params;
-		this.cookies = new ServerCookies();
-		this.cookies._init(req?.headers.get('Cookie') ?? '');
+		this.req = req;
+		this._cookies = new ServerCookies();
+		this._cookies._init(req.headers.get('Cookie') ?? '');
 	}
 
 	/**
@@ -32,17 +34,10 @@ export default class CrelteServer {
 	}
 
 	/**
-	 * returns the url params from the request
-	 *
-	 * @example
-	 * ```js
-	 * router.get('/blog/:slug', async (cs, req) => {
-	 *     return Response.json({ slug: cs.getParam('slug') });
-	 * });
-	 * ```
+	 * Get the Cookies instance
 	 */
-	getParam(name: string): string | null {
-		return this._params[name] ?? null;
+	get cookies(): Cookies {
+		return this._cookies;
 	}
 
 	/**
@@ -70,7 +65,7 @@ export default class CrelteServer {
 	): Promise<unknown> {
 		// this function is added as convenience
 		return this.graphQl.query(query, variables, {
-			route: this._req ? new URL(this._req.url) : undefined,
+			route: new URL(this.req.url),
 			...opts,
 		});
 	}
