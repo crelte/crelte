@@ -15,6 +15,7 @@ import {
 	LoadDataFn,
 	LoadDataObj,
 } from './loadData/index.js';
+import { Entry } from './entry/index.js';
 
 export {
 	Crelte,
@@ -25,6 +26,7 @@ export {
 	type LoadDataFn,
 	type LoadDataObj,
 	type LoadDataArray,
+	type Entry,
 };
 
 /**

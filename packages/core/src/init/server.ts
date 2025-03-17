@@ -1,6 +1,6 @@
 import { CrelteBuilder } from '../Crelte.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
-import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
+import { pluginsBeforeRender, prepareLoadFn, setupPlugins } from './shared.js';
 import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
@@ -85,11 +85,18 @@ export async function main(data: MainData): Promise<{
 	// setup plugins
 	setupPlugins(crelte, data.app.plugins ?? []);
 
+	const loadFn = await prepareLoadFn(
+		crelte,
+		data.app,
+		data.entryQuery,
+		data.globalQuery,
+	);
+
 	// setup load Data
 
 	crelte.router._internal.onLoad = req => {
 		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr, data.app, data.entryQuery, data.globalQuery);
+		return loadFn(cr);
 	};
 
 	const { success, redirect, req, props } =

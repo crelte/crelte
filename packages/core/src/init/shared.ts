@@ -1,5 +1,6 @@
 import Crelte from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
+import EntryRouter, { EntryRoutes } from '../entry/EntryRouter.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
@@ -12,6 +13,8 @@ interface App<E, T> {
 	loadEntryData?: LoadData<any>;
 
 	templates?: Record<string, LazyTemplateModule<E, T>>;
+
+	entryRoutes?: EntryRoutes;
 }
 
 interface TemplateModule<E, T> {
@@ -58,14 +61,43 @@ export function getEntry(page: any): any {
 	};
 }
 
-export async function loadFn<D, E, T>(
+// todo it would be nice to call this only once per server start
+export async function prepareLoadFn<E, T>(
+	crelte: Crelte,
+	app: App<E, T>,
+	entryQuery: GraphQlQuery,
+	globalQuery?: GraphQlQuery,
+): Promise<(cr: CrelteRequest, loadOpts?: LoadOptions) => Promise<any>> {
+	const templateModules = prepareTemplates(app.templates ?? {});
+	let entryRouter: EntryRouter | null = null;
+	if (app.entryRoutes) {
+		entryRouter = new EntryRouter(crelte);
+		await app.entryRoutes(entryRouter);
+	}
+
+	return async (cr, loadOpts) => {
+		return await loadFn(
+			cr,
+			app,
+			templateModules,
+			entryRouter,
+			entryQuery,
+			globalQuery,
+			loadOpts,
+		);
+	};
+}
+
+async function loadFn<E, T>(
 	cr: CrelteRequest,
 	app: App<E, T>,
+	templateModules: Map<string, LazyTemplateModule<E, T>>,
+	entryRouter: EntryRouter | null,
 	entryQuery: GraphQlQuery,
 	globalQuery?: GraphQlQuery,
 	loadOpts?: LoadOptions,
 ): Promise<any> {
-	let dataProm: Promise<D> | null = null;
+	let dataProm: Promise<any> | null = null;
 	// @ts-ignore
 	if (app.loadData) {
 		throw new Error(
@@ -93,43 +125,29 @@ export async function loadFn<D, E, T>(
 		})();
 	}
 
-	let pageProm = null;
-	if (cr.req.siteMatches()) {
-		let uri = decodeURI(cr.req.uri);
-		if (uri.startsWith('/')) uri = uri.substring(1);
-		if (uri === '' || uri === '/') uri = '__home__';
-
-		pageProm = cr.query(entryQuery, {
-			uri,
-			siteId: cr.site.id,
-		});
-	}
+	const entryProm = queryEntry(cr, app, entryRouter, entryQuery);
 
 	const pluginsLoadGlobalData = cr.events.trigger('loadGlobalData', cr);
 
 	// loading progress is at 20%
 	loadOpts?.setProgress(0.2);
 
-	const [data, global, page] = await Promise.all([
+	const [data, global, entry] = await Promise.all([
 		dataProm,
 		globalProm,
-		pageProm,
+		entryProm,
 		...pluginsLoadGlobalData,
 	]);
 
-	if (global) {
-		cr.globals._setData(cr.site.id, global);
-	} else if (!cr.globals._wasLoaded(cr.site.id)) {
-		// we need to set the global data to an empty object
-		// so any waiters get's triggered
-		cr.globals._setData(cr.site.id, {});
+	// global is only set if !wasLoaded but we need to store something
+	// even if no globalQuery exists
+	if (global || !cr.globals._wasLoaded(cr.site.id)) {
+		cr.globals._setData(cr.site.id, global ?? {});
 	}
-
-	const entry = getEntry(page);
 
 	let template;
 	if (app.templates) {
-		template = await loadTemplate(app.templates, entry);
+		template = await loadTemplate(templateModules, entry);
 	} else {
 		throw new Error('App must have templates or loadTemplate method');
 	}
@@ -180,12 +198,39 @@ function parseFilename(path: string): [string, string] {
 	return [name, ext];
 }
 
-async function loadTemplate<E, T>(
+async function queryEntry<E, T>(
+	cr: CrelteRequest,
+	app: App<E, T>,
+	entryRouter: EntryRouter | null,
+	entryQuery: GraphQlQuery,
+): Promise<any | null> {
+	// check
+	if (entryRouter) {
+		const entry = await entryRouter._handle(cr);
+		if (entry) return entry;
+	}
+
+	if (cr.req.siteMatches()) {
+		let uri = decodeURI(cr.req.uri);
+		if (uri.startsWith('/')) uri = uri.substring(1);
+		if (uri === '' || uri === '/') uri = '__home__';
+
+		const page = await cr.query(entryQuery, {
+			uri,
+			siteId: cr.site.id,
+		});
+
+		return getEntry(page);
+	}
+
+	return null;
+}
+
+function prepareTemplates<E, T>(
 	rawModules: Record<string, LazyTemplateModule<E, T>>,
-	entry: E,
-): Promise<TemplateModule<E, T>> {
+): Map<string, LazyTemplateModule<E, T>> {
 	// parse modules
-	const modules = new Map(
+	return new Map(
 		Object.entries(rawModules)
 			.map(([path, mod]) => {
 				const [name, _ext] = parseFilename(path);
@@ -193,7 +238,12 @@ async function loadTemplate<E, T>(
 			})
 			.filter(([name, _mod]) => !!name),
 	);
+}
 
+async function loadTemplate<E, T>(
+	modules: Map<string, LazyTemplateModule<E, T>>,
+	entry: E,
+): Promise<TemplateModule<E, T>> {
 	const entr = entry as any;
 	const handle = `${entr.sectionHandle}-${entr.typeHandle}`;
 

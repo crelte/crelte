@@ -2,7 +2,7 @@ import { CrelteBuilder } from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
-import { loadFn, pluginsBeforeRender, setupPlugins } from './shared.js';
+import { pluginsBeforeRender, prepareLoadFn, setupPlugins } from './shared.js';
 import { tick } from 'svelte';
 
 /**
@@ -49,7 +49,7 @@ const mainDataDefault = {
  * });
  * ```
  */
-export function main(data: MainData) {
+export async function main(data: MainData) {
 	data = { ...mainDataDefault, ...data };
 
 	// rendering steps
@@ -97,11 +97,18 @@ export function main(data: MainData) {
 	// setup plugins
 	setupPlugins(crelte, data.app.plugins ?? []);
 
+	const loadFn = await prepareLoadFn(
+		crelte,
+		data.app,
+		data.entryQuery,
+		data.globalQuery,
+	);
+
 	// setup load Data
 
 	crelte.router._internal.onLoad = (req, opts) => {
 		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr, data.app, data.entryQuery, data.globalQuery, opts);
+		return loadFn(cr, opts);
 	};
 
 	// render Space
