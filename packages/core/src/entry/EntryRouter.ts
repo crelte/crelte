@@ -5,7 +5,7 @@ import { GraphQlQuery } from '../graphql/GraphQl.js';
 
 export type EntryRouteHandler = (
 	cr: CrelteEntryRequest,
-) => Promise<Entry | null | undefined> | Entry | null | undefined;
+) => Promise<Entry | null | undefined> | Entry | null | undefined | void;
 
 export type EntryRoutes = (router: EntryRouter) => Promise<void> | void;
 
