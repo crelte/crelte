@@ -249,8 +249,8 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 		}
 
 		if (typeof serverMod.routes === 'function') {
-			// check if a route matches
-			const router = new Router(env.endpointUrl, env.env);
+			// check if a route matches (todo can i move this out of the middleware?)
+			const router = new Router(env.endpointUrl, env.env, env.sites);
 
 			await serverMod.routes(router);
 

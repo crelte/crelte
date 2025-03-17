@@ -5,6 +5,8 @@ import { SsrCache } from 'crelte/ssr';
 import ServerRequest from './Request.js';
 import { QueryOptions } from 'crelte';
 import CrelteServerRequest from './CrelteServer.js';
+import { SiteFromGraphQl } from './server.js';
+import { Site } from 'crelte/routing';
 
 export type Handler = (
 	csr: CrelteServerRequest,
@@ -14,12 +16,18 @@ export default class Router {
 	private endpointUrl: string;
 	private env: Map<string, string>;
 	private _graphQl: GraphQl;
+	private _sites: Site[];
 	private inner: Trouter<Handler>;
 
-	constructor(endpointUrl: string, env: Map<string, string>) {
+	constructor(
+		endpointUrl: string,
+		env: Map<string, string>,
+		sites: SiteFromGraphQl[],
+	) {
 		this.endpointUrl = endpointUrl;
 		this.env = env;
 		this._graphQl = new GraphQl(endpointUrl, new SsrCache());
+		this._sites = sites.map(site => new Site(site));
 		this.inner = new Trouter();
 
 		this.all = this.add.bind(this, '' as Methods);
@@ -49,6 +57,13 @@ export default class Router {
 	trace: (pattern: Pattern, ...handlers: Handler[]) => this;
 	post: (pattern: Pattern, ...handlers: Handler[]) => this;
 	put: (pattern: Pattern, ...handlers: Handler[]) => this;
+
+	/**
+	 * The sites which are available
+	 */
+	get sites(): Site[] {
+		return this._sites;
+	}
 
 	/**
 	 * returns an env variable from the craft/.env file.

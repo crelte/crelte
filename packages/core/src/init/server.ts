@@ -5,7 +5,7 @@ import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import CrelteRequest from '../CrelteRequest.js';
-import { gql, GraphQlQuery } from '../graphql/GraphQl.js';
+import { GraphQlQuery } from '../graphql/GraphQl.js';
 
 export type ServerData = {
 	url: string;
@@ -15,9 +15,8 @@ export type ServerData = {
 	endpoint: string;
 	craftWeb: string;
 	viteEnv: Map<string, string>;
-	cookies?: string;
-	readSitesCache?: () => Promise<any>;
-	writeSitesCache?: (data: any) => Promise<void>;
+	cookies: string;
+	sites: SiteFromGraphQl[];
 };
 
 /**
@@ -76,9 +75,8 @@ export async function main(data: MainData): Promise<{
 	const cookies = data.serverData.cookies ?? '';
 	builder.setupCookies(cookies);
 
-	const csites = await loadSites(builder, data.serverData);
-	builder.ssrCache.set('crelteSites', csites);
-	builder.setupRouter(csites);
+	builder.ssrCache.set('crelteSites', data.serverData.sites);
+	builder.setupRouter(data.serverData.sites);
 
 	const crelte = builder.build();
 
@@ -194,60 +192,11 @@ export async function mainError(
 	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', 'de');
 
 	const finalHtml = htmlTemplate
-		.replace('<!--ssr-head-->', head)
+		.replace('</head>', head + '\n\t</head>')
 		.replace('<!--ssr-body-->', html);
 
 	return {
 		status: data.error.status,
 		html: finalHtml,
 	};
-}
-
-// requires, GraphQl, SsrCache
-async function loadSites(
-	builder: CrelteBuilder,
-	serverData: ServerData,
-): Promise<SiteFromGraphQl[]> {
-	if (!builder.graphQl) throw new Error();
-
-	if ('CRAFT_SITES_CACHED' in globalThis) {
-		return (globalThis as any)['CRAFT_SITES_CACHED'];
-	}
-
-	if (import.meta.env.PROD && serverData.readSitesCache) {
-		try {
-			const sites =
-				(await serverData.readSitesCache()) as SiteFromGraphQl[];
-			// @ts-ignore
-			globalThis['CRAFT_SITES_CACHED'] = sites;
-			return sites;
-		} catch (_e: any) {
-			// ignore
-		}
-	}
-
-	const resp = (await builder.graphQl.query(
-		gql`
-			query {
-				crelteSites {
-					id
-					baseUrl
-					language
-					name
-					handle
-					primary
-				}
-			}
-		`,
-		{},
-		// don't cache since we cache ourself
-		{ caching: false },
-	)) as { crelteSites: SiteFromGraphQl[] };
-
-	// @ts-ignore
-	globalThis['CRAFT_SITES_CACHED'] = resp.crelteSites;
-	if (import.meta.env.PROD && serverData.writeSitesCache) {
-		await serverData.writeSitesCache(resp.crelteSites);
-	}
-	return resp.crelteSites;
 }

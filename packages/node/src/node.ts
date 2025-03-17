@@ -35,7 +35,11 @@ async function writeSitesCache(data: any): Promise<void> {
 }
 
 export default async function createServer(serverMod: any, buildTime: string) {
-	const env = await initEnvData();
+	const env = await initEnvData({
+		enabled: process.env.NODE_ENV === 'production',
+		writeSitesCache,
+		readSitesCache,
+	});
 	const template = await readFile(localDir('index.html'));
 	const globalEtag = '"' + buildTime + '"';
 	const ssrManifest = JSON.parse(
@@ -44,7 +48,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 
 	let router: Router | null = null;
 	if (typeof serverMod.routes === 'function') {
-		router = new Router(env.endpointUrl, env.env);
+		router = new Router(env.endpointUrl, env.env, env.sites);
 		await serverMod.routes(router);
 	}
 
@@ -74,8 +78,6 @@ export default async function createServer(serverMod: any, buildTime: string) {
 
 			const response = await modRender(env, serverMod, template, req, {
 				ssrManifest,
-				writeSitesCache,
-				readSitesCache,
 			});
 			await webResponseToResponse(response, res);
 			return;
@@ -95,7 +97,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 				thrownError,
 				template,
 				req,
-				{ ssrManifest, writeSitesCache, readSitesCache },
+				{ ssrManifest },
 			);
 			await webResponseToResponse(response, res);
 			return;

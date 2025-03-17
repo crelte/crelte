@@ -1,6 +1,8 @@
 import { readFile as readFileAsync } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import * as http from 'node:http';
+import { gql, GraphQl } from 'crelte/graphql';
+import { SsrCache } from 'crelte/ssr';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -30,9 +32,10 @@ export type EnvData = {
 	endpointUrl: string;
 	craftWebUrl: string;
 	viteEnv: Map<string, string>;
+	sites: SiteFromGraphQl[];
 };
 
-export async function initEnvData(): Promise<EnvData> {
+export async function initEnvData(cache?: SitesCache): Promise<EnvData> {
 	const envPath = '../craft/.env';
 
 	let env;
@@ -53,18 +56,81 @@ export async function initEnvData(): Promise<EnvData> {
 		Array.from(env).filter(([key]) => key.startsWith('VITE_')),
 	);
 
+	const graphQl = new GraphQl(endpointUrl, new SsrCache());
+	const sites = await loadSites(graphQl, cache);
+
 	return {
 		env,
 		endpointUrl,
 		craftWebUrl,
 		viteEnv,
+		sites,
 	};
+}
+
+export type SiteFromGraphQl = {
+	id: number;
+	baseUrl: string;
+	language: string;
+	name: string | null;
+	handle: string;
+	primary: boolean;
+};
+
+export type SitesCache = {
+	enabled: boolean;
+	readSitesCache?: () => Promise<any>;
+	writeSitesCache?: (data: any) => Promise<void>;
+};
+
+// requires, GraphQl, SsrCache
+async function loadSites(
+	graphQl: GraphQl,
+	cache?: SitesCache,
+): Promise<SiteFromGraphQl[]> {
+	if ('CRAFT_SITES_CACHED' in globalThis) {
+		return (globalThis as any)['CRAFT_SITES_CACHED'];
+	}
+
+	if (cache?.enabled && cache?.readSitesCache) {
+		try {
+			const sites = (await cache.readSitesCache()) as SiteFromGraphQl[];
+			// @ts-ignore
+			globalThis['CRAFT_SITES_CACHED'] = sites;
+			return sites;
+		} catch (_e: any) {
+			// ignore
+		}
+	}
+
+	const resp = (await graphQl.query(
+		gql`
+			query {
+				crelteSites {
+					id
+					baseUrl
+					language
+					name
+					handle
+					primary
+				}
+			}
+		`,
+		{},
+		// don't cache since we cache ourself
+		{ caching: false },
+	)) as { crelteSites: SiteFromGraphQl[] };
+
+	// @ts-ignore
+	globalThis['CRAFT_SITES_CACHED'] = resp.crelteSites;
+	if (cache?.enabled && cache?.writeSitesCache) {
+		await cache.writeSitesCache(resp.crelteSites);
+	}
+	return resp.crelteSites;
 }
 
 export type ModRenderOptions = {
 	ssrManifest?: Record<string, string>;
-	readSitesCache?: () => Promise<any>;
-	writeSitesCache?: (data: any) => Promise<void>;
 };
 
 type RenderFn = (req: RenderRequest) => Promise<RenderResponse>;
@@ -79,8 +145,7 @@ export type RenderRequest = {
 	craftWeb: string;
 	viteEnv: Map<string, string>;
 	cookies: string;
-	readSitesCache?: () => Promise<any>;
-	writeSitesCache?: (data: any) => Promise<void>;
+	sites: SiteFromGraphQl[];
 };
 
 export async function modRender(
@@ -105,6 +170,7 @@ export async function modRender(
 		craftWeb: env.craftWebUrl,
 		viteEnv: env.viteEnv,
 		cookies,
+		sites: env.sites,
 		...opts,
 	});
 
@@ -135,8 +201,7 @@ export type RenderErrorRequest = {
 	endpoint: string;
 	craftWeb: string;
 	viteEnv: Map<string, string>;
-	readSitesCache?: () => Promise<any>;
-	writeSitesCache?: (data: any) => Promise<void>;
+	sites: SiteFromGraphQl[];
 };
 
 export async function modRenderError(
@@ -158,6 +223,7 @@ export async function modRenderError(
 	if (typeof (thrownError as any).__isGraphQlError__ === 'function')
 		error.status = (thrownError as any).status();
 
+	// todo is the process.env.NODE_ENV the correct check?
 	if (error.status !== 503 && process.env.NODE_ENV === 'development') {
 		throw thrownError;
 	}
@@ -166,10 +232,11 @@ export async function modRenderError(
 		url: req.url,
 		htmlTemplate: template,
 		ssrManifest: {},
+		acceptLang,
 		endpoint: env.endpointUrl,
 		craftWeb: env.craftWebUrl,
 		viteEnv: env.viteEnv,
-		acceptLang,
+		sites: env.sites,
 		...opts,
 	});
 
