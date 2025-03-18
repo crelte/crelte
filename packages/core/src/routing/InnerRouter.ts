@@ -208,12 +208,9 @@ export default class InnerRouter {
 			const req = this.targetToRequest(link.href, { origin: 'click' });
 			const routeEq =
 				this.route && this.route.eqUrl(req) && this.route.eqSearch(req);
-			// the route is the same don't do anything
-			// or maybe scroll the page to the hash? todo
-			if (routeEq && this.route?.eqHash(req)) return;
 
-			// this means the hash did not match, so we wan't to just scroll but not load
-			// data
+			// this means the route is the same maybe with a different hash
+			// so it is not necessary to load the data again
 			if (routeEq) {
 				req.disableLoadData = true;
 			}
@@ -309,6 +306,7 @@ export default class InnerRouter {
 		}
 
 		const current = this.route;
+		// store scrollY
 		if (current) {
 			// if the scrollY would still be updated we clear the timeout
 			// since we should have the latest scrollY
