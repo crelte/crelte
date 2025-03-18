@@ -1,10 +1,9 @@
 import { Methods, Pattern, Trouter } from 'trouter';
-import CrelteServer from './CrelteServer.js';
+import CrelteServerRequest from './CrelteServer.js';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import { SsrCache } from 'crelte/ssr';
 import ServerRequest from './Request.js';
 import { QueryOptions } from 'crelte';
-import CrelteServerRequest from './CrelteServer.js';
 import { SiteFromGraphQl } from './server.js';
 import { Site } from 'crelte/routing';
 
@@ -103,8 +102,9 @@ export default class Router {
 
 		if (!handlers.length) return null;
 
-		const csr = new CrelteServer(
+		const csr = new CrelteServerRequest(
 			this.env,
+			this.sites,
 			new GraphQl(this.getEnv('ENDPOINT_URL')!, new SsrCache()),
 			nReq,
 		);

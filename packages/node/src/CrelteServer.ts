@@ -3,6 +3,7 @@ import { Cookies } from 'crelte/cookies';
 import { ServerCookies } from 'crelte/cookies/internal';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import ServerRequest from './Request.js';
+import { Site } from 'crelte/routing';
 
 export default class CrelteServerRequest {
 	/**
@@ -11,15 +12,18 @@ export default class CrelteServerRequest {
 	req: ServerRequest;
 
 	private _env: Map<string, string>;
+	private _sites: Site[];
 	private _graphQl: GraphQl;
 	protected _cookies: Cookies;
 
 	constructor(
 		env: Map<string, string>,
+		sites: Site[],
 		graphQl: GraphQl,
 		req: ServerRequest,
 	) {
 		this._env = env;
+		this._sites = sites;
 		this._graphQl = graphQl;
 		this.req = req;
 		this._cookies = new ServerCookies();
@@ -38,6 +42,13 @@ export default class CrelteServerRequest {
 	 */
 	get cookies(): Cookies {
 		return this._cookies;
+	}
+
+	/**
+	 * The sites which are available
+	 */
+	get sites(): Site[] {
+		return this._sites;
 	}
 
 	/**
