@@ -4,6 +4,7 @@ import { ServerCookies } from 'crelte/cookies/internal';
 import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import ServerRequest from './Request.js';
 import { Site } from 'crelte/routing';
+import { siteFromUrl } from 'crelte/routing/internal';
 
 export default class CrelteServerRequest {
 	/**
@@ -59,6 +60,15 @@ export default class CrelteServerRequest {
 	getEnv(name: string): string | null;
 	getEnv(name: string): string | null {
 		return this._env.get(name) ?? null;
+	}
+
+	/**
+	 * Get the site from a url
+	 */
+	getSiteFromUrl(url: string | URL): Site | null {
+		url = typeof url === 'string' ? new URL(url) : url;
+
+		return siteFromUrl(url, this.sites);
 	}
 
 	/**
