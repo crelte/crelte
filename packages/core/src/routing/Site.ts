@@ -63,3 +63,27 @@ export default class Site {
 		return trimSlashEnd(this.url.pathname);
 	}
 }
+
+export function siteFromUrl(url: URL, sites: Site[]): Site | null {
+	let site: Site | null = null;
+	// get the site which matches the url the most
+	for (const s of sites) {
+		const siteUri = s.uri;
+
+		// make sure the start of the url matches
+		if (url.host !== s.url.host || !url.pathname.startsWith(siteUri)) {
+			continue;
+		}
+
+		// make sure that after the base url a slash follows or nothing
+		const uri = url.pathname.substring(siteUri.length);
+		if (uri.length > 0 && !uri.startsWith('/')) continue;
+
+		/// make sure we get the most matched site
+		if (site && site.uri.length > siteUri.length) continue;
+
+		site = s;
+	}
+
+	return site;
+}

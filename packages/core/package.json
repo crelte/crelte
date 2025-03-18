@@ -1,6 +1,6 @@
 {
 	"name": "crelte",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
@@ -43,6 +43,10 @@
 		"./routing": {
 			"types": "./dist/routing/index.d.ts",
 			"default": "./dist/routing/index.js"
+		},
+		"./routing/internal": {
+			"types": "./dist/routing/internal.d.ts",
+			"default": "./dist/routing/internal.js"
 		},
 		"./entry": {
 			"types": "./dist/entry/index.d.ts",

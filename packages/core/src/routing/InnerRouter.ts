@@ -1,4 +1,4 @@
-import Site, { SiteFromGraphQl } from './Site.js';
+import Site, { SiteFromGraphQl, siteFromUrl } from './Site.js';
 import History from './History.js';
 import { ClientHistory, ServerHistory } from './History.js';
 import Request, { isRequest, RequestOptions } from './Request.js';
@@ -184,25 +184,7 @@ export default class InnerRouter {
 		const route = new Route(fullUrl, null!);
 		const url = route.url;
 
-		let site: Site | null = null;
-		// get the site which matches the url the most
-		for (const s of this.sites) {
-			const siteUri = s.uri;
-
-			// make sure the start of the url matches
-			if (url.host !== s.url.host || !url.pathname.startsWith(siteUri)) {
-				continue;
-			}
-
-			// make sure that after the base url a slash follows or nothing
-			const uri = url.pathname.substring(siteUri.length);
-			if (uri.length > 0 && !uri.startsWith('/')) continue;
-
-			/// make sure we get the most matched site
-			if (site && site.uri.length > siteUri.length) continue;
-
-			site = s;
-		}
+		const site = siteFromUrl(url, this.sites);
 
 		// todo should we throw if we can't find a site
 		// or use the site which matches the language
