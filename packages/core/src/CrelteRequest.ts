@@ -3,6 +3,7 @@ import { GraphQlQuery } from './graphql/GraphQl.js';
 import Site from './routing/Site.js';
 import Request from './routing/Request.js';
 import Route from './routing/Route.js';
+import { circles } from './utils.js';
 
 export default class CrelteRequest extends Crelte {
 	/**
@@ -104,3 +105,12 @@ export default class CrelteRequest extends Crelte {
 		});
 	}
 }
+
+export function requestFromCrelte(
+	crelte: Crelte,
+	req?: Route | Request,
+): CrelteRequest {
+	return CrelteRequest.fromCrelte(crelte, req);
+}
+
+circles.requestFromCrelte = requestFromCrelte;

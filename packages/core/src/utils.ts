@@ -8,3 +8,6 @@ export function objClone(obj: any): any {
 
 	return JSON.parse(JSON.stringify(obj));
 }
+
+// this allows us to fix cyclic dependencies
+export const circles: Record<string, any> = {};

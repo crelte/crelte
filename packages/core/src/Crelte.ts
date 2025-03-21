@@ -2,7 +2,6 @@ import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
 import ServerCookies from './cookies/ServerCookies.js';
 import GraphQl, { GraphQlQuery } from './graphql/GraphQl.js';
-import { CrelteRequest } from './index.js';
 import Globals, { Global } from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
@@ -11,6 +10,8 @@ import type Request from './routing/Request.js';
 import Router from './routing/Router.js';
 import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
+import { type CrelteRequest } from './index.js';
+import { circles } from './utils.js';
 
 export type Config = {
 	/**
@@ -255,7 +256,8 @@ export default class Crelte {
 	 * to use in loadData context
 	 */
 	toRequest(req?: Route | Request): CrelteRequest {
-		return CrelteRequest.fromCrelte(this, req);
+		// we do this to avoid cyclic dependencies
+		return circles.requestFromCrelte(this, req);
 	}
 
 	/**
