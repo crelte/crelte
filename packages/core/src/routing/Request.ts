@@ -112,6 +112,7 @@ export default class Request extends Route {
 			state: objClone(this._state),
 			context: this._context,
 			disableScroll: this.disableScroll,
+			disableLoadData: this.disableLoadData,
 			statusCode: this.statusCode ?? undefined,
 		});
 	}
@@ -137,6 +138,7 @@ export default class Request extends Route {
 		this._state = opts.state ?? this._state;
 		this._context = opts.context ?? this._context;
 		this.disableScroll = opts.disableScroll ?? this.disableScroll;
+		this.disableLoadData = opts.disableLoadData ?? this.disableLoadData;
 		this.statusCode = opts.statusCode ?? this.statusCode;
 	}
 }
