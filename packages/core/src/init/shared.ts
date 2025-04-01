@@ -149,7 +149,7 @@ async function loadFn<E, T>(
 	if (app.templates) {
 		template = await loadTemplate(templateModules, entry);
 	} else {
-		throw new Error('App must have templates or loadTemplate method');
+		throw new Error('App must export some templates');
 	}
 
 	// loading progress is at 60%
