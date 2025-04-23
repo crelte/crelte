@@ -136,7 +136,10 @@ export async function main(data: MainData): Promise<{
 
 	return {
 		status:
-			entry.sectionHandle === 'error' ? parseInt(entry.typeHandle) : 200,
+			req.statusCode ??
+			(entry.sectionHandle === 'error'
+				? parseInt(entry.typeHandle)
+				: 200),
 		html: finalHtml,
 		setCookies: (crelte.cookies as ServerCookies)._getSetCookiesHeaders(),
 	};
