@@ -10,6 +10,12 @@ export type Entry = {
 	[key: string]: any;
 };
 
+export type EntryQueryVars = {
+	uri: string;
+	siteId: number;
+	[key: string]: any;
+};
+
 export type EntryRequestOptions = RequestOptions & {
 	params?: Map<string, string>;
 };

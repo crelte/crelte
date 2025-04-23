@@ -1,6 +1,7 @@
 import Crelte from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import EntryRouter, { EntryRoutes } from '../entry/EntryRouter.js';
+import { EntryQueryVars } from '../entry/index.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { Entry } from '../index.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
@@ -40,6 +41,11 @@ export function pluginsBeforeRender(cr: CrelteRequest): void {
 	cr.events.trigger('beforeRender', cr);
 }
 
+const ERROR_404_ENTRY: Entry = {
+	sectionHandle: 'error',
+	typeHandle: '404',
+};
+
 /**
  * Get the entry from the page
  *
@@ -48,7 +54,7 @@ export function pluginsBeforeRender(cr: CrelteRequest): void {
  * products should alias productTypeHandle with typeHandle,
  * sectionHandle will be automatically set to product
  */
-export function getEntry(page: any): any {
+function getEntry(page: any): Entry | null {
 	if (page?.entry) return { ...page.entry };
 	if (page?.product)
 		return {
@@ -56,10 +62,7 @@ export function getEntry(page: any): any {
 			...page.product,
 		};
 
-	return {
-		sectionHandle: 'error',
-		typeHandle: '404',
-	};
+	return null;
 }
 
 // todo it would be nice to call this only once per server start
@@ -204,27 +207,54 @@ async function queryEntry(
 	app: App,
 	entryRouter: EntryRouter | null,
 	entryQuery: GraphQlQuery,
-): Promise<any | null> {
-	// check
-	if (entryRouter) {
-		const entry = await entryRouter._handle(cr);
-		if (entry) return entry;
-	}
+): Promise<Entry> {
+	let vars: EntryQueryVars | null = null;
 
 	if (cr.req.siteMatches()) {
 		let uri = decodeURI(cr.req.uri);
 		if (uri.startsWith('/')) uri = uri.substring(1);
 		if (uri === '' || uri === '/') uri = '__home__';
 
-		const page = await cr.query(entryQuery, {
+		vars = {
 			uri,
 			siteId: cr.site.id,
-		});
-
-		return getEntry(page);
+		};
 	}
 
-	return null;
+	if (vars) {
+		await Promise.all(cr.events.trigger('beforeQueryEntry', cr, vars));
+	}
+
+	// basic query function
+	let loadFn = async (vars: EntryQueryVars | null) => {
+		if (entryRouter) {
+			const entry = await entryRouter._handle(cr);
+			if (entry) return entry;
+		}
+
+		if (vars) {
+			const page = await cr.query(entryQuery, vars);
+
+			return getEntry(page);
+		}
+
+		return null;
+	};
+
+	// check if a plugin wants to override the query
+	const fns = cr.events.getListeners('queryEntry');
+	for (const fn of fns) {
+		const prevLoadFn = loadFn;
+		loadFn = async vars => {
+			return await fn(cr, vars, prevLoadFn);
+		};
+	}
+
+	const entry = (await loadFn(vars)) ?? ERROR_404_ENTRY;
+
+	await Promise.all(cr.events.trigger('afterQueryEntry', cr, entry));
+
+	return entry;
 }
 
 function prepareTemplates(
