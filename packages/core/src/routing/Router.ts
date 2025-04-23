@@ -232,6 +232,13 @@ export default class Router {
 		});
 		if (!req) return;
 
+		if (req === this._request) {
+			throw new Error(
+				'Cannot open the same request object twice. Either clone the request ' +
+					'or just pass in the url.',
+			);
+		}
+
 		this.inner.open(req);
 	}
 
@@ -269,6 +276,9 @@ export default class Router {
 	 * ```
 	 */
 	push(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
+		// todo not sure if that is what we want?
+		if (import.meta.env.SSR) return this.open(route, opts);
+
 		// theoretically string and URL also work but we might
 		// change that in the future
 		const req = this.targetOrUpdateToRequest(route, opts, {
@@ -322,6 +332,9 @@ export default class Router {
 	 * ```
 	 */
 	replace(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
+		// todo not sure if that is what we want?
+		if (import.meta.env.SSR) return this.open(route, opts);
+
 		// theoretically string and URL also work but we might
 		// change that in the future
 		const req = this.targetOrUpdateToRequest(route, opts, {
@@ -572,7 +585,8 @@ export default class Router {
 			const route = this.route.get();
 			if (!route) {
 				throw new Error(
-					'route to update missing in first loadData call',
+					'route to update missing in first loadData call. ' +
+						'Use cr.req.clone() instead',
 				);
 			}
 
