@@ -29,6 +29,8 @@ export {
 	type Entry,
 };
 
+export type Init = (crelte: Crelte) => void;
+
 /**
  * Get Crelte from the current context
  *

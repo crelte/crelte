@@ -1,4 +1,5 @@
 import { CrelteRequest } from '../index.js';
+import { CrelteRequest, Entry } from '../index.js';
 
 export default class Events {
 	inner: Map<string, Set<any>>;
@@ -19,7 +20,7 @@ export default class Events {
 	): () => void;
 	on(
 		ev: 'loadData',
-		fn: (cr: CrelteRequest, entry: any) => Promise<any>,
+		fn: (cr: CrelteRequest, entry: Entry) => Promise<any>,
 	): () => void;
 	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {

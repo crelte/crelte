@@ -96,6 +96,7 @@ export async function main(data: MainData) {
 
 	// setup plugins
 	setupPlugins(crelte, data.app.plugins ?? []);
+	data.app.init?.(crelte);
 
 	const loadFn = await prepareLoadFn(
 		crelte,

@@ -2,31 +2,32 @@ import Crelte from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import EntryRouter, { EntryRoutes } from '../entry/EntryRouter.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
+import { Entry } from '../index.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
-interface App<E, T> {
+interface App {
 	loadGlobalData?: LoadData<null>;
 
 	// todo: add a generic
-	loadEntryData?: LoadData<any>;
+	loadEntryData?: LoadData<Entry>;
 
-	templates?: Record<string, LazyTemplateModule<E, T>>;
+	templates?: Record<string, LazyTemplateModule>;
 
 	entryRoutes?: EntryRoutes;
+
+	init?: (crelte: Crelte) => void;
 }
 
-interface TemplateModule<E, T> {
+interface TemplateModule {
 	// svelte component
 	default: any;
 
-	loadData?(cr: CrelteRequest, entry: E): Promise<T>;
+	loadData?: LoadData<Entry>;
 }
 
-type LazyTemplateModule<E, T> =
-	| (() => Promise<TemplateModule<E, T>>)
-	| TemplateModule<E, T>;
+type LazyTemplateModule = (() => Promise<TemplateModule>) | TemplateModule;
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -62,9 +63,9 @@ export function getEntry(page: any): any {
 }
 
 // todo it would be nice to call this only once per server start
-export async function prepareLoadFn<E, T>(
+export async function prepareLoadFn(
 	crelte: Crelte,
-	app: App<E, T>,
+	app: App,
 	entryQuery: GraphQlQuery,
 	globalQuery?: GraphQlQuery,
 ): Promise<(cr: CrelteRequest, loadOpts?: LoadOptions) => Promise<any>> {
@@ -88,10 +89,10 @@ export async function prepareLoadFn<E, T>(
 	};
 }
 
-async function loadFn<E, T>(
+async function loadFn(
 	cr: CrelteRequest,
-	app: App<E, T>,
-	templateModules: Map<string, LazyTemplateModule<E, T>>,
+	app: App,
+	templateModules: Map<string, LazyTemplateModule>,
 	entryRouter: EntryRouter | null,
 	entryQuery: GraphQlQuery,
 	globalQuery?: GraphQlQuery,
@@ -198,9 +199,9 @@ function parseFilename(path: string): [string, string] {
 	return [name, ext];
 }
 
-async function queryEntry<E, T>(
+async function queryEntry(
 	cr: CrelteRequest,
-	app: App<E, T>,
+	app: App,
 	entryRouter: EntryRouter | null,
 	entryQuery: GraphQlQuery,
 ): Promise<any | null> {
@@ -226,24 +227,24 @@ async function queryEntry<E, T>(
 	return null;
 }
 
-function prepareTemplates<E, T>(
-	rawModules: Record<string, LazyTemplateModule<E, T>>,
-): Map<string, LazyTemplateModule<E, T>> {
+function prepareTemplates(
+	rawModules: Record<string, LazyTemplateModule>,
+): Map<string, LazyTemplateModule> {
 	// parse modules
 	return new Map(
 		Object.entries(rawModules)
 			.map(([path, mod]) => {
 				const [name, _ext] = parseFilename(path);
-				return [name, mod] as [string, LazyTemplateModule<E, T>];
+				return [name, mod] as [string, LazyTemplateModule];
 			})
 			.filter(([name, _mod]) => !!name),
 	);
 }
 
-async function loadTemplate<E, T>(
-	modules: Map<string, LazyTemplateModule<E, T>>,
-	entry: E,
-): Promise<TemplateModule<E, T>> {
+async function loadTemplate(
+	modules: Map<string, LazyTemplateModule>,
+	entry: Entry,
+): Promise<TemplateModule> {
 	const entr = entry as any;
 	const handle = `${entr.sectionHandle}-${entr.typeHandle}`;
 
