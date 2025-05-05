@@ -12,7 +12,10 @@
 		"check-fmt": "npm run check-fmt --workspaces",
 		"fmt": "npm run fmt --workspaces",
 		"lint": "npm run lint --workspaces",
-		"build": "npm run build --workspaces"
+		"build": "npm run build --workspaces",
+		"docs:dev": "vitepress dev docs",
+		"docs:build": "vitepress build docs",
+		"docs:preview": "vitepress preview docs"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.3",
@@ -25,6 +28,7 @@
 		"prettier": "^3.2.4",
 		"prettier-plugin-svelte": "^3.2.6",
 		"typescript": "^5.0.0",
-		"typescript-eslint": "^8.0.0"
+		"typescript-eslint": "^8.0.0",
+		"vitepress": "^1.6.3"
 	}
 }

@@ -3,3 +3,5 @@
 /auto-docs
 /.idea
 /.npm
+docs/.vitepress/dist
+docs/.vitepress/cache
