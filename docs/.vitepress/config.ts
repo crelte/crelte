@@ -8,7 +8,7 @@ export default defineConfig({
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
 			{ text: 'Guide', link: '/guide/01-introduction/01-overview' },
-			{ text: 'Tutorial', link: '/markdown-examples' },
+			{ text: 'Tutorial', link: '/tutorial/01-introduction/01-overview' },
 		],
 
 		sidebar: {
@@ -54,20 +54,17 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
 function sidebarTutorial(): DefaultTheme.SidebarItem[] {
 	return [
 		{
-			text: 'Reference',
+			text: 'Introduction',
 			items: [
-				{ text: 'Site Config', link: 'site-config' },
-				{ text: 'Frontmatter Config', link: 'frontmatter-config' },
-				{ text: 'Runtime API', link: 'runtime-api' },
-				{ text: 'CLI', link: 'cli' },
-				{
-					text: 'Default Theme',
-					base: '/reference/default-theme-',
-					items: [
-						{ text: 'Overview', link: 'config' },
-						{ text: 'Nav', link: 'nav' },
-					],
-				},
+				{ text: 'Overview', link: '01-introduction/01-overview' },
+				{ text: 'Create a project', link: '01-introduction/02-create' },
+			],
+		},
+		{
+			text: 'Page & Header',
+			items: [
+				{ text: 'Craft', link: '02-page-header/01-craft' },
+				{ text: 'Svelte', link: '02-page-header/02-svelte' },
 			],
 		},
 	];
