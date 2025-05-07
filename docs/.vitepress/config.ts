@@ -67,5 +67,13 @@ function sidebarTutorial(): DefaultTheme.SidebarItem[] {
 				{ text: 'Svelte', link: '02-page-header/02-svelte' },
 			],
 		},
+		{
+			text: 'Content Matrix',
+			items: [
+				{ text: 'Craft', link: '03-content-matrix/01-craft' },
+				{ text: 'Svelte', link: '03-content-matrix/02-svelte' },
+				{ text: 'Preview', link: '03-content-matrix/03-preview' },
+			],
+		},
 	];
 }
