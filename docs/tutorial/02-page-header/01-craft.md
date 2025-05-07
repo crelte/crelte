@@ -50,7 +50,7 @@ Set the title to `Home` and select the `Home` entry type.
 Then to make sure the homepage is the first page set the slug to `__home__`.
 ![Section Pages](./assets/01-section-pages-home.png)
 
-Create another Page named `News articles`.
+Create another Page named `News`.
 ![Section Pages](./assets/01-section-pages-news.png)
 
 ## Header
