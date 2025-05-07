@@ -25,16 +25,20 @@ export default defineConfig({
 function sidebarGuide(): DefaultTheme.SidebarItem[] {
 	return [
 		{
-			text: 'Introduction',
+			text: 'Getting started',
 			// collapsed: false,
 			items: [
-				{ text: 'Overview', link: '01-introduction/01-overview' },
+				{
+					text: 'Introduction',
+					link: '01-introduction/01-introduction',
+				},
+				{ text: 'Overview', link: '01-introduction/02-overview' },
 				{ text: 'Create a project', link: '01-introduction/02-create' },
 				{ text: 'Structure', link: '01-introduction/03-structure' },
 			],
 		},
 		{
-			text: 'Core',
+			text: 'Concepts',
 			// collapsed: false,
 			items: [
 				{ text: 'Routing', link: '02-core/01-routing' },
