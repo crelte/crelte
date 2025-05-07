@@ -3,7 +3,8 @@
 Before a template can be rendered, it needs data. Two data sources get loaded for you automatically, `global.graphql` and `entry.graphql` others need to be defined in `loadGlobalData` or `loadData` respectively.
 
 ## loadGlobalData
-The first load that occurs is `loadGlobalData` this will load the `global.graphql` and at the same time `entry.graphql` is loaded. If you don't need to wait for the entry to be available you can export a `loadGlobalData` function from the `App.svelte`.
+
+The first load that occurs is `loadGlobalData`. This will load the `global.graphql`, at the same time `entry.graphql` is loaded. If you don't need to wait for the entry to be available you can export a `loadGlobalData` function from the `App.svelte`.
 
 ```svelte
 <script context="module">
@@ -20,9 +21,11 @@ The first load that occurs is `loadGlobalData` this will load the `global.graphq
 After this `loadData` get's called.
 
 ## loadData
+
 Each template can have a `loadData` export which will get automatically called by crelte.
 
 ### templates/pages-home.svelte
+
 ```svelte
 <script context="module">
 	import { gql } from 'crelte/graphql';
@@ -47,9 +50,11 @@ Each template can have a `loadData` export which will get automatically called b
 ```
 
 ## Types
+
 There are four ways `loadData` can be defined. Each of them will be executed on the server and on the client.
 
 ### Object
+
 This is the most common way loadData will be used.
 Each property should be a loadData type, each one is called in parallel.
 And will be available to your component with the same name.
@@ -74,6 +79,7 @@ And will be available to your component with the same name.
 ```
 
 ### GraphQl
+
 You can just export a graphql query as a loadData type.
 This will export all queries from the graphql file as properties.
 
@@ -102,6 +108,7 @@ This will export all queries from the graphql file as properties.
 ```
 
 ### Function
+
 Using a function gives you the most flexibility but also is the
 most cumbersome.
 
@@ -130,6 +137,7 @@ most cumbersome.
 ```
 
 ### Array
+
 You can also return an array of loadData types. These will be executed
 in parallel and their results will be combined.
 
@@ -158,10 +166,13 @@ in parallel and their results will be combined.
 ```
 
 ## Input
+
 Each function has access to `CrelteRequest` as well as the `entry` object expect in `loadGlobalData` where `entry` is not yet loaded.
 
 ## Output
+
 A load data should either return an object or nothing since it will be spread into the component.
 
 ## When to use a loadData
+
 If you need to load data which cannot be loaded in `global.graphql` or `entry.graphql`, it is always favorable to use already existing queries, to avoid multiple request.
