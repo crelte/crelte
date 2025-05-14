@@ -48,3 +48,5 @@ Go to `Settings > GraphQL > Public Schema` and select all `Entries`.
 Before you can start creating a few news articles we need to change the
 entry type of the News page to `News`.
 ![News Page](./assets/01-news-page.png)
+
+Now create a few news articles and categories.
