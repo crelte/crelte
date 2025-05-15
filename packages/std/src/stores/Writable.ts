@@ -1,14 +1,17 @@
 import { CloneableOrPrimitive } from '../index.js';
-import { Listeners } from '../sync/index.js';
+import { Writable as SvelteWritable, writable } from 'svelte/store';
 import Readable from './Readable.js';
 import Readclone from './Readclone.js';
 
 /**
  * A svelte store
+ *
+ * Prefer `import { writable } from 'svelte/store';` if you don't have
+ * specific needs
  */
 export default class Writable<T> {
 	private inner: T;
-	private listeners: Listeners<[T]>;
+	private store: SvelteWritable<object>;
 
 	/**
 	 * Creates a new Writable
@@ -17,27 +20,28 @@ export default class Writable<T> {
 	 */
 	constructor(def: T) {
 		this.inner = def;
-		this.listeners = new Listeners();
+		this.store = writable({});
 	}
 
 	/**
 	 * The function get's called once with the current value and then when the
 	 * values changes
 	 *
+	 * ## Note
+	 * This does not check for equality like svelte.
+	 *
 	 * @return a function which should be called to unsubscribe
 	 */
-	subscribe(fn: (val: T) => void): () => void {
-		fn(this.inner);
-
-		return this.listeners.add(fn);
+	subscribe(fn: (val: T) => void, invalidate?: () => void): () => void {
+		return this.store.subscribe(() => fn(this.inner), invalidate);
 	}
 
 	/**
-	 * Sets the value and call alls subscribers with the value
+	 * Sets the value and calls all subscribers with the value
 	 */
 	set(inner: T) {
 		this.inner = inner;
-		this.listeners.trigger(this.inner);
+		this.store.set({});
 	}
 
 	/**
@@ -51,7 +55,7 @@ export default class Writable<T> {
 	 * calls all subscribers with the value
 	 */
 	notify() {
-		this.listeners.trigger(this.inner!);
+		this.store.set({});
 	}
 
 	/**

@@ -172,7 +172,7 @@ export async function main(data: MainData) {
 		// render with view Transition if enabled and not in hydration
 		if (
 			builder.config.viewTransition &&
-			appInstance &&
+			!isFirstLoad &&
 			(document as any).startViewTransition
 		) {
 			render = () => (document as any).startViewTransition(render);
@@ -181,6 +181,7 @@ export async function main(data: MainData) {
 		await render();
 	};
 
+	// gets called if disableLoadData was set
 	crelte.router._internal.onNothingLoaded = async (req, ready) => {
 		crelte.globals._updateSiteId(req.site.id);
 		ready();

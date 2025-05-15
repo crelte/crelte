@@ -146,8 +146,8 @@ export class Global<T = any> {
 	 *
 	 * @return a function which should be called to unsubscribe
 	 */
-	subscribe(fn: (val: T) => void): () => void {
-		return this.inner.subscribe(fn);
+	subscribe(fn: (val: T) => void, invalidate?: () => void): () => void {
+		return this.inner.subscribe(fn, invalidate);
 	}
 
 	/**

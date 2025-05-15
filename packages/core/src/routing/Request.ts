@@ -20,7 +20,7 @@ export type RequestOptions = {
 /**
  * A Request is a Route with some extra options
  * you get a Request from the onRequest event or
- * in a loadGlobal function.
+ * in a loadData function.
  */
 export default class Request extends Route {
 	/**

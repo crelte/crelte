@@ -23,8 +23,8 @@ export default class Readclone<
 	 *
 	 * @return a function which should be called to unsubscribe
 	 */
-	subscribe(fn: (val: T) => void): () => void {
-		return super.subscribe(t => fn(clone(t)));
+	subscribe(fn: (val: T) => void, invalidate?: () => void): () => void {
+		return super.subscribe(t => fn(clone(t)), invalidate);
 	}
 
 	/**
