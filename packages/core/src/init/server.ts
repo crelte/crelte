@@ -6,6 +6,8 @@ import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
+import { svelteRender } from './svelteComponents.js';
+import { Writable } from 'crelte-std/stores';
 
 export type ServerData = {
 	url: string;
@@ -123,7 +125,12 @@ export async function main(data: MainData): Promise<{
 	pluginsBeforeRender(cr);
 	crelte.globals._updateSiteId(cr.site.id);
 	// eslint-disable-next-line prefer-const
-	let { html, head } = data.app.default.render(props, { context });
+	let { html, head } = svelteRender(data.app.default, {
+		props: {
+			props: new Writable(props),
+		},
+		context,
+	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
 	head += crelte.ssrCache._exportToHead();
@@ -190,7 +197,10 @@ export async function mainError(
 	ssrCache.set('ERROR', data.error);
 
 	// eslint-disable-next-line prefer-const
-	let { html, head } = data.errorPage.default.render(data.error, { context });
+	let { html, head } = svelteRender(data.errorPage.default, {
+		props: data.error,
+		context,
+	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
 	head += ssrCache._exportToHead();
