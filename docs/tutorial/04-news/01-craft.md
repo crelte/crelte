@@ -11,7 +11,7 @@ Go to `Settings > Sections` and click `New section`.
 
 Name it `Categories` and set the `Type` to `Structure` which allows
 to re order the categories.
-Change the URI format to `news/?category={slug}`.
+Change the URI format to `news/?category={id}`.
 Set `Max Levels` to `1` so the categories cannot be nested.
 Create a new Entry Type named `Category`.
 
