@@ -75,5 +75,13 @@ function sidebarTutorial(): DefaultTheme.SidebarItem[] {
 				{ text: 'Preview', link: '03-content-matrix/03-preview' },
 			],
 		},
+		{
+			text: 'News',
+			items: [
+				{ text: 'Craft', link: '04-news/01-craft' },
+				{ text: 'Svelte', link: '04-news/02-svelte' },
+				{ text: 'End', link: '04-news/03-end' },
+			],
+		},
 	];
 }
