@@ -1,9 +1,11 @@
+import { Writable } from 'crelte-std/stores';
 import { CrelteBuilder } from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { pluginsBeforeRender, prepareLoadFn, setupPlugins } from './shared.js';
 import { tick } from 'svelte';
+import { svelteMount } from './svelteComponents.js';
 
 /**
  * The main function to start the client side rendering
@@ -85,10 +87,9 @@ export async function main(data: MainData) {
 		// should this be called??
 		crelte.router._internal.initClient();
 
-		new data.errorPage.default({
+		svelteMount(data.errorPage.default, {
 			target: document.body,
 			props: { ...serverError },
-			hydrate: true,
 			context: crelte._getContext(),
 		});
 		return;
@@ -115,17 +116,18 @@ export async function main(data: MainData) {
 	// render Space
 
 	let appInstance: any;
+	let propsStore: Writable<any> | null = null;
 	const updateAppProps = (props: any) => {
-		if (!appInstance) {
-			appInstance = new data.app.default({
+		if (!propsStore) {
+			propsStore = new Writable(props);
+			appInstance = svelteMount(data.app.default, {
 				target: document.body,
-				props,
-				hydrate: true,
+				props: { props: propsStore },
 				context: crelte._getContext(),
 				intro: builder.config.playIntro,
 			});
 		} else {
-			appInstance.$set(props);
+			propsStore.set(props);
 		}
 	};
 
