@@ -136,7 +136,10 @@ async function servePublic(
 ): Promise<boolean> {
 	if (!req.url || req.url === '/' || req.method !== 'GET') return false;
 
-	let filePath = join(publicDir, req.url);
+	// parse the url so we can get the pathname without query params
+	const url = new URL(req.url, 'http://localhost');
+
+	let filePath = join(publicDir, url.pathname);
 	filePath = path.normalize(filePath);
 
 	if (!filePath.startsWith(publicDir)) {
