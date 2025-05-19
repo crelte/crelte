@@ -12,7 +12,7 @@ hero:
           link: /guide/01-introduction/01-introduction
         - theme: alt
           text: Tutorial
-          link: /api-examples
+          link: /tutorial/01-introduction/01-overview
 
 features:
     - title: Feature A
