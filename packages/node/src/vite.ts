@@ -201,7 +201,7 @@ export default function crelte(): Plugin {
 				} else {
 					return (
 						`export function internalSvelteMount(comp, options) {` +
-						`return new comp(options);` +
+						`return new comp({ ...options, hydrate: true });` +
 						`}` +
 						`export function internalSvelteRender(comp, options) {` +
 						`return comp.render(options.props, options);` +
