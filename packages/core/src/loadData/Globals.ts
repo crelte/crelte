@@ -128,7 +128,7 @@ export class Global<T = any> {
 		// In v0.2, we queried the global data for all sites.
 		// We now check if the siteId is present and notify the user to remove it.
 		if (
-			typeof (data as any).siteId === 'number' ||
+			typeof (data as any)?.siteId === 'number' ||
 			(Array.isArray(data) && typeof data[0]?.siteId === 'number')
 		) {
 			throw new Error(
