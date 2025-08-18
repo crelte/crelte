@@ -93,7 +93,7 @@ export default class Router {
 	 */
 	private _site: Writable<Site | null>;
 
-	// the next request, just here to destroy it
+	// the next request if it is not only a preload request
 	private _request: Request | null;
 
 	/**
@@ -161,9 +161,10 @@ export default class Router {
 	 * returns a store with the current route
 	 *
 	 * ## Note
-	 * Will always contain a route expect in the first loadData call
-	 *
-	 * Consider to use CrelteRequest instead
+	 * Will always contain a route except in the first loadData call this
+	 * is intentional since you will get the wrong route in a loadData call.
+	 * In a loadData you should always use the `CrelteRequest` provided
+	 * in each loadData call.
 	 */
 	get route(): Readable<Route | null> {
 		return this._route.readclone();
@@ -173,12 +174,28 @@ export default class Router {
 	 * returns a store with the current site
 	 *
 	 * ## Note
-	 * Will always contain a site expect in the first loadData call
+	 * Will always contain a site except in the first loadData call this
+	 * is intentional since you might get the wrong site if a site switch
+	 * is happening and you call this in loadData. If possible use the CrelteRequest
+	 * provided in each loadData call.
 	 *
-	 * Consider to use CrelteRequest instead
+	 * Else use `router.site.get() ?? router.req.site`
 	 */
 	get site(): Readable<Site | null> {
 		return this._site.readonly();
+	}
+
+	/**
+	 * returns the latest request in progress otherwise returns null.
+	 *
+	 * ## Important !!
+	 * If at all possible prefer using the `CrelteRequest` provided in each
+	 * loadData call. For example in a preload request this will return null.
+	 * Or a user has clicked multiple times on different links you might get
+	 * the url of the newer request.
+	 */
+	get req(): Request | null {
+		return this._request;
 	}
 
 	/**
@@ -510,8 +527,10 @@ export default class Router {
 		}
 	}
 
-	private destroyRequest() {
+	private destroyRequest(requestToDestroy?: Request) {
 		if (!this._request) return;
+
+		if (this._request !== requestToDestroy) return;
 
 		this._request._renderBarrier.cancel();
 		this._request = null;
@@ -521,7 +540,7 @@ export default class Router {
 		this.pageLoader.preload(req);
 	}
 
-	// gets called by the pageLoader when teh loadData completes
+	// gets called by the pageLoader when the loadData completes
 	private async _onLoaded(
 		resp: LoadResponse,
 		req: Request,
@@ -539,6 +558,7 @@ export default class Router {
 
 		// call the client or server saying we are ready for a new render
 		this._internal.onLoaded(resp.success, req, () => {
+			this.destroyRequest(req);
 			this.setNewRoute(route);
 			return resp.data;
 		});
@@ -559,6 +579,7 @@ export default class Router {
 		// call the client or server saying there was an update in the route
 		// but no new data was loaded so no render should happen
 		this._internal.onNothingLoaded(req, () => {
+			this.destroyRequest(req);
 			this.setNewRoute(route);
 		});
 	}
