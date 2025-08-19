@@ -6,6 +6,7 @@ import { ServerHistory } from './History.js';
 import { Readable, Writable } from 'crelte-std/stores';
 import { Listeners } from 'crelte-std/sync';
 import Request, { RequestOptions } from './Request.js';
+import EntryRoute from './EntryRoute.js';
 
 export type RouterOptions = {
 	preloadOnMouseOver?: boolean;
@@ -81,15 +82,15 @@ export default class Router {
 	 * The current route
 	 *
 	 * ## Note
-	 * Will always contain a route expect in the first loadData call
+	 * Will always contain a route except in the first loadData call
 	 */
-	private _route: Writable<Route | null>;
+	private _route: Writable<EntryRoute | null>;
 
 	/**
 	 * The current site
 	 *
 	 * ## Note
-	 * Will always contain a site expect in the first loadData call
+	 * Will always contain a site except in the first loadData call
 	 */
 	private _site: Writable<Site | null>;
 
@@ -139,7 +140,7 @@ export default class Router {
 		this._internal = {
 			onLoaded: () => {},
 			onNothingLoaded: () => {},
-			onLoad: () => {},
+			onLoad: () => null!,
 			domReady: req => this.inner.domReady(req),
 			initClient: () => this._initClient(),
 			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
@@ -166,7 +167,7 @@ export default class Router {
 	 * In a loadData you should always use the `CrelteRequest` provided
 	 * in each loadData call.
 	 */
-	get route(): Readable<Route | null> {
+	get route(): Readable<EntryRoute | null> {
 		return this._route.readclone();
 	}
 
@@ -432,7 +433,7 @@ export default class Router {
 		return this.inner.targetToRequest(target, opts);
 	}
 
-	private setNewRoute(route: Route) {
+	private setNewRoute(route: EntryRoute) {
 		this._route.setSilent(route);
 		const siteChanged = this.site.get()?.id !== route.site.id;
 		this._site.setSilent(route.site);
@@ -554,12 +555,10 @@ export default class Router {
 		// in the meantime
 		more.changeHistory();
 
-		const route = req.toRoute();
-
 		// call the client or server saying we are ready for a new render
 		this._internal.onLoaded(resp.success, req, () => {
 			this.destroyRequest(req);
-			this.setNewRoute(route);
+			this.setNewRoute(er);
 			return resp.data;
 		});
 	}

@@ -106,7 +106,7 @@ async function loadFn(
 	if (app.loadData) {
 		throw new Error(
 			'loadData is ambigous, choose loadGlobalData or ' +
-				'loadEntryData depending on if you need access to entry or not?',
+				'loadEntryData depending on if you need access to the entry or not?',
 		);
 	}
 

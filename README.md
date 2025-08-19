@@ -1,5 +1,34 @@
 # Crelte
 
+
+consolidating features
+- entryRoutes
+- plugin events
+
+
+- documenting them
+
+
+## Reworking the router
+
+// only exposes public properties
+// all internal types rely on the InnerRouter
+// maybe the current InnerRouter should be renamed to DomRouter or something
+
+// a request should contain the entry if already fetched
+Router {
+
+}
+
+
+## Allowing for custom graphql functions
+- would allow to define loading data from a custom api instead of only graphql
+- allow the plugin system to handle better language redirects
+
+
+
+
+
 ## Svelte 5.0
 
 <script context="module">
