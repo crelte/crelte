@@ -1,4 +1,3 @@
-import { Writable } from 'crelte-std/stores';
 import { CrelteBuilder } from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
@@ -116,19 +115,14 @@ export async function main(data: MainData) {
 	// render Space
 
 	let appInstance: any;
-	let propsStore: Writable<any> | null = null;
-	const updateAppProps = (props: any) => {
-		if (!propsStore) {
-			propsStore = new Writable(props);
-			appInstance = svelteMount(data.app.default, {
-				target: document.body,
-				props: { props: propsStore },
-				context: crelte._getContext(),
-				intro: builder.config.playIntro,
-			});
-		} else {
-			propsStore.set(props);
-		}
+	const mountApp = () => {
+		if (appInstance) return;
+
+		appInstance = svelteMount(data.app.default, {
+			target: document.body,
+			context: crelte._getContext(),
+			intro: builder.config.playIntro,
+		});
 	};
 
 	let firstLoad = true;
@@ -148,6 +142,7 @@ export async function main(data: MainData) {
 				return;
 			}
 
+			// todo should we even call readyForProps here?
 			return handleLoadError(readyForProps());
 		}
 
@@ -158,7 +153,8 @@ export async function main(data: MainData) {
 			// we should trigger the route update here
 			pluginsBeforeRender(cr);
 			crelte.globals._updateSiteId(cr.site.id);
-			updateAppProps(readyForProps());
+			readyForProps();
+			mountApp();
 
 			await tick();
 

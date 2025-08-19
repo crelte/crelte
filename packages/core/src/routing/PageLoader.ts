@@ -1,15 +1,24 @@
+import EntryRoute from './EntryRoute.js';
 import Request from './Request.js';
 
 export type PageLoaderOptions = {
 	debugTiming: boolean;
 };
 
-export type LoadResponse = {
-	success: boolean;
-	data: any;
-};
+export type LoadResponse =
+	| {
+			success: true;
+			data: EntryRoute;
+	  }
+	| {
+			success: false;
+			data: any;
+	  };
 
-export type LoadFn = (req: Request, opts: LoadOptions) => Promise<any> | any;
+export type LoadFn = (
+	req: Request,
+	opts: LoadOptions,
+) => Promise<EntryRoute> | EntryRoute;
 
 export type LoadOptions = {
 	setProgress: (num: number) => void;
@@ -64,13 +73,17 @@ export default class PageLoader<More> {
 			this.onProgress(true, num);
 		};
 
-		const resp: LoadResponse = { success: false, data: null };
+		let resp: LoadResponse;
 		try {
-			resp.data = await this.loadFn(req, { setProgress });
-			resp.success = true;
+			resp = {
+				success: true,
+				data: await this.loadFn(req, { setProgress }),
+			};
 		} catch (e) {
-			resp.success = false;
-			resp.data = e;
+			resp = {
+				success: false,
+				data: e,
+			};
 		}
 
 		if (startTime)

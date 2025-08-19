@@ -111,6 +111,7 @@ export default {
 
 function isSvelte5(): boolean {
 	if (sveltePackage && sveltePackage.version) {
+		console.log('sveltepackage', sveltePackage.version);
 		return sveltePackage.version.startsWith('5.');
 	}
 	// Fallback or error handling if version cannot be determined
@@ -121,12 +122,17 @@ function isSvelte5(): boolean {
 // outside of crelte because each build executes crelte again
 let isSsrBuild = false;
 
-export default function crelte(): Plugin {
+export type CrelteOptions = {
+	/** If not specified tries to detect which version is installed */
+	svelte4?: boolean;
+};
+
+export default function crelte(opts?: CrelteOptions): Plugin {
 	let viteConfig: ResolvedConfig;
 	let viteConfigEnv: ConfigEnv;
 	let initialConfig: UserConfig;
 
-	const svelte5 = isSvelte5();
+	const svelte5 = opts?.svelte4 ? false : isSvelte5();
 
 	return {
 		name: 'crelte',
