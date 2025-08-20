@@ -109,6 +109,9 @@ export async function main(data: MainData): Promise<{
 		return {
 			status: req.statusCode ?? 302,
 			location: req.url.toString(),
+			setCookies: (
+				crelte.cookies as ServerCookies
+			)._getSetCookiesHeaders(),
 		};
 	}
 
