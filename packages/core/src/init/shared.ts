@@ -2,11 +2,12 @@ import Crelte from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
 import EntryRouter, { EntryRoutes } from '../entry/EntryRouter.js';
 import { EntryQueryVars } from '../entry/index.js';
-import { GraphQlQuery } from '../graphql/GraphQl.js';
+import { GraphQlQuery, isGraphQlQuery } from '../graphql/GraphQl.js';
 import { Entry } from '../index.js';
 import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
-import { LoadOptions } from '../routing/PageLoader.js';
+import { LoadOptions } from '../routing/LoadRunner.js';
+import { App } from './InternalApp.js';
 
 interface TemplateModule {
 	// svelte component
@@ -52,52 +53,50 @@ function getEntry(page: any): Entry | null {
 	return null;
 }
 
-async function loadFn(
+export async function loadFn(
 	cr: CrelteRequest,
 	app: App,
-	templateModules: Map<string, LazyTemplateModule>,
-	entryRouter: EntryRouter | null,
-	entryQuery: GraphQlQuery,
-	globalQuery?: GraphQlQuery,
 	loadOpts?: LoadOptions,
-): Promise<any> {
-	let dataProm: Promise<any> | null = null;
-	// @ts-ignore
-	if (app.loadData) {
-		throw new Error(
-			'loadData is ambigous, choose loadGlobalData or ' +
-				'loadEntryData depending on if you need access to the entry or not?',
-		);
-	}
+): Promise<void> {
+	let globalProm: Promise<any> | null = null;
 
 	if (app.loadGlobalData) {
-		dataProm = callLoadData(app.loadGlobalData, cr, null) as any;
+		// todo this needs to be better
+		// since some properties might depend on the other one
+		// or is that not possible inside the same loadGlobalData?
+		// maybe for the moment its enough to wrap this in a promise
+		// and as soon as we get an object sett ot to the globals
+		globalProm = callLoadData(app.loadGlobalData, cr, null);
 	}
 
-	let globalProm: Promise<any> | null = null;
-	if (globalQuery && !cr.globals._wasLoaded(cr.site.id)) {
-		globalProm = (async () => {
-			const res = await cr.query(globalQuery, {
-				siteId: cr.site.id,
-			});
-			// we need to do this sorcery here and can't wait until all
-			// globals functions are done, because some global function
-			// might want to use globals, and for that the function
-			// getAsync exists on Globals
-			cr.globals._setData(cr.site.id, res);
-			return res;
-		})();
+	// let globalProm: Promise<any> | null = null;
+	// if (globalQuery && !cr.globals._wasLoaded(cr.site.id)) {
+	// 	globalProm = (async () => {
+	// 		const res = await cr.query(globalQuery, {
+	// 			siteId: cr.site.id,
+	// 		});
+	// 		// we need to do this sorcery here and can't wait until all
+	// 		// globals functions are done, because some global function
+	// 		// might want to use globals, and for that the function
+	// 		// getAsync exists on Globals
+	// 		cr.globals._setData(cr.site.id, res);
+	// 		return res;
+	// 	})();
+	// }
+	//
+	let loadEntry = app.loadEntry;
+	if (isGraphQlQuery(loadEntry)) {
+		loadEntry = cr => queryEntry(cr, loadEntry as GraphQlQuery);
 	}
 
-	const entryProm = queryEntry(cr, app, entryRouter, entryQuery);
+	const entryProm = callLoadData(loadEntry, cr, null);
 
 	const pluginsLoadGlobalData = cr.events.trigger('loadGlobalData', cr);
 
 	// loading progress is at 20%
 	loadOpts?.setProgress(0.2);
 
-	const [data, global, entry] = await Promise.all([
-		dataProm,
+	const [global, entry] = await Promise.all([
 		globalProm,
 		entryProm,
 		...pluginsLoadGlobalData,
@@ -149,57 +148,46 @@ async function loadFn(
 	};
 }
 
-async function queryEntry(
+export async function queryEntry(
 	cr: CrelteRequest,
-	app: App,
-	entryRouter: EntryRouter | null,
 	entryQuery: GraphQlQuery,
 ): Promise<Entry> {
-	let vars: EntryQueryVars | null = null;
+	if (!cr.req.siteMatches())
+		throw new Error(
+			'to run the entryQuery the request needs to have a matching site',
+		);
 
-	if (cr.req.siteMatches()) {
-		let uri = decodeURI(cr.req.uri);
-		if (uri.startsWith('/')) uri = uri.substring(1);
-		if (uri === '' || uri === '/') uri = '__home__';
+	let uri = decodeURI(cr.req.uri);
+	if (uri.startsWith('/')) uri = uri.substring(1);
+	if (uri === '' || uri === '/') uri = '__home__';
 
-		vars = {
-			uri,
-			siteId: cr.site.id,
-		};
-	}
-
-	if (vars) {
-		await Promise.all(cr.events.trigger('beforeQueryEntry', cr, vars));
-	}
-
-	// basic query function
-	let loadFn = async (vars: EntryQueryVars | null) => {
-		if (entryRouter) {
-			const entry = await entryRouter._handle(cr);
-			if (entry) return entry;
-		}
-
-		if (vars) {
-			const page = await cr.query(entryQuery, vars);
-
-			return getEntry(page);
-		}
-
-		return null;
+	const vars = {
+		uri,
+		siteId: cr.site.id,
 	};
 
-	// check if a plugin wants to override the query
-	const fns = cr.events.getListeners('queryEntry');
-	for (const fn of fns) {
-		const prevLoadFn = loadFn;
-		loadFn = async vars => {
-			return await fn(cr, vars, prevLoadFn);
-		};
-	}
+	const page = await cr.query(entryQuery, vars);
+	return getEntry(page) ?? ERROR_404_ENTRY;
 
-	const entry = (await loadFn(vars)) ?? ERROR_404_ENTRY;
+	// // basic query function
+	// let loadFn = async (vars: EntryQueryVars | null) => {
+	// 	const page = await cr.query(entryQuery, vars);
 
-	await Promise.all(cr.events.trigger('afterQueryEntry', cr, entry));
+	// 	return getEntry(page);
+	// };
 
-	return entry;
+	// // check if a plugin wants to override the query
+	// // const fns = cr.events.getListeners('queryEntry');
+	// // for (const fn of fns) {
+	// // 	const prevLoadFn = loadFn;
+	// // 	loadFn = async vars => {
+	// // 		return await fn(cr, vars, prevLoadFn);
+	// // 	};
+	// // }
+
+	// const entry = (await loadFn(vars)) ?? ERROR_404_ENTRY;
+
+	// // await Promise.all(cr.events.trigger('afterQueryEntry', cr, entry));
+
+	// return entry;
 }

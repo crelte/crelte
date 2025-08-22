@@ -1,19 +1,8 @@
-import { b } from 'vitest/dist/chunks/mocker.d.BE_2ls6u.js';
 import Request from './Request.js';
 
-export type PageLoaderOptions = {
+export type LoadRunnerOptions = {
 	debugTiming: boolean;
 };
-
-export type LoadResponse =
-	| {
-			success: true;
-			data: void;
-	  }
-	| {
-			success: false;
-			data: any;
-	  };
 
 export type LoadFn = (req: Request, opts: LoadOptions) => Promise<void> | void;
 
@@ -25,13 +14,12 @@ export type LoadOptions = {
 /**
  * The PageLoader which is responsible for loading page Data
  */
-export default class LoadRunner<More> {
+export default class LoadRunner {
 	private debugTiming: boolean;
 	private preloadedUrls: Set<string>;
 
 	private loadingVersion: number;
 
-	onLoaded: (resp: LoadResponse, req: Request, more: More) => void;
 	onProgress: (loading: boolean, progress?: number) => void;
 	loadFn: LoadFn;
 
@@ -40,13 +28,12 @@ export default class LoadRunner<More> {
 	 *
 	 * @param {Object} options `{debugTiming}`
 	 */
-	constructor(options: PageLoaderOptions) {
+	constructor(options: LoadRunnerOptions) {
 		this.debugTiming = options.debugTiming;
 		this.preloadedUrls = new Set();
 
 		this.loadingVersion = 0;
 
-		this.onLoaded = () => null!;
 		this.onProgress = () => null!;
 		this.loadFn = () => null!;
 	}
@@ -59,7 +46,10 @@ export default class LoadRunner<More> {
 		this.onProgress(false);
 	}
 
-	async load(req: Request, more: More) {
+	/**
+	 * @returns true if the load was completed
+	 */
+	async load(req: Request): Promise<boolean> {
 		this.onProgress(true);
 
 		const version = ++this.loadingVersion;
@@ -68,35 +58,33 @@ export default class LoadRunner<More> {
 		const isCanceled = () => this.loadingVersion !== version;
 
 		const setProgress = (num: number) => {
-			if (this.loadingVersion !== version) return;
+			if (isCanceled()) return;
 
 			this.onProgress(true, num);
 		};
 
-		let resp: LoadResponse;
+		// a function which should return the response
+		let resp: () => void;
 		try {
-			resp = {
-				success: true,
-				data: await this.loadFn(req, { isCanceled, setProgress }),
-			};
+			const data = await this.loadFn(req, { isCanceled, setProgress });
+			resp = () => data;
 		} catch (e) {
-			resp = {
-				success: false,
-				data: e,
+			resp = () => {
+				throw e;
 			};
 		}
+
+		if (isCanceled()) {
+			console.log('route changed quickly, ignoring response');
+			return false;
+		}
+
+		this.onProgress(false);
 
 		if (startTime)
 			console.log('page load took ' + (Date.now() - startTime) + 'ms');
 
-		// if were the last that called loading, trigger the loaded event
-		if (isCanceled())
-			return console.log('route changed quickly, ignoring response');
-
-		this.onProgress(false);
-		this.onLoaded(resp, req, more);
-
-		return resp;
+		return resp(), true;
 	}
 
 	// you don't need to wait on this call
@@ -107,9 +95,12 @@ export default class LoadRunner<More> {
 		this.preloadedUrls.add(url);
 
 		try {
-			await this.loadFn(req, { setProgress: () => null });
-		} catch (_e) {
-			console.log('preload failed');
+			await this.loadFn(req, {
+				isCanceled: () => false,
+				setProgress: () => null,
+			});
+		} catch (e) {
+			console.log('preload failed', e);
 			// retry at another time
 			this.preloadedUrls.delete(url);
 		}

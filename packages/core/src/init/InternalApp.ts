@@ -10,6 +10,8 @@ export interface App {
 
 	loadGlobalData?: LoadData<null>;
 
+	loadEntry: LoadData<null>;
+
 	// todo: add a generic
 	loadEntryData?: LoadData<Entry>;
 
@@ -38,14 +40,37 @@ export default class InternalApp {
 	constructor(inner: App) {
 		this.inner = inner;
 		this.templateModules = prepareTemplates(inner.templates ?? {});
+
+		// @ts-ignore
+		if (inner.loadData) {
+			throw new Error(
+				'loadData is ambigous, choose loadGlobalData or ' +
+					'loadEntryData depending on if you need access to the entry or not?',
+			);
+		}
+
+		if (!inner.loadEntry) {
+			throw new Error(
+				'loadEntry is required in the app. `export const loadEntry ' +
+					'= entryQuery;`',
+			);
+		}
 	}
 
 	get plugins(): PluginCreator[] {
 		return this.inner.plugins ?? [];
 	}
 
+	get loadGlobalData(): LoadData<null> | undefined {
+		return this.inner.loadGlobalData;
+	}
+
 	init(crelte: Crelte): void {
 		this.inner.init?.(crelte);
+	}
+
+	get loadEntry(): LoadData<null> {
+		return this.inner.loadEntry;
 	}
 }
 

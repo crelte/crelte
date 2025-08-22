@@ -1,6 +1,6 @@
 import { Readable } from 'svelte/store';
 import BaseRouter from './BaseRouter.js';
-import { Route, Site } from './index.js';
+import { Request, Route, Site } from './index.js';
 
 /**
  * Allows to easely modify a Request

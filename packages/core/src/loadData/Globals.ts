@@ -11,6 +11,15 @@ import { Writable } from 'crelte-std/stores';
 
 export type GlobalWaiters<T> = [(g: T | null) => void];
 
+/**
+ * Globals is sort of a queue
+ *
+ * each time a new request get's started
+ * a copy of globals is created which references some properties of the original one
+ *
+ * then if everything is loaded th original globals is "overriden" with the new one
+ * and we get a new state
+ */
 export default class Globals {
 	// while the globals are not loaded if somebody calls
 	// getAsync then we need to store the waiters

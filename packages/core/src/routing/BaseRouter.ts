@@ -9,6 +9,9 @@ import Route from './Route.js';
 import Site, { SiteFromGraphQl, siteFromUrl } from './Site.js';
 import { matchAcceptLang } from './utils.js';
 import { UpdateRequest } from './Router.js';
+import LoadRunner, { LoadRunnerOptions } from './LoadRunner.js';
+
+export type BaseRouterOptions = {} & LoadRunnerOptions;
 
 export default class BaseRouter {
 	sites: Site[];
@@ -33,16 +36,16 @@ export default class BaseRouter {
 	// the next request if it is not only a preload request
 	request: Request | null;
 
-	onLoad: (req: Request) => Promise<void>;
-	onLoadError: () => void;
-	onLoaded: () => void;
+	loadRunner: LoadRunner;
+	// onLoaded: () => void;
 
-	constructor(sites: SiteFromGraphQl[]) {
+	constructor(sites: SiteFromGraphQl[], opts: BaseRouterOptions) {
 		this.sites = sites.map(s => new Site(s));
 		this.sitesByLanguage = new Map(this.sites.map(s => [s.language, s]));
 		this.route = new Writable(null);
 		this.site = new Writable(null);
 		this.request = null;
+		this.loadRunner = new LoadRunner(opts);
 	}
 
 	/**
@@ -96,7 +99,7 @@ export default class BaseRouter {
 			}
 
 			// first get a req
-			const req = this.inner.targetToRequest(route, opts);
+			const req = this.targetToRequest(route, opts);
 			// check if the request was canceled by the update request
 			if (target(req) === false) return null;
 
@@ -106,7 +109,7 @@ export default class BaseRouter {
 			return req;
 		}
 
-		return this.inner.targetToRequest(target, {
+		return this.targetToRequest(target, {
 			...opts,
 			...forcedOpts,
 		});
