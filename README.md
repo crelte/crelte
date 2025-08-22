@@ -49,6 +49,11 @@ consolidating features
 // Router (the public class)
 
 
+// GlobalsCreator?
+
+// RequestGlobals
+
+// Globals
 
 
 

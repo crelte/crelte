@@ -8,19 +8,6 @@ import { LoadData, callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/PageLoader.js';
 
-interface App {
-	loadGlobalData?: LoadData<null>;
-
-	// todo: add a generic
-	loadEntryData?: LoadData<Entry>;
-
-	templates?: Record<string, LazyTemplateModule>;
-
-	entryRoutes?: EntryRoutes;
-
-	init?: (crelte: Crelte) => void;
-}
-
 interface TemplateModule {
 	// svelte component
 	default: any;
@@ -63,33 +50,6 @@ function getEntry(page: any): Entry | null {
 		};
 
 	return null;
-}
-
-// todo it would be nice to call this only once per server start
-export async function prepareLoadFn(
-	crelte: Crelte,
-	app: App,
-	entryQuery: GraphQlQuery,
-	globalQuery?: GraphQlQuery,
-): Promise<(cr: CrelteRequest, loadOpts?: LoadOptions) => Promise<any>> {
-	const templateModules = prepareTemplates(app.templates ?? {});
-	let entryRouter: EntryRouter | null = null;
-	if (app.entryRoutes) {
-		entryRouter = new EntryRouter(crelte);
-		await app.entryRoutes(entryRouter);
-	}
-
-	return async (cr, loadOpts) => {
-		return await loadFn(
-			cr,
-			app,
-			templateModules,
-			entryRouter,
-			entryQuery,
-			globalQuery,
-			loadOpts,
-		);
-	};
 }
 
 async function loadFn(
@@ -189,19 +149,6 @@ async function loadFn(
 	};
 }
 
-function parseFilename(path: string): [string, string] {
-	// get filename with extension
-	const slash = path.lastIndexOf('/');
-	const filename = path.substring(slash + 1);
-
-	const extPos = filename.lastIndexOf('.');
-
-	const name = filename.substring(0, extPos);
-	const ext = filename.substring(extPos + 1);
-
-	return [name, ext];
-}
-
 async function queryEntry(
 	cr: CrelteRequest,
 	app: App,
@@ -255,48 +202,4 @@ async function queryEntry(
 	await Promise.all(cr.events.trigger('afterQueryEntry', cr, entry));
 
 	return entry;
-}
-
-function prepareTemplates(
-	rawModules: Record<string, LazyTemplateModule>,
-): Map<string, LazyTemplateModule> {
-	// parse modules
-	return new Map(
-		Object.entries(rawModules)
-			.map(([path, mod]) => {
-				const [name, _ext] = parseFilename(path);
-				return [name, mod] as [string, LazyTemplateModule];
-			})
-			.filter(([name, _mod]) => !!name),
-	);
-}
-
-async function loadTemplate(
-	modules: Map<string, LazyTemplateModule>,
-	entry: Entry,
-): Promise<TemplateModule> {
-	const entr = entry as any;
-	const handle = `${entr.sectionHandle}-${entr.typeHandle}`;
-
-	if (
-		// @ts-ignore
-		import.meta.env.DEV &&
-		!modules.has(handle) &&
-		!modules.has(entr.sectionHandle)
-	) {
-		console.error(
-			`Template not found: <${handle}>, expecting file: ${handle}.svelte or ${entr.sectionHandle}.svelte`,
-		);
-	}
-
-	const loadMod =
-		modules.get(handle) ??
-		modules.get(entr.sectionHandle) ??
-		modules.get('error-404');
-	if (!loadMod) throw new Error('could not find error-404 template');
-
-	if (typeof loadMod === 'function') {
-		return await loadMod();
-	}
-	return loadMod;
 }

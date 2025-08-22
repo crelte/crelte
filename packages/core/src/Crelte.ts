@@ -12,6 +12,7 @@ import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
 import { type CrelteRequest } from './index.js';
 import { circles } from './utils.js';
+import BaseRouter from './routing/BaseRouter.js';
 
 export type Config = {
 	/**
@@ -93,11 +94,8 @@ export class CrelteBuilder {
 		});
 	}
 
-	setupRouter(sites: SiteFromGraphQl[]) {
-		this.router = new Router(sites, {
-			preloadOnMouseOver: this.config.preloadOnMouseOver,
-			debugTiming: this.config.debugTiming,
-		});
+	setupRouter(router: BaseRouter) {
+		this.router = new Router(router);
 	}
 
 	setupCookies(cookies: string) {

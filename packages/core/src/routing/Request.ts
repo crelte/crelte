@@ -1,12 +1,17 @@
 import { Barrier } from 'crelte-std/sync';
-import Route, { RouteOrigin } from './Route.js';
 import Site from './Site.js';
 import { objClone } from '../utils.js';
+import { Entry } from '../entry/index.js';
+import BaseRoute, { RouteOrigin } from './BaseRoute.js';
+import Route, { TemplateModule } from './Route.js';
 
 /**
  * Options to create a Request
  */
 export type RequestOptions = {
+	entry?: Entry;
+	template?: TemplateModule;
+	loadedData?: Record<string, any>;
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
@@ -22,7 +27,22 @@ export type RequestOptions = {
  * you get a Request from the onRequest event or
  * in a loadGlobal function.
  */
-export default class Request extends Route {
+export default class Request extends BaseRoute {
+	/**
+	 * The entry of the request once loaded
+	 */
+	entry: Entry | null;
+
+	/**
+	 * The template module of the request once loaded
+	 */
+	template: TemplateModule | null;
+
+	/**
+	 * The loaded data of the request
+	 */
+	loadedData: Record<string, any> | null;
+
 	/**
 	 * Disable scrolling for this request
 	 * @default false
@@ -49,6 +69,9 @@ export default class Request extends Route {
 	constructor(url: string | URL, site: Site, opts: RequestOptions = {}) {
 		super(url, site, opts);
 
+		this.entry = opts.entry ?? null;
+		this.template = opts.template ?? null;
+		this.loadedData = opts.loadedData ?? null;
 		this.disableScroll = opts.disableScroll ?? false;
 		this.disableLoadData = opts.disableLoadData ?? false;
 		this.statusCode = opts.statusCode ?? null;
@@ -57,6 +80,9 @@ export default class Request extends Route {
 
 	/**
 	 * Create a Request from a Route
+	 *
+	 * Clears the entry, template, and loadedData
+	 * todo should it?
 	 */
 	static fromRoute(route: Route, opts: RequestOptions = {}) {
 		return new Request(route.url.href, route.site, {
@@ -106,6 +132,9 @@ export default class Request extends Route {
 	 */
 	clone() {
 		return new Request(this.url.href, this.site, {
+			entry: objClone(this.entry),
+			template: this.template ?? undefined,
+			loadedData: objClone(this.loadedData),
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
@@ -120,18 +149,35 @@ export default class Request extends Route {
 	/**
 	 * Create a Route from the Request
 	 */
-	toRoute() {
-		return new Route(this.url.href, this.site, {
-			scrollY: this.scrollY ?? undefined,
-			index: this.index,
-			origin: this.origin,
-			state: objClone(this._state),
-			context: this._context,
-		});
+	toRoute(
+		entry: Entry,
+		template: TemplateModule,
+		loadedData: Record<string, any>,
+	) {
+		return new Route(
+			this.url.href,
+			this.site,
+			entry,
+			template,
+			loadedData,
+			{
+				scrollY: this.scrollY ?? undefined,
+				index: this.index,
+				origin: this.origin,
+				state: objClone(this._state),
+				context: this._context,
+			},
+		);
 	}
 
 	/** @hidden */
 	_updateOpts(opts: RequestOptions = {}) {
+		// todo maybe should check that if entry is updated
+		// template and loadedData is also updated
+
+		this.entry = opts.entry ?? this.entry;
+		this.template = opts.template ?? this.template;
+		this.loadedData = opts.loadedData ?? this.loadedData;
 		this.scrollY = opts.scrollY ?? this.scrollY;
 		this.index = opts.index ?? this.index;
 		this.origin = opts.origin ?? this.origin;

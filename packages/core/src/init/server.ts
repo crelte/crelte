@@ -8,6 +8,8 @@ import CrelteRequest from '../CrelteRequest.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { svelteRender } from './svelteComponents.js';
 import { Writable } from 'crelte-std/stores';
+import ServerRouter from '../routing/ServerRouter.js';
+import InternalApp from './InternalApp.js';
 
 export type ServerData = {
 	url: string;
@@ -27,10 +29,6 @@ export type ServerData = {
 export type MainData = {
 	/** The App.svelte module */
 	app: any;
-	/** The entry query from queries/entry.graphql */
-	entryQuery: GraphQlQuery;
-	/** The global query from queries/global.graphql */
-	globalQuery?: GraphQlQuery;
 
 	/** Server data provided by crelte-node */
 	serverData: ServerData;
@@ -78,27 +76,25 @@ export async function main(data: MainData): Promise<{
 	builder.setupCookies(cookies);
 
 	builder.ssrCache.set('crelteSites', data.serverData.sites);
-	builder.setupRouter(data.serverData.sites);
+	const router = new ServerRouter(data.serverData.sites);
+	builder.setupRouter(router);
 
 	const crelte = builder.build();
 
-	// setup plugins
-	setupPlugins(crelte, data.app.plugins ?? []);
-	data.app.init?.(crelte);
+	const app = new InternalApp(data.app);
 
-	const loadFn = await prepareLoadFn(
-		crelte,
-		data.app,
-		data.entryQuery,
-		data.globalQuery,
-	);
+	// setup plugins
+	setupPlugins(crelte, data.app.plugins);
+	app.init(crelte);
+
+	await router.init(data.serverData.url, data.serverData.acceptLang);
 
 	// setup load Data
 
-	crelte.router._internal.onLoad = req => {
-		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr);
-	};
+	// crelte.router._internal.onLoad = req => {
+	// 	const cr = new CrelteRequest(crelte, req);
+	// 	return loadFn(cr);
+	// };
 
 	const { success, redirect, req, props } =
 		await crelte.router._internal.initServer(
