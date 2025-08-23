@@ -13,7 +13,7 @@ consolidating features
 
 1. request comes in (build a request from url and state or headers).
 - site is determined or a default one is used
-2. > trigger event onRequest
+2. > trigger event onRequestStart
 3. if the request does not have a matching site, redirect to the site
    matching the acceptLang
 4. loadGlobalData (in parallel with 5-7)

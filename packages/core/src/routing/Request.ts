@@ -63,6 +63,8 @@ export default class Request extends BaseRoute {
 	/** @hidden */
 	_renderBarrier: RenderBarrier;
 
+	private _cancelled: boolean;
+
 	/**
 	 * Create a new Request
 	 */
@@ -76,6 +78,7 @@ export default class Request extends BaseRoute {
 		this.disableLoadData = opts.disableLoadData ?? false;
 		this.statusCode = opts.statusCode ?? null;
 		this._renderBarrier = new RenderBarrier();
+		this._cancelled = false;
 	}
 
 	/**
@@ -93,6 +96,10 @@ export default class Request extends BaseRoute {
 			context: route._context,
 			...opts,
 		});
+	}
+
+	get cancelled(): boolean {
+		return this._cancelled;
 	}
 
 	/**
@@ -129,12 +136,20 @@ export default class Request extends BaseRoute {
 
 	/**
 	 * Create a copy of the request
+	 *
+	 * without including the entry, template, loadedData or cancelled state
+	 *
+	 * Is this what we wan't, maybe it should copy everything
 	 */
 	clone() {
-		return new Request(this.url.href, this.site, {
-			entry: objClone(this.entry),
-			template: this.template ?? undefined,
-			loadedData: objClone(this.loadedData),
+		// todo should this clone the entry
+		// the route for example does not do it
+		//
+		// todo should this clone keep the entry?
+		const req = new Request(this.url.href, this.site, {
+			// entry: objClone(this.entry),
+			// template: this.template ?? undefined,
+			// loadedData: objClone(this.loadedData),
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
@@ -144,22 +159,34 @@ export default class Request extends BaseRoute {
 			disableLoadData: this.disableLoadData,
 			statusCode: this.statusCode ?? undefined,
 		});
+
+		return req;
 	}
 
 	/**
 	 * Create a Route from the Request
+	 *
+	 * ## Throws
+	 * if the entry, template or loadedData is missing
+	 * or the request was cancelled
 	 */
-	toRoute(
-		entry: Entry,
-		template: TemplateModule,
-		loadedData: Record<string, any>,
-	) {
-		return new Route(
+	toRoute() {
+		if (this.cancelled)
+			throw new Error(
+				'cannot create a new route because it was cancelled',
+			);
+
+		if (!this.entry || !this.template || !this.loadedData)
+			throw new Error(
+				'cannot create a new route because entry, template or loadedData is missing',
+			);
+
+		const route = new Route(
 			this.url.href,
 			this.site,
-			entry,
-			template,
-			loadedData,
+			this.entry,
+			this.template,
+			this.loadedData,
 			{
 				scrollY: this.scrollY ?? undefined,
 				index: this.index,
@@ -168,6 +195,9 @@ export default class Request extends BaseRoute {
 				context: this._context,
 			},
 		);
+		route.entryChanged = !this.disableLoadData;
+
+		return route;
 	}
 
 	/** @hidden */
@@ -186,6 +216,12 @@ export default class Request extends BaseRoute {
 		this.disableScroll = opts.disableScroll ?? this.disableScroll;
 		this.disableLoadData = opts.disableLoadData ?? this.disableLoadData;
 		this.statusCode = opts.statusCode ?? this.statusCode;
+	}
+
+	/** @hidden */
+	_cancel() {
+		this._cancelled = true;
+		this._renderBarrier.cancel();
 	}
 }
 
@@ -224,15 +260,18 @@ class RenderBarrier {
 
 	/** @hidden */
 	cancel() {
+		// if the barrier is already open
+		// we don't wan't to flag the render as cancelled
+		// because it already happened
 		if (this.inner.isOpen()) return;
 
 		this.cancelled = true;
 		this.root.remove();
 	}
 
-	// returns if the render was cancelled
+	// returns true if the render was cancelled
 	/** @hidden */
-	ready(): Promise<boolean> {
+	ready(): Promise<boolean> | boolean {
 		return this.root.ready();
 	}
 }

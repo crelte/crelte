@@ -92,19 +92,17 @@ export async function main(data: MainData): Promise<{
 	setupPlugins(crelte, data.app.plugins);
 	app.init(crelte);
 
-	router.loadRunner.loadFn = (req, opts) => {
-		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr, app, opts);
+	router.onNewCrelteRequest = req => new CrelteRequest(crelte, req);
+
+	router.onRequestStart = cr => {
+		// trigger onRequest event
+		// or maybe also call it onRequestStart
+		// or onBeforeRequest?
 	};
 
+	router.loadRunner.loadFn = (cr, opts) => loadFn(cr, app, opts);
+
 	await router.init(data.serverData.url, data.serverData.acceptLang);
-
-	// setup load Data
-
-	// crelte.router._internal.onLoad = req => {
-	// 	const cr = new CrelteRequest(crelte, req);
-	// 	return loadFn(cr);
-	// };
 
 	const { success, redirect, req, props } =
 		await crelte.router._internal.initServer(

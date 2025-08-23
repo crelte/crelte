@@ -8,6 +8,9 @@ import { circles } from './utils.js';
 export default class CrelteRequest extends Crelte {
 	/**
 	 * The current request
+	 *
+	 * ## Warning
+	 * Do not override this
 	 */
 	req: Request;
 
@@ -15,6 +18,9 @@ export default class CrelteRequest extends Crelte {
 		super(inner);
 
 		this.req = req;
+
+		// now state to globals that a new request started
+		this._globals = this.globals._toRequest();
 	}
 
 	/**
@@ -84,6 +90,10 @@ export default class CrelteRequest extends Crelte {
 	async getGlobalAsync<T = any>(name: string): Promise<T | null> {
 		return this.globals.getAsync(name, this.site.id);
 	}
+
+	// todo we should override getPlugin making it possible for the plugin
+	// to attach a CrelteRequest to itself
+	// for that we should call cloneWithRequest(cr: CrelteRequest)
 
 	/**
 	 * Run a GraphQl Query

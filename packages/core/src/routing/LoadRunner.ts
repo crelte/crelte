@@ -1,10 +1,13 @@
-import Request from './Request.js';
+import { type CrelteRequest } from '../index.js';
 
 export type LoadRunnerOptions = {
 	debugTiming: boolean;
 };
 
-export type LoadFn = (req: Request, opts: LoadOptions) => Promise<void> | void;
+export type LoadFn = (
+	cr: CrelteRequest,
+	opts: LoadOptions,
+) => Promise<void> | void;
 
 export type LoadOptions = {
 	setProgress: (num: number) => void;
@@ -48,8 +51,12 @@ export default class LoadRunner {
 
 	/**
 	 * @returns true if the load was completed
+	 *
+	 * ## Throws
+	 * if there was an error but not if the request
+	 * was cancelled before
 	 */
-	async load(req: Request): Promise<boolean> {
+	async load(req: CrelteRequest): Promise<boolean> {
 		this.onProgress(true);
 
 		const version = ++this.loadingVersion;
@@ -84,18 +91,18 @@ export default class LoadRunner {
 		if (startTime)
 			console.log('page load took ' + (Date.now() - startTime) + 'ms');
 
-		return resp(), true;
+		return (resp(), true);
 	}
 
 	// you don't need to wait on this call
-	async preload(req: Request) {
-		const url = req.url.origin + req.url.pathname;
+	async preload(cr: CrelteRequest) {
+		const url = cr.req.url.origin + cr.req.url.pathname;
 		if (this.preloadedUrls.has(url)) return;
 
 		this.preloadedUrls.add(url);
 
 		try {
-			await this.loadFn(req, {
+			await this.loadFn(cr, {
 				isCanceled: () => false,
 				setProgress: () => null,
 			});

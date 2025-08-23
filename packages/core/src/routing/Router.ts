@@ -14,6 +14,8 @@ import { Request, Route, Site } from './index.js';
  */
 export type UpdateRequest = (req: Request) => boolean | null | undefined | void;
 
+// Todo this router should be stateful like globals
+// allow to reference the correct route or request
 export default class Router {
 	private inner: BaseRouter;
 

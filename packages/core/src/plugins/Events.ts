@@ -75,19 +75,11 @@ export default class Events {
 	/**
 	 * Trigger an event
 	 */
+	trigger(ev: 'onRequest', cr: CrelteRequest): Promise<any>[];
 	trigger(ev: 'loadGlobalData', cr: CrelteRequest): Promise<any>[];
+	trigger(ev: 'afterLoadEntry', cr: CrelteRequest): Promise<any>[];
 	trigger(ev: 'loadData', cr: CrelteRequest, entry: Entry): Promise<any>[];
 	trigger(ev: 'beforeRender', cr: CrelteRequest): void[];
-	trigger(
-		ev: 'beforeQueryEntry',
-		cr: CrelteRequest,
-		vars: EntryQueryVars,
-	): void[];
-	trigger(
-		ev: 'afterQueryEntry',
-		cr: CrelteRequest,
-		entry: Entry,
-	): Promise<void>[];
 	trigger(ev: string, ...args: any[]): any[] {
 		const set = this.inner.get(ev);
 		if (!set) return [];
