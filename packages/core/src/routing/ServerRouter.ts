@@ -12,13 +12,6 @@ export default class ServerRouter extends BaseRouter {
 
 		this.acceptLang = null;
 		this.redirect = null;
-
-		this.onRender = async (cr, readyForRoute, _domUpdated) => {
-			const route = readyForRoute();
-			cr._complete(route);
-
-			return route;
-		};
 	}
 
 	defaultSite(): Site {
@@ -26,6 +19,10 @@ export default class ServerRouter extends BaseRouter {
 	}
 
 	async openRequest(req: Request) {
+		// only handle the first redirect
+		// this makes the behaviour the same as client router
+		if (this.redirect) return;
+
 		this.redirect = req;
 		this.cancelRequest();
 	}

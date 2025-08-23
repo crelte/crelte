@@ -72,7 +72,7 @@ export default class BaseRouter {
 		 * if the route is missing entry, template or loadedData
 		 */
 		readyForRoute: () => Route,
-		domUpdated: () => void,
+		domUpdated: (cr: CrelteRequest, route: Route) => void,
 	) => Promise<Route> | Route;
 
 	constructor(sites: SiteFromGraphQl[], opts: BaseRouterOptions) {

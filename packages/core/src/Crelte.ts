@@ -71,7 +71,7 @@ export class CrelteBuilder {
 	graphQl?: GraphQl;
 	router?: Router;
 	globals: Globals;
-	cookies: Cookies;
+	cookies?: Cookies;
 
 	constructor(config: Config) {
 		this.config = { ...defaultConfig, ...config };
@@ -80,10 +80,6 @@ export class CrelteBuilder {
 		this.plugins = new Plugins();
 		this.events = new Events();
 		this.globals = new Globals();
-		// @ts-ignore
-		this.cookies = import.meta.env.SSR
-			? new ServerCookies()
-			: new ClientCookies();
 	}
 
 	setupGraphQl(endpoint: string) {
@@ -98,8 +94,8 @@ export class CrelteBuilder {
 		this.router = new Router(router);
 	}
 
-	setupCookies(cookies: string) {
-		this.cookies._init(cookies);
+	setupCookies(cookies: Cookies) {
+		this.cookies = cookies;
 	}
 
 	build(): Crelte {

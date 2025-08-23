@@ -77,7 +77,7 @@ export async function main(data: MainData): Promise<{
 	builder.setupGraphQl(endpoint);
 
 	const cookies = data.serverData.cookies ?? '';
-	builder.setupCookies(cookies);
+	builder.setupCookies(new ServerCookies(cookies));
 
 	builder.ssrCache.set('crelteSites', data.serverData.sites);
 	const router = new ServerRouter(data.serverData.sites, {
@@ -90,7 +90,7 @@ export async function main(data: MainData): Promise<{
 	const app = new InternalApp(data.app);
 
 	// setup plugins
-	setupPlugins(crelte, data.app.plugins);
+	setupPlugins(crelte, app.plugins);
 	app.init(crelte);
 
 	router.onNewCrelteRequest = req => {
@@ -209,6 +209,9 @@ export async function mainError(
 	ssrComponents.addToContext(context);
 
 	ssrCache.set('ERROR', data.error);
+
+	// todo on the client crelte is in the context
+	// but it should match this impl
 
 	// eslint-disable-next-line prefer-const
 	let { html, head } = svelteRender(data.errorPage.default, {
