@@ -36,7 +36,14 @@ consolidating features
 - call template.loadData (if defined)
 > trigger loadData
 
-9. convert to Route and open
+9. convert to Route
+10. render
+- route notify
+- site notify
+- entry notify
+- onRoute
+- globalsUpdate
+- beforeRender
 
 
 // Base Router

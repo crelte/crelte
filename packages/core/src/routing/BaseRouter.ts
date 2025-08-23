@@ -10,9 +10,9 @@ import Site, { SiteFromGraphQl, siteFromUrl } from './Site.js';
 import { matchAcceptLang } from './utils.js';
 import { UpdateRequest } from './Router.js';
 import LoadRunner, { LoadRunnerOptions } from './LoadRunner.js';
-import { type CrelteRequest } from '../index.js';
+import { Entry, type CrelteRequest } from '../index.js';
 import { Listeners } from 'crelte-std/sync';
-import { objClone } from '../utils.js';
+import { isPromise, objClone } from '../utils.js';
 
 export type BaseRouterOptions = {} & LoadRunnerOptions;
 
@@ -30,6 +30,7 @@ export default class BaseRouter {
 	 */
 	route: Writable<Route | null>;
 
+	// todo should probably be a derived
 	/**
 	 * The current site
 	 *
@@ -38,12 +39,24 @@ export default class BaseRouter {
 	 */
 	site: Writable<Site | null>;
 
+	// todo should probably be a derived
+	/**
+	 * The current entry
+	 *
+	 *  ## Note
+	 * Will always contain an entry except in the first loadData call
+	 */
+	entry: Writable<Entry | null>;
+
 	// the next request if it is not only a preload request
 	request: Request | null;
 
 	onNewCrelteRequest: (req: Request) => CrelteRequest;
 
-	onRequestStart: (cr: CrelteRequest) => Promise<void> | void;
+	/**
+	 * Not sure the naming here is great but
+	 */
+	onBeforeRequest: (cr: CrelteRequest) => Promise<void> | void;
 
 	onRequestListeners: Listeners<[Request]>;
 
@@ -60,20 +73,21 @@ export default class BaseRouter {
 		 */
 		readyForRoute: () => Route,
 		domUpdated: () => void,
-	) => Promise<Route>;
+	) => Promise<Route> | Route;
 
 	constructor(sites: SiteFromGraphQl[], opts: BaseRouterOptions) {
 		this.sites = sites.map(s => new Site(s));
 		this.sitesByLanguage = new Map(this.sites.map(s => [s.language, s]));
 		this.route = new Writable(null);
 		this.site = new Writable(null);
+		this.entry = new Writable(null);
 		this.request = null;
 		this.onNewCrelteRequest = () => null!;
-		this.onRequestStart = () => {};
+		this.onBeforeRequest = () => {};
 		this.onRequestListeners = new Listeners();
 		this.loadRunner = new LoadRunner(opts);
 		this.onRouteListeners = new Listeners();
-		this.onRender = async () => {};
+		this.onRender = async () => null!;
 	}
 
 	/**
@@ -222,6 +236,15 @@ export default class BaseRouter {
 	// async open() {
 	// 	throw new Error('environment specific');
 	// }
+	//
+
+	cancelRequest() {
+		// destroy the old request
+		if (this.request) {
+			this.request._cancel();
+			this.request = null;
+		}
+	}
 
 	/**
 	 * ## Throws
@@ -236,11 +259,8 @@ export default class BaseRouter {
 		// the user clicked on a new link or an event decided to call open
 		const isCancelled = () => req.cancelled;
 
-		// destroy the old request
-		if (this.request) {
-			this.request._cancel();
-			this.request = null;
-		}
+		// cancel the previous request
+		this.cancelRequest();
 
 		const barrier = req._renderBarrier;
 		if (barrier.isOpen()) throw new Error('the request was already used');
@@ -254,8 +274,8 @@ export default class BaseRouter {
 		const cr = this.onNewCrelteRequest(req);
 
 		// trigger event onRequestStart
-		const onReqStartProm = this.onRequestStart(cr);
-		if (isPromise(onReqStartProm)) await onReqStartProm;
+		const onBeforeReqProm = this.onRequestStart(cr);
+		if (isPromise(onBeforeReqProm)) await onBeforeReqProm;
 		if (isCancelled()) return;
 
 		// if the request does not have a matching site, redirect
@@ -289,7 +309,8 @@ export default class BaseRouter {
 		const wasCancelled = isPromise(readyProm) ? await readyProm : readyProm;
 		if (wasCancelled || isCancelled()) return;
 
-		// todo should onRender not happen if the request was cancelled?
+		// the onRender should decide by itself if it wants to render or not
+		// for example in most cases if !entryChanged it does not make sense to render
 		return await this.onRender(
 			cr,
 			// readyForRoute
@@ -329,18 +350,14 @@ export default class BaseRouter {
 		this.route.setSilent(route);
 		const siteChanged = this.site.get()?.id !== route.site.id;
 		this.site.setSilent(route.site);
+		this.entry.setSilent(route.entry);
 
 		// trigger an update
 		this.route.notify();
 		if (siteChanged) this.site.notify();
+		if (route.entryChanged) this.entry.notify();
 		this.onRouteListeners.trigger(route);
 	}
 
-	updateHistory(_req: Request) {}
-
 	updateScroll() {}
-}
-
-function isPromise<T>(p: Promise<T> | T): p is Promise<T> {
-	return typeof (p as any)?.then === 'function';
 }

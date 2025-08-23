@@ -3,14 +3,13 @@ import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
 	pluginsBeforeRender,
-	prepareLoadFn,
+	pluginsBeforeRequest,
 	setupPlugins,
 } from './shared.js';
 import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import CrelteRequest from '../CrelteRequest.js';
-import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { svelteRender } from './svelteComponents.js';
 import { Writable } from 'crelte-std/stores';
 import ServerRouter from '../routing/ServerRouter.js';
@@ -81,7 +80,9 @@ export async function main(data: MainData): Promise<{
 	builder.setupCookies(cookies);
 
 	builder.ssrCache.set('crelteSites', data.serverData.sites);
-	const router = new ServerRouter(data.serverData.sites);
+	const router = new ServerRouter(data.serverData.sites, {
+		debugTiming: builder.config.debugTiming ?? false,
+	});
 	builder.setupRouter(router);
 
 	const crelte = builder.build();
@@ -92,26 +93,32 @@ export async function main(data: MainData): Promise<{
 	setupPlugins(crelte, data.app.plugins);
 	app.init(crelte);
 
-	router.onNewCrelteRequest = req => new CrelteRequest(crelte, req);
-
-	router.onRequestStart = cr => {
-		// trigger onRequest event
-		// or maybe also call it onRequestStart
-		// or onBeforeRequest?
+	router.onNewCrelteRequest = req => {
+		const cr = new CrelteRequest(crelte, req);
+		cr._setGlobals(cr.globals._toRequest());
+		return cr;
 	};
+
+	router.onBeforeRequest = pluginsBeforeRequest;
 
 	router.loadRunner.loadFn = (cr, opts) => loadFn(cr, app, opts);
 
-	await router.init(data.serverData.url, data.serverData.acceptLang);
+	router.onRender = (cr, readyForRoute, _domUpdated) => {
+		const route = readyForRoute();
+		cr.globals._syncToStores();
+		pluginsBeforeRender(cr, route);
 
-	const { success, redirect, req, props } =
-		await crelte.router._internal.initServer(
-			data.serverData.url,
-			data.serverData.acceptLang,
-		);
-	if (!success) throw props;
+		return route;
+	};
 
-	if (redirect) {
+	// throws if there was an error
+	const [req, route] = await router.init(
+		data.serverData.url,
+		data.serverData.acceptLang,
+	);
+
+	// if redirect
+	if (!route) {
 		return {
 			status: req.statusCode ?? 302,
 			location: req.url.toString(),
@@ -125,14 +132,14 @@ export async function main(data: MainData): Promise<{
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 
-	const cr = new CrelteRequest(crelte, req);
-	pluginsBeforeRender(cr);
-	crelte.globals._updateSiteId(cr.site.id);
+	// app should not use getRoute but use the route store
+	// received from the props, since it will only update when
+	// the entryChanges
+	const routeProp = new Writable(route);
+
 	// eslint-disable-next-line prefer-const
 	let { html, head } = svelteRender(data.app.default, {
-		props: {
-			props: new Writable(props),
-		},
+		props: { route: routeProp },
 		context,
 	});
 
@@ -140,13 +147,16 @@ export async function main(data: MainData): Promise<{
 	head += crelte.ssrCache._exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
-	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', cr.site.language);
+	htmlTemplate = htmlTemplate.replace(
+		'<!--page-lang-->',
+		route.site.language,
+	);
 
 	const finalHtml = htmlTemplate
 		.replace('</head>', head + '\n\t</head>')
 		.replace('<!--ssr-body-->', html);
 
-	const entry = props.entry;
+	const entry = route.entry;
 
 	return {
 		status:

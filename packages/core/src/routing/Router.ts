@@ -1,4 +1,4 @@
-import { Readable } from 'svelte/store';
+import { Readable } from 'crelte-std/stores';
 import BaseRouter from './BaseRouter.js';
 import { Request, Route, Site } from './index.js';
 

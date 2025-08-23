@@ -5,7 +5,9 @@ import { Entry } from '../index.js';
 import { callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
+import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
+import Route from '../routing/Route.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -14,8 +16,16 @@ export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	}
 }
 
-export function pluginsBeforeRender(cr: CrelteRequest): void {
-	cr.events.trigger('beforeRender', cr);
+export function pluginsBeforeRequest(cr: CrelteRequest): Promise<void> | void {
+	const res = cr.events.trigger('beforeRequest', cr);
+	// if one of the is a promise we need to wait for it
+	if (res.some(isPromise)) {
+		return Promise.all(res).then();
+	}
+}
+
+export function pluginsBeforeRender(cr: CrelteRequest, route: Route): void {
+	cr.events.trigger('beforeRender', cr, route);
 }
 
 // This should be onRequest or handle Request

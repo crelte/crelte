@@ -1,5 +1,6 @@
 import { EntryQueryVars } from '../entry/index.js';
 import { CrelteRequest, Entry } from '../index.js';
+import { Route } from '../routing/index.js';
 
 export default class Events {
 	inner: Map<string, Set<any>>;
@@ -11,9 +12,18 @@ export default class Events {
 	/**
 	 * Listens for an event.
 	 *
+	 * ## beforeRequest
+	 * Please prefer to return not return a promise only if you need to wait
+	 * for something. This allows a push request to be done without a microtask.
+	 * Allowing for a better DX.
+	 *
 	 * @returns a function to remove the listener
 	 */
 	// override this function to add your own function signatures
+	on(
+		ev: 'beforeRequest',
+		fn: (cr: CrelteRequest) => Promise<void> | void,
+	): () => void;
 	on(
 		ev: 'loadGlobalData',
 		fn: (cr: CrelteRequest) => Promise<any>,
@@ -75,11 +85,11 @@ export default class Events {
 	/**
 	 * Trigger an event
 	 */
-	trigger(ev: 'onRequest', cr: CrelteRequest): Promise<any>[];
+	trigger(ev: 'beforeRequest', cr: CrelteRequest): (Promise<void> | void)[];
 	trigger(ev: 'loadGlobalData', cr: CrelteRequest): Promise<any>[];
 	trigger(ev: 'afterLoadEntry', cr: CrelteRequest): Promise<any>[];
 	trigger(ev: 'loadData', cr: CrelteRequest, entry: Entry): Promise<any>[];
-	trigger(ev: 'beforeRender', cr: CrelteRequest): void[];
+	trigger(ev: 'beforeRender', cr: CrelteRequest, route: Route): void[];
 	trigger(ev: string, ...args: any[]): any[] {
 		const set = this.inner.get(ev);
 		if (!set) return [];
