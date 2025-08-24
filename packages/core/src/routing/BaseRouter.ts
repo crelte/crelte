@@ -68,7 +68,7 @@ export default class BaseRouter {
 	 */
 	onBeforeRequest: (cr: CrelteRequest) => Promise<void> | void;
 
-	onRequestListeners: Listeners<[Request]>;
+	onRequestListeners: Listeners<[CrelteRequest]>;
 
 	loadRunner: LoadRunner;
 
@@ -453,7 +453,7 @@ export default class BaseRouter {
 
 		// trigger onRequest listeners (this is not an event and more intended
 		// to be used by the actual site and not a plugin)
-		this.onRequestListeners.trigger(req);
+		this.onRequestListeners.trigger(cr);
 		if (isCancelled()) return;
 
 		//!! this block might throw if something did not work as expected

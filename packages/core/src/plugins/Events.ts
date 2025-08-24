@@ -1,4 +1,3 @@
-import { EntryQueryVars } from '../entry/index.js';
 import { CrelteRequest, Entry } from '../index.js';
 import { Route } from '../routing/index.js';
 

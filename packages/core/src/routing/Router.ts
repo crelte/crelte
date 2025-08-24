@@ -1,6 +1,8 @@
 import { Readable } from 'crelte-std/stores';
 import BaseRouter from './BaseRouter.js';
 import { Request, RequestOptions, Route, Site } from './index.js';
+import { Entry } from '../entry/index.js';
+import CrelteRequest from '../CrelteRequest.js';
 
 /**
  * Allows to easely modify a Request
@@ -51,6 +53,19 @@ export default class Router {
 	 */
 	get site(): Readable<Site | null> {
 		return this.inner.site.readonly();
+	}
+
+	/**
+	 * returns a store with the current entry
+	 *
+	 * ## Note
+	 * Will always contain an entry except in the first loadData call this
+	 * is intentional since you might get the wrong entry if a request is happening
+	 * and you call this in loadData. If possible use the CrelteRequest
+	 * provided in each loadData call.
+	 */
+	get entry(): Readable<Entry | null> {
+		return this.inner.entry.readonly();
 	}
 
 	/**
@@ -260,10 +275,7 @@ export default class Router {
 	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route) => void): () => void {
-		// todo we have the onRoute listener, it that not needed?
-
-		let first = true;
-		return this.route.subscribe(r => (first ? (first = false) : fn(r!)));
+		return this.inner.onRouteListeners.add(fn);
 	}
 
 	/**
@@ -273,7 +285,7 @@ export default class Router {
 	 *
 	 * @returns a function to remove the listener
 	 */
-	onRequest(fn: (req: Request) => void): () => void {
+	onRequest(fn: (req: CrelteRequest) => void): () => void {
 		return this.inner.onRequestListeners.add(fn);
 	}
 
