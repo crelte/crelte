@@ -5,6 +5,7 @@ import Request from './routing/Request.js';
 import Route from './routing/Route.js';
 import { circles } from './utils.js';
 import Globals from './loadData/Globals.js';
+import { Router } from './routing/index.js';
 
 export default class CrelteRequest extends Crelte {
 	/**
@@ -111,6 +112,11 @@ export default class CrelteRequest extends Crelte {
 			route: this.req,
 			...opts,
 		});
+	}
+
+	/** @hidden */
+	_setRouter(router: Router) {
+		this._router = router;
 	}
 
 	/** @hidden */

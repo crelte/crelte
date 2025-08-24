@@ -95,6 +95,7 @@ export async function main(data: MainData): Promise<{
 
 	router.onNewCrelteRequest = req => {
 		const cr = new CrelteRequest(crelte, req);
+		cr._setRouter(cr.router._toRequest(req));
 		cr._setGlobals(cr.globals._toRequest());
 		return cr;
 	};
@@ -105,6 +106,7 @@ export async function main(data: MainData): Promise<{
 
 	router.onRender = (cr, readyForRoute, _domUpdated) => {
 		const route = readyForRoute();
+		cr.router._requestCompleted();
 		cr.globals._syncToStores();
 		pluginsBeforeRender(cr, route);
 

@@ -1,5 +1,5 @@
 import BaseRouter, { BaseRouterOptions } from './BaseRouter.js';
-import { Request } from './index.js';
+import { Request, RequestOptions } from './index.js';
 import Route from './Route.js';
 import Site, { SiteFromGraphQl } from './Site.js';
 
@@ -21,10 +21,28 @@ export default class ServerRouter extends BaseRouter {
 	async openRequest(req: Request) {
 		// only handle the first redirect
 		// this makes the behaviour the same as client router
+		// not true
+		// todo: the client only instatly redirects if it belongs to another
+		// site (aka needs to use window.location.href)
 		if (this.redirect) return;
 
 		this.redirect = req;
 		this.cancelRequest();
+
+		// request was handled with a redirect so we don't have an entry
+		// templateData or anything else
+		// todo is that what we wan't to return. Because void would tell
+		// the user the request was cancelled
+	}
+
+	async pushRequest(req: Request, _opts: RequestOptions = {}) {
+		// todo not sure if that is what we want?
+		return await this.openRequest(req);
+	}
+
+	async replaceRequest(req: Request, _opts: RequestOptions = {}) {
+		// todo not sure if that is what we want?
+		return await this.openRequest(req);
 	}
 
 	/**

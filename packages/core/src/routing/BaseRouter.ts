@@ -8,7 +8,6 @@ import Request, { isRequest, RequestOptions } from './Request.js';
 import Route from './Route.js';
 import Site, { SiteFromGraphQl, siteFromUrl } from './Site.js';
 import { matchAcceptLang } from './utils.js';
-import { UpdateRequest } from './Router.js';
 import LoadRunner, { LoadRunnerOptions } from './LoadRunner.js';
 import { Entry, type CrelteRequest } from '../index.js';
 import { Listeners } from 'crelte-std/sync';
@@ -51,6 +50,17 @@ export default class BaseRouter {
 	// the next request if it is not only a preload request
 	request: Request | null;
 
+	/**
+	 * The loading flag, specifies if a page is currently
+	 * getting loaded
+	 */
+	loading: Writable<boolean>;
+
+	/**
+	 * The loading progress, the value is between 0 and 1
+	 */
+	loadingProgress: Writable<number>;
+
 	onNewCrelteRequest: (req: Request) => CrelteRequest;
 
 	/**
@@ -82,12 +92,22 @@ export default class BaseRouter {
 		this.site = new Writable(null);
 		this.entry = new Writable(null);
 		this.request = null;
+		this.loading = new Writable(false);
+		this.loadingProgress = new Writable(0);
 		this.onNewCrelteRequest = () => null!;
 		this.onBeforeRequest = () => {};
 		this.onRequestListeners = new Listeners();
 		this.loadRunner = new LoadRunner(opts);
 		this.onRouteListeners = new Listeners();
 		this.onRender = async () => null!;
+
+		// todo move this to the client?
+		this.loadRunner.onProgress = (loading, progress) => {
+			if (this.loading.get() !== loading) this.loading.set(loading);
+
+			if (typeof progress === 'number')
+				this.loadingProgress.set(progress);
+		};
 	}
 
 	/**
@@ -129,48 +149,6 @@ export default class BaseRouter {
 	 */
 	siteById(id: number): Site | null {
 		return this.sites.find(s => s.id === id) ?? null;
-	}
-
-	/**
-	 * Todo, this should only be on the router
-	 * because it knows which the current route is
-	 * So everything behaves as expected
-	 *
-	 * Transforms a target to a request
-	 *
-	 * returns null if the request was canceled by the update request
-	 */
-	targetOrUpdateToRequest(
-		target: string | URL | Route | Request | UpdateRequest,
-		opts: RequestOptions = {},
-		forcedOpts: RequestOptions = {},
-	): Request | null {
-		// we have an update request
-		if (typeof target === 'function') {
-			const route = this.route.get();
-			if (!route) {
-				// todo should we use the request here?
-				throw new Error(
-					'route to update missing in first loadData call. ' +
-						'Use cr.req.clone() instead',
-				);
-			}
-
-			// first get a req
-			const req = this.targetToRequest(route, opts);
-			// check if the request was canceled by the update request
-			if (target(req) === false) return null;
-
-			// now we add the forcedOpts
-			req._updateOpts(forcedOpts);
-
-			return req;
-		}
-
-		return this.targetToRequest(target, {
-			...opts,
-			...forcedOpts,
-		});
 	}
 
 	// keep this doc in sync with Router.targetToRequest
@@ -229,14 +207,201 @@ export default class BaseRouter {
 		return req;
 	}
 
-	async openRequest(_req: Request) {
+	/**
+	 * Open a new route
+	 *
+	 * @param target the target to open can be an url, a route or a request
+	 * the url needs to start with http or with a / which will be considered as
+	 * the site baseUrl
+	 *
+	 * ## Note
+	 * The origin will always be set to 'manual'
+	 *
+	 * ## Example
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 * console.log(router.site.get().url.href); // 'https://example.com/de';
+	 *
+	 * router.open('/foo/bar');
+	 * // the following page will be opened https://example.com/de/foo/bar
+	 * ```
+	 */
+	async open(
+		target: string | URL | Route | Request,
+		opts: RequestOptions = {},
+	): Promise<Route | void> {
+		const req = this.targetToRequest(target, {
+			...opts,
+			origin: 'manual',
+		});
+		if (!req) return;
+
+		if (req === this.request) {
+			throw new Error(
+				'Cannot open the same request object twice. Either clone the request ' +
+					'or just pass in the url.',
+			);
+		}
+
+		try {
+			return await this.openRequest(req);
+		} catch (e) {
+			console.warn('opening route failed', e);
+			throw e;
+		}
+	}
+
+	async openRequest(_req: Request): Promise<Route | void> {
 		throw new Error('environment specific');
 	}
 
-	// async open() {
-	// 	throw new Error('environment specific');
-	// }
-	//
+	/**
+	 * This pushes the new route without triggering a new pageload
+	 *
+	 * You can use this when using pagination for example change the route object
+	 * (search argument) and then call push
+	 *
+	 * ## Note
+	 * This will always set the origin to 'push'
+	 * And will clear the scrollY value if you not provide a new one via the `opts`
+	 * This will disableLoadData by default if you not provide an override via the `opts`
+	 *
+	 * ## Example using the update function
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const page = 1;
+	 * router.push(req => req.setSearchParam('page', page || null));
+	 * ```
+	 *
+	 * ## Example using the route object
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const page = 1;
+	 * const route = router.route.get();
+	 * route.setSearchParam('page', page > 0 ? page : null);
+	 * router.push(route);
+	 * ```
+	 */
+	async push(route: Route | Request, opts: RequestOptions = {}) {
+		// theoretically string and URL also work but we might
+		// change that in the future
+		const req = this.targetToRequest(route, {
+			...opts,
+			origin: 'push',
+			scrollY: opts.scrollY ?? undefined,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
+
+		if (!req) return;
+
+		try {
+			return await this.pushRequest(req, opts);
+		} catch (e) {
+			console.warn('pushing route failed', e);
+			throw e;
+		}
+	}
+
+	pushRequest(
+		_req: Request,
+		_opts: RequestOptions = {},
+	): Promise<Route | void> {
+		throw new Error('environment specific');
+	}
+
+	/**
+	 * This replaces the state of the route without triggering a new pageload
+	 *
+	 * You can use this when using some filters for example a search filter
+	 *
+	 * ## Note
+	 * This will always set the origin to 'replace'
+	 * And will clear the scrollY value if you don't provide a new one via the `opts`
+	 * This will disableLoadData by default if you don't provide an override via the `opts`
+	 *
+	 * ## Example using the update function
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const search = 'foo';
+	 * router.replace(req => req.setSearchParam('search', search));
+	 * ```
+	 *
+	 * ## Example using the route object
+	 * ```
+	 * import { getRouter } from 'crelte';
+	 *
+	 * const router = getRouter();
+	 *
+	 * const search = 'foo';
+	 * const route = router.route.get();
+	 * route.setSearchParam('search', search);
+	 * router.replace(route);
+	 * ```
+	 */
+	async replace(route: Route | Request, opts: RequestOptions = {}) {
+		// theoretically string and URL also work but we might
+		// change that in the future
+		const req = this.targetToRequest(route, {
+			...opts,
+			origin: 'replace',
+			scrollY: opts.scrollY ?? undefined,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
+		if (!req) return;
+
+		try {
+			return await this.replaceRequest(req, opts);
+		} catch (e) {
+			console.warn('replacing route failed', e);
+			throw e;
+		}
+	}
+
+	async replaceRequest(
+		_req: Request,
+		_opts: RequestOptions = {},
+	): Promise<Route | void> {
+		throw new Error('environment specific');
+	}
+
+	/**
+	 * Checks if there are previous routes which would allow it to go back
+	 */
+	canGoBack(): boolean {
+		throw new Error('environment specific');
+		// return this.route.get()?.canGoBack() ?? false;
+	}
+
+	/**
+	 * Go back in the history
+	 */
+	back() {
+		throw new Error('environment specific');
+		// this.inner.history.back();
+	}
+
+	async preload(target: string | URL | Route | Request) {
+		const req = this.targetToRequest(target);
+		const current = this.route.get();
+
+		// if the origin matches, the route will be able to be load
+		// so let's preload it
+		if (current && current.url.origin === req.url.origin) {
+			// todo i don't wan't to send a CrelteRequest?
+			this.loadRunner.preload(this.onNewCrelteRequest(req));
+		}
+	}
 
 	cancelRequest() {
 		// destroy the old request
@@ -274,7 +439,7 @@ export default class BaseRouter {
 		const cr = this.onNewCrelteRequest(req);
 
 		// trigger event onRequestStart
-		const onBeforeReqProm = this.onRequestStart(cr);
+		const onBeforeReqProm = this.onBeforeRequest(cr);
 		if (isPromise(onBeforeReqProm)) await onBeforeReqProm;
 		if (isCancelled()) return;
 
@@ -328,8 +493,8 @@ export default class BaseRouter {
 			},
 			// domUpdated
 			// we use a callback to maybe decrease latency?
-			() => {
-				this.updateScroll();
+			(cr, route) => {
+				this.updateScroll(cr, route);
 			},
 		);
 	}
@@ -359,5 +524,5 @@ export default class BaseRouter {
 		this.onRouteListeners.trigger(route);
 	}
 
-	updateScroll() {}
+	updateScroll(_cr: CrelteRequest, _route: Route) {}
 }

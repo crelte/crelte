@@ -18,7 +18,7 @@ export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 
 export function pluginsBeforeRequest(cr: CrelteRequest): Promise<void> | void {
 	const res = cr.events.trigger('beforeRequest', cr);
-	// if one of the is a promise we need to wait for it
+	// if one of them is a promise we need to wait for it
 	if (res.some(isPromise)) {
 		return Promise.all(res).then();
 	}

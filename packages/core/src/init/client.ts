@@ -6,7 +6,6 @@ import {
 	loadFn,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
-	prepareLoadFn,
 	setupPlugins,
 } from './shared.js';
 import { tick } from 'svelte';
@@ -87,6 +86,7 @@ export async function main(data: MainData) {
 	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];
 	const router = new ClientRouter(csites, {
 		debugTiming: builder.config.debugTiming ?? false,
+		preloadOnMouseOver: builder.config.preloadOnMouseOver ?? false,
 	});
 	builder.setupRouter(router);
 
@@ -100,6 +100,7 @@ export async function main(data: MainData) {
 
 	router.onNewCrelteRequest = req => {
 		const cr = new CrelteRequest(crelte, req);
+		cr._setRouter(cr.router._toRequest(req));
 		cr._setGlobals(cr.globals._toRequest());
 		return cr;
 	};
@@ -166,8 +167,10 @@ export async function main(data: MainData) {
 		// }
 
 		const startTime = builder.config.debugTiming ? Date.now() : null;
+
 		let render = async () => {
 			const route = readyForRoute();
+			cr.router._requestCompleted();
 			cr.globals._syncToStores();
 			// we should trigger the route update here
 			pluginsBeforeRender(cr, route);
