@@ -152,6 +152,9 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 				server: {
 					port: 8080,
 				},
+				optimizeDeps: {
+					exclude: ['crelte'],
+				},
 				ssr: {
 					// embedd all our packages
 					// this ensure that if you wan't you could deploy the dist folder
