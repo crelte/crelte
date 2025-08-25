@@ -27,8 +27,7 @@ export default class CrelteServerRequest {
 		this._sites = sites;
 		this._graphQl = graphQl;
 		this.req = req;
-		this._cookies = new ServerCookies();
-		this._cookies._init(req.headers.get('Cookie') ?? '');
+		this._cookies = new ServerCookies(req.headers.get('Cookie') ?? '');
 	}
 
 	/**
