@@ -1,6 +1,6 @@
 import { clone, CloneableOrPrimitive } from '../index.js';
 import Readable from './Readable.js';
-import type Writable from './Writable.js';
+import { Readable as SvelteReadable } from 'svelte/store';
 
 /**
  * A svelte store
@@ -9,11 +9,9 @@ export default class Readclone<
 	T extends CloneableOrPrimitive,
 > extends Readable<T> {
 	/**
-	 * Creates a new Writable
-	 *
-	 * @param def A default value
+	 * Creates a new Readclone
 	 */
-	constructor(inner: Writable<T>) {
+	constructor(inner: SvelteReadable<T>) {
 		super(inner);
 	}
 

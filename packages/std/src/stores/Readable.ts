@@ -1,18 +1,22 @@
-import type Writable from './Writable.js';
+import { get as getStore, Readable as SvelteReadable } from 'svelte/store';
 
 /**
  * A svelte store
  */
 export default class Readable<T> {
-	private inner: Writable<T>;
+	private inner: SvelteReadable<T>;
+	private getFn: () => T;
 
 	/**
-	 * Creates a new Writable
-	 *
-	 * @param def A default value
+	 * Creates a new Readable
 	 */
-	constructor(inner: Writable<T>) {
+	constructor(inner: SvelteReadable<T>) {
+		const nInner = inner as SvelteReadable<T> & { get?: () => T };
 		this.inner = inner;
+		this.getFn =
+			typeof nInner.get === 'function'
+				? () => nInner.get!()
+				: () => getStore(nInner);
 	}
 
 	/**
@@ -29,6 +33,6 @@ export default class Readable<T> {
 	 * Get the current value
 	 */
 	get(): T {
-		return this.inner.get();
+		return this.getFn();
 	}
 }
