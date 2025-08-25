@@ -1,6 +1,6 @@
 export type BarrierAction<T> = {
 	// notify the barrier that you are ready
-	ready: (val: T) => Promise<T>;
+	ready: (val: T) => Promise<T> | T;
 	// remove yourself from the barrier
 	remove: () => void;
 };
@@ -58,15 +58,17 @@ export default class Barrier<T> {
 		this.listeners[id] = obj;
 
 		return {
-			ready: async val => {
+			ready: val => {
 				if (this.open) throw new Error('Barrier is already open');
 
 				this.lastValue = val;
 				obj.ready = true;
 
-				this._maybeTrigger();
+				// if I was the one triggering it we can return
+				// the value instantly without using a promise
+				if (this._maybeTrigger()) return val;
 
-				return await readyPromise;
+				return readyPromise;
 			},
 			remove: () => {
 				if (this.open) throw new Error('Barrier is already open');
@@ -79,10 +81,10 @@ export default class Barrier<T> {
 		};
 	}
 
-	private _maybeTrigger() {
+	private _maybeTrigger(): boolean {
 		const ready = this.listeners.every(v => v === null || v.ready);
 		// if all are ready
-		if (!ready) return;
+		if (!ready) return false;
 
 		// send the last value to all of them
 
@@ -92,5 +94,7 @@ export default class Barrier<T> {
 		this.listeners.forEach(v => v?.resolve(this.lastValue as T));
 		this.listeners = [];
 		this.open = true;
+
+		return true;
 	}
 }
