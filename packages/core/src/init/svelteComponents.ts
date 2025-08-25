@@ -1,7 +1,7 @@
 import {
 	internalSvelteMount,
 	internalSvelteRender,
-} from 'crelte-vite-plugin/svelteComponents.js';
+} from 'virtual:crelte/svelteComponents';
 
 export function svelteMount(comp: any, options: any): any {
 	return internalSvelteMount(comp, options);
