@@ -6,7 +6,6 @@ import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
 import Crelte, { type QueryOptions, type Config } from './Crelte.js';
 import CrelteRequest from './CrelteRequest.js';
-import type { Global } from './loadData/Globals.js';
 import type { Cookies } from './cookies/index.js';
 import type { Readable } from 'crelte-std/stores';
 import {
@@ -98,6 +97,19 @@ export function getSite(): Readable<Site> {
 }
 
 /**
+ * Get a store with the current entry
+ *
+ * ## Note
+ * This only works during component initialisation.
+ */
+export function getEntry(): Readable<Entry> {
+	/// the entry will never be null because it is only null in the
+	// first loadData call and that happens before any component
+	// initialisation
+	return getRouter().entry as Readable<Entry>;
+}
+
+/**
  * returns an env variable from the craft/.env file.
  * All env variables need to start with VITE_
  * except ENDPOINT_URL and CRAFT_WEB_URL
@@ -138,7 +150,7 @@ export function getLoadingProgress(): Readable<number> {
  * ## Note
  * This only works during component initialisation.
  */
-export function getGlobal<T = any>(name: string): Global<T> | null {
+export function getGlobal<T = any>(name: string): Readable<T> | null {
 	return getCrelte().globals.getStore(name);
 }
 
@@ -158,11 +170,9 @@ export function getCookies(): Cookies {
  * ## Note
  * This only works during component initialisation.
  */
-export function onRoute(fn: (route: Route, crelte: Crelte) => void) {
+export function onRoute(fn: (route: Route) => void) {
 	const crelte = getCrelte();
-	const rmListener = crelte.router.onRoute(route => {
-		fn(route, crelte);
-	});
+	const rmListener = crelte.router.onRoute(route => fn(route));
 
 	onDestroy(rmListener);
 }
@@ -175,9 +185,7 @@ export function onRoute(fn: (route: Route, crelte: Crelte) => void) {
  */
 export function onRequest(fn: (cr: CrelteRequest) => void) {
 	const crelte = getCrelte();
-	const rmListener = crelte.router.onRequest(req => {
-		fn(new CrelteRequest(crelte, req));
-	});
+	const rmListener = crelte.router.onRequest(cr => fn(cr));
 
 	onDestroy(rmListener);
 }

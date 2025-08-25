@@ -9,14 +9,9 @@ export default class ServerCookies implements Cookies {
 	requestCookies: Map<string, string>;
 	setCookies: Map<string, SetCookie>;
 
-	constructor() {
-		this.requestCookies = new Map();
-		this.setCookies = new Map();
-	}
-
-	_init(cookies: string): void {
-		// parse the cookies
+	constructor(cookies: string) {
 		this.requestCookies = parseCookies(cookies);
+		this.setCookies = new Map();
 	}
 
 	/// Rethrns the value of the cookie with the given name, or null if it doesn't exist.

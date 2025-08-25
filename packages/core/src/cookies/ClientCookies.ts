@@ -7,8 +7,6 @@ import { parseCookies, setCookieToString } from './utils.js';
 export default class ClientCookies implements Cookies {
 	constructor() {}
 
-	_init(_cookies: string): void {}
-
 	get(name: string): string | null {
 		const cookies = getCookies();
 		return cookies.get(name) ?? null;

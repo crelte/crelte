@@ -1,3 +1,4 @@
+import BaseRoute from '../routing/BaseRoute.js';
 import Route from '../routing/Route.js';
 import SsrCache, { calcKey as ssrCacheCalcKey } from '../ssr/SsrCache.js';
 
@@ -75,7 +76,7 @@ export type GraphQlRequestOptions = {
 	 * !! the route here might not contain a site even if the types
 	 * says it does. CrelteServer does not know about site
 	 */
-	route?: Route | URL;
+	route?: BaseRoute | URL;
 	ignoreStatusCode?: boolean;
 	previewToken?: string;
 	siteToken?: string;
