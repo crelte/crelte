@@ -19,6 +19,7 @@ import {
 	webResponseToResponse,
 } from './server.js';
 import Router from './Router.js';
+import sveltePackage from 'svelte/package.json' with { type: 'json' };
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -31,17 +32,36 @@ async function readFile(path: string): Promise<string> {
 function usedSsrComponents(
 	code: string,
 	id: string,
-	options?: { ssr?: boolean },
+	options: { ssr?: boolean } | undefined,
+	svelte5: boolean,
 ): TransformResult | undefined {
 	if (!options?.ssr || !id.endsWith('.svelte')) return;
 
 	const file = relative('.', id);
 
-	const initFnSign =
-		'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
-	let idx = code.indexOf(initFnSign);
-	if (idx < 0) return;
-	idx += initFnSign.length;
+	let idx;
+	if (svelte5) {
+		// this will not catch all cases, but it should be enough
+		// since almost all components will have props
+		const initFnSign = '($$payload, $$props) {';
+		idx = code.indexOf(initFnSign);
+		if (idx < 0) return;
+
+		const pushSign = '$.push(';
+		idx = code.indexOf(pushSign, idx);
+		if (idx < 0) return;
+
+		// Find the end of the line where the pattern was found
+		idx = code.indexOf('\n', idx);
+		if (idx < 0) return;
+		idx += 1; // \n
+	} else {
+		const initFnSign =
+			'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
+		idx = code.indexOf(initFnSign);
+		if (idx < 0) return;
+		idx += initFnSign.length;
+	}
 
 	const s = new MagicString(code);
 
@@ -89,13 +109,30 @@ export default {
 `;
 }
 
+function isSvelte5(): boolean {
+	if (sveltePackage && sveltePackage.version) {
+		console.log('sveltepackage', sveltePackage.version);
+		return sveltePackage.version.startsWith('5.');
+	}
+	// Fallback or error handling if version cannot be determined
+	console.warn('Could not determine Svelte version. Assuming not Svelte 5.');
+	return false;
+}
+
 // outside of crelte because each build executes crelte again
 let isSsrBuild = false;
 
-export default function crelte(): Plugin {
+export type CrelteOptions = {
+	/** If not specified tries to detect which version is installed */
+	svelte4?: boolean;
+};
+
+export default function crelte(opts?: CrelteOptions): Plugin {
 	let viteConfig: ResolvedConfig;
 	let viteConfigEnv: ConfigEnv;
 	let initialConfig: UserConfig;
+
+	const svelte5 = opts?.svelte4 ? false : isSvelte5();
 
 	return {
 		name: 'crelte',
@@ -140,6 +177,10 @@ export default function crelte(): Plugin {
 			if (id.endsWith('/src/serverNode.js')) {
 				return id;
 			}
+
+			if (id === 'crelte-vite-plugin/svelteComponents.js') {
+				return id;
+			}
 		},
 
 		load(id) {
@@ -150,11 +191,36 @@ export default function crelte(): Plugin {
 					`createServer(server, ${Date.now()});`
 				);
 			}
+
+			if (id === 'crelte-vite-plugin/svelteComponents.js') {
+				if (svelte5) {
+					return (
+						`import { hydrate } from 'svelte';` +
+						`import { render } from 'svelte/server';` +
+						`export function internalSvelteMount(comp, options) {` +
+						`hydrate(comp, options);` +
+						`}` +
+						`export function internalSvelteRender(comp, options) {` +
+						`return render(comp, options);` +
+						`}`
+					);
+				} else {
+					return (
+						`export function internalSvelteMount(comp, options) {` +
+						`return new comp({ ...options, hydrate: true });` +
+						`}` +
+						`export function internalSvelteRender(comp, options) {` +
+						`return comp.render(options.props, options);` +
+						`}`
+					);
+				}
+			}
 		},
 
 		transform(code, id, options) {
 			return (
-				usedSsrComponents(code, id, options) || graphQlFiles(code, id)
+				usedSsrComponents(code, id, options, svelte5) ||
+				graphQlFiles(code, id)
 			);
 		},
 
