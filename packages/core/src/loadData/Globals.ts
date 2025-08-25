@@ -53,17 +53,9 @@ export default class Globals {
 				'calling get in loadGlobalData will not work. call getAsync',
 			);
 
-		if (!this.newData) {
-			throw new Error(
-				'calling get outside of a loadData is forbidden. use getStore',
-			);
+		if (this.newData) return this.newData.get(name) ?? null;
 
-			// todo do we wan't to allow this?
-			// isn't it just a footgun?
-			// return this.getStore(name)?.get() ?? null;
-		}
-
-		return this.newData.get(name) ?? null;
+		return this.getStore(name)?.get() ?? null;
 	}
 
 	/**
@@ -88,10 +80,7 @@ export default class Globals {
 	getAsync<T = any>(name: string): Promise<T | null> | T | null {
 		if (this.newData) return this.newData.get(name) ?? null;
 
-		if (!this.waiters)
-			throw new Error(
-				'calling getAsync in non loadGlobalData contexts is pointless. Use getStore instead',
-			);
+		if (!this.waiters) return this.stores.get(name)?.get() ?? null;
 
 		let listeners = this.waiters.get(name);
 		if (!listeners) {
