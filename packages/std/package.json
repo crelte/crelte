@@ -1,6 +1,6 @@
 {
 	"name": "crelte-std",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
@@ -37,14 +37,15 @@
 			"default": "./dist/stores/index.js"
 		}
 	},
-	"dependencies": {
-		"svelte": "^4.2.12"
+	"dependencies": {},
+	"peerDependencies": {
+		"svelte": "^4.0.0 || ^5.0.0"
 	},
 	"devDependencies": {
 		"@sveltejs/package": "^2.3.1",
-		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^4.0.0",
 		"svelte-check": "^4.1.4",
 		"typescript-svelte-plugin": "^0.3.45",
-		"vitest": "^2.0.0"
+		"vitest": "^3.0.0"
 	}
 }
