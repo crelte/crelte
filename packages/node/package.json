@@ -1,6 +1,6 @@
 {
 	"name": "crelte-node",
-	"version": "0.5.0-alpha.1",
+	"version": "0.5.0-alpha.2",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
@@ -31,7 +31,7 @@
 		}
 	},
 	"dependencies": {
-		"crelte": "^0.5.0-alpha.1",
+		"crelte": "^0.5.0-alpha.3",
 		"magic-string": "^0.30.17",
 		"trouter": "^4.0.0"
 	},

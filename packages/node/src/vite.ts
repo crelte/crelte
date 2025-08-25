@@ -21,6 +21,9 @@ import {
 import Router from './Router.js';
 import sveltePackage from 'svelte/package.json' with { type: 'json' };
 
+const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
+const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
+
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
 	return await fs.readFile(path, 'utf-8');
@@ -178,8 +181,8 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 				return id;
 			}
 
-			if (id === 'crelte-vite-plugin/svelteComponents.js') {
-				return id;
+			if (id === VIRT_MOD_ID) {
+				return RESOLVED_VIRT_MOD_ID;
 			}
 		},
 
@@ -192,7 +195,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 				);
 			}
 
-			if (id === 'crelte-vite-plugin/svelteComponents.js') {
+			if (id === RESOLVED_VIRT_MOD_ID) {
 				if (svelte5) {
 					return (
 						`import { hydrate } from 'svelte';` +
