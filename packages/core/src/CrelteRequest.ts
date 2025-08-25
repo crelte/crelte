@@ -4,10 +4,15 @@ import Site from './routing/Site.js';
 import Request from './routing/Request.js';
 import Route from './routing/Route.js';
 import { circles } from './utils.js';
+import Globals from './loadData/Globals.js';
+import { Router } from './routing/index.js';
 
 export default class CrelteRequest extends Crelte {
 	/**
 	 * The current request
+	 *
+	 * ## Warning
+	 * Do not override this
 	 */
 	req: Request;
 
@@ -71,7 +76,7 @@ export default class CrelteRequest extends Crelte {
 	 * `.getGlobalAsync`
 	 */
 	getGlobal<T = any>(name: string): T | null {
-		return this.globals.get(name, this.site.id);
+		return this.globals.get(name);
 	}
 
 	/**
@@ -82,8 +87,12 @@ export default class CrelteRequest extends Crelte {
 	 * you can use `.getGlobal` which does return a Promise
 	 */
 	async getGlobalAsync<T = any>(name: string): Promise<T | null> {
-		return this.globals.getAsync(name, this.site.id);
+		return this.globals.getAsync(name);
 	}
+
+	// todo we should override getPlugin making it possible for the plugin
+	// to attach a CrelteRequest to itself
+	// for that we should call cloneWithRequest(cr: CrelteRequest)
 
 	/**
 	 * Run a GraphQl Query
@@ -103,6 +112,16 @@ export default class CrelteRequest extends Crelte {
 			route: this.req,
 			...opts,
 		});
+	}
+
+	/** @hidden */
+	_setRouter(router: Router) {
+		this._router = router;
+	}
+
+	/** @hidden */
+	_setGlobals(globals: Globals) {
+		this._globals = globals;
 	}
 }
 

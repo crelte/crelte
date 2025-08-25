@@ -1,9 +1,19 @@
 import { CrelteBuilder } from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
-import { GraphQlQuery } from '../graphql/GraphQl.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
-import { pluginsBeforeRender, prepareLoadFn, setupPlugins } from './shared.js';
+import {
+	loadFn,
+	pluginsBeforeRender,
+	pluginsBeforeRequest,
+	setupPlugins,
+} from './shared.js';
 import { tick } from 'svelte';
+import { svelteMount } from './svelteComponents.js';
+import ClientCookies from '../cookies/ClientCookies.js';
+import ClientRouter from '../routing/ClientRouter.js';
+import InternalApp from './InternalApp.js';
+import { Route } from '../routing/index.js';
+import { Writable } from 'crelte-std/stores';
 
 /**
  * The main function to start the client side rendering
@@ -13,10 +23,6 @@ export type MainData = {
 	app: any;
 	/** The Error.svelte module */
 	errorPage: any;
-	/** The entry query from queries/entry.graphql */
-	entryQuery: GraphQlQuery;
-	/** The global query from queries/global.graphql */
-	globalQuery?: GraphQlQuery;
 };
 
 const mainDataDefault = {
@@ -52,111 +58,110 @@ const mainDataDefault = {
 export async function main(data: MainData) {
 	data = { ...mainDataDefault, ...data };
 
-	// rendering steps
-
-	// loadSites (first time)
-	// determine route (if site is empty on server redirect to correct language)
-	// loadData, entry (make globally available), pluginsData
-	// loadTemplate
-	// render
-
-	// on route change
-	// determine route
-	// entry, pluginsData
-	// loadTemplate
-	// update
-
-	// construct Crelte
+	// todo if entryQuery or globalQuery is present show a hint
+	// they should be added to App.svelte and removed from here
 
 	const builder = new CrelteBuilder(data.app.config ?? {});
-	const endpoint = builder.ssrCache.get('ENDPOINT_URL') as string;
-	builder.setupGraphQl(endpoint);
 
-	// on the client the cookies are always coming from document.cookie
-	builder.setupCookies('');
-
-	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];
-	builder.setupRouter(csites);
-
-	const crelte = builder.build();
-
-	const serverError = crelte.ssrCache.get('ERROR');
+	const serverError = builder.ssrCache.get('ERROR');
 	if (serverError) {
-		// should this be called??
-		crelte.router._internal.initClient();
+		// todo should this init the client, but maybe we just
+		// want it as minimal as possible
 
-		new data.errorPage.default({
+		svelteMount(data.errorPage.default, {
 			target: document.body,
-			props: { ...serverError },
-			hydrate: true,
-			context: crelte._getContext(),
+			props: serverError,
 		});
 		return;
 	}
 
+	const endpoint = builder.ssrCache.get('ENDPOINT_URL') as string;
+	builder.setupGraphQl(endpoint);
+
+	// on the client the cookies are always coming from document.cookie
+	builder.setupCookies(new ClientCookies());
+
+	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];
+	const router = new ClientRouter(csites, {
+		debugTiming: builder.config.debugTiming ?? false,
+		preloadOnMouseOver: builder.config.preloadOnMouseOver ?? false,
+	});
+	builder.setupRouter(router);
+
+	const crelte = builder.build();
+
+	const app = new InternalApp(data.app);
+
 	// setup plugins
-	setupPlugins(crelte, data.app.plugins ?? []);
-	data.app.init?.(crelte);
+	setupPlugins(crelte, app.plugins);
+	app.init(crelte);
 
-	const loadFn = await prepareLoadFn(
-		crelte,
-		data.app,
-		data.entryQuery,
-		data.globalQuery,
-	);
-
-	// setup load Data
-
-	crelte.router._internal.onLoad = (req, opts) => {
+	router.onNewCrelteRequest = req => {
 		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr, opts);
+		cr._setRouter(cr.router._toRequest(req));
+		cr._setGlobals(cr.globals._toRequest());
+		return cr;
 	};
+
+	router.onBeforeRequest = pluginsBeforeRequest;
+
+	router.loadRunner.loadFn = (cr, opts) => loadFn(cr, app, opts);
 
 	// render Space
 
 	let appInstance: any;
-	const updateAppProps = (props: any) => {
-		if (!appInstance) {
-			appInstance = new data.app.default({
-				target: document.body,
-				props,
-				hydrate: true,
-				context: crelte._getContext(),
-				intro: builder.config.playIntro,
-			});
-		} else {
-			appInstance.$set(props);
+	let routeProp: Writable<Route>;
+	const renderApp = (route: Route) => {
+		if (appInstance) {
+			routeProp!.set(route);
+			return;
 		}
+
+		routeProp = new Writable(route);
+		appInstance = svelteMount(data.app.default, {
+			target: document.body,
+			props: { route: routeProp },
+			context: crelte._getContext(),
+			intro: builder.config.playIntro,
+		});
 	};
 
-	let firstLoad = true;
-	crelte.router._internal.onLoaded = async (success, req, readyForProps) => {
-		const isFirstLoad = firstLoad;
-		firstLoad = false;
+	router.onError = e => {
+		console.error('routing failed:', e, 'reloading trying to fix it');
+		// since onError is called only on subsequent requests we should never
+		// have an infinite loop here
+		window.location.reload();
+	};
 
-		if (!success) {
-			// if this is not the first load we should reload the page
-			// we don't reload everytime because this might cause a reload loop
-			// and since the first load will probably just contain ssrCache data
-			// in almost all cases the first load will never faill
-			if (!isFirstLoad) {
-				// the load might contain a js error and we prefer the error
-				// page
-				window.location.reload();
-				return;
-			}
+	// let firstLoad = true;
+	router.onRender = async (cr, readyForRoute, domUpdated) => {
+		if (appInstance && cr.req.disableLoadData) {
+			// if the app is already rendered and entry did not change
+			// we just wan't to run domUpdated because we don't wan't to update anything
 
-			return handleLoadError(readyForProps());
+			const route = readyForRoute();
+			cr.router._requestCompleted();
+			// globals should not be run because they will be empty
+			// since nobody called loadGlobalData (todo maybe globals should also,
+			// know if it accepts updates)
+
+			// todo should we wait a tick here?
+			await tick();
+
+			domUpdated(cr, route);
+
+			return route;
 		}
 
-		const cr = new CrelteRequest(crelte, req);
-
 		const startTime = builder.config.debugTiming ? Date.now() : null;
+
 		let render = async () => {
+			const route = readyForRoute();
+			cr.router._requestCompleted();
+			cr.globals._syncToStores();
 			// we should trigger the route update here
-			pluginsBeforeRender(cr);
-			crelte.globals._updateSiteId(cr.site.id);
-			updateAppProps(readyForProps());
+			pluginsBeforeRender(cr, route);
+			renderApp(route);
 
 			await tick();
 
@@ -166,7 +171,9 @@ export async function main(data: MainData) {
 				);
 			}
 
-			crelte.router._internal.domReady(cr.req);
+			domUpdated(cr, route);
+
+			return route;
 		};
 
 		// render with view Transition if enabled and not in hydration
@@ -175,22 +182,26 @@ export async function main(data: MainData) {
 			appInstance &&
 			(document as any).startViewTransition
 		) {
-			render = () => (document as any).startViewTransition(render);
+			const prevRender = render;
+			render = async () =>
+				new Promise(resolve => {
+					(document as any).startViewTransition(async () => {
+						resolve(await prevRender());
+					});
+				});
 		}
 
-		await render();
+		return await render();
 	};
 
-	crelte.router._internal.onNothingLoaded = async (req, ready) => {
-		crelte.globals._updateSiteId(req.site.id);
-		ready();
-
-		await tick();
-
-		crelte.router._internal.domReady(req);
-	};
-
-	crelte.router._internal.initClient();
+	try {
+		await router.init();
+	} catch (e) {
+		// the first load we can't handle with a redirect since this might
+		// cause an infinite loop
+		// but since almost everything should be ssrCached nothing should fail
+		handleLoadError(e);
+	}
 }
 
 function handleLoadError(e: any) {

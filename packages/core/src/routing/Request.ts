@@ -1,12 +1,17 @@
 import { Barrier } from 'crelte-std/sync';
-import Route, { RouteOrigin } from './Route.js';
 import Site from './Site.js';
 import { objClone } from '../utils.js';
+import { Entry } from '../entry/index.js';
+import BaseRoute, { RouteOrigin } from './BaseRoute.js';
+import Route, { TemplateModule } from './Route.js';
 
 /**
  * Options to create a Request
  */
 export type RequestOptions = {
+	entry?: Entry;
+	template?: TemplateModule;
+	loadedData?: Record<string, any>;
 	scrollY?: number;
 	index?: number;
 	origin?: RouteOrigin;
@@ -22,7 +27,22 @@ export type RequestOptions = {
  * you get a Request from the onRequest event or
  * in a loadGlobal function.
  */
-export default class Request extends Route {
+export default class Request extends BaseRoute {
+	/**
+	 * The entry of the request once loaded
+	 */
+	entry: Entry | null;
+
+	/**
+	 * The template module of the request once loaded
+	 */
+	template: TemplateModule | null;
+
+	/**
+	 * The loaded data of the request
+	 */
+	loadedData: Record<string, any> | null;
+
 	/**
 	 * Disable scrolling for this request
 	 * @default false
@@ -43,20 +63,29 @@ export default class Request extends Route {
 	/** @hidden */
 	_renderBarrier: RenderBarrier;
 
+	private _cancelled: boolean;
+
 	/**
 	 * Create a new Request
 	 */
 	constructor(url: string | URL, site: Site, opts: RequestOptions = {}) {
 		super(url, site, opts);
 
+		this.entry = opts.entry ?? null;
+		this.template = opts.template ?? null;
+		this.loadedData = opts.loadedData ?? null;
 		this.disableScroll = opts.disableScroll ?? false;
 		this.disableLoadData = opts.disableLoadData ?? false;
 		this.statusCode = opts.statusCode ?? null;
 		this._renderBarrier = new RenderBarrier();
+		this._cancelled = false;
 	}
 
 	/**
 	 * Create a Request from a Route
+	 *
+	 * Clears the entry, template, and loadedData
+	 * todo should it?
 	 */
 	static fromRoute(route: Route, opts: RequestOptions = {}) {
 		return new Request(route.url.href, route.site, {
@@ -67,6 +96,10 @@ export default class Request extends Route {
 			context: route._context,
 			...opts,
 		});
+	}
+
+	get cancelled(): boolean {
+		return this._cancelled;
 	}
 
 	/**
@@ -103,9 +136,20 @@ export default class Request extends Route {
 
 	/**
 	 * Create a copy of the request
+	 *
+	 * without including the entry, template, loadedData or cancelled state
+	 *
+	 * Is this what we wan't, maybe it should copy everything
 	 */
 	clone() {
-		return new Request(this.url.href, this.site, {
+		// todo should this clone the entry
+		// the route for example does not do it
+		//
+		// todo should this clone keep the entry?
+		const req = new Request(this.url.href, this.site, {
+			// entry: objClone(this.entry),
+			// template: this.template ?? undefined,
+			// loadedData: objClone(this.loadedData),
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
@@ -115,23 +159,55 @@ export default class Request extends Route {
 			disableLoadData: this.disableLoadData,
 			statusCode: this.statusCode ?? undefined,
 		});
+
+		return req;
 	}
 
 	/**
 	 * Create a Route from the Request
+	 *
+	 * ## Throws
+	 * if the entry, template or loadedData is missing
+	 * or the request was cancelled
 	 */
 	toRoute() {
-		return new Route(this.url.href, this.site, {
-			scrollY: this.scrollY ?? undefined,
-			index: this.index,
-			origin: this.origin,
-			state: objClone(this._state),
-			context: this._context,
-		});
+		if (this.cancelled)
+			throw new Error(
+				'cannot create a new route because it was cancelled',
+			);
+
+		if (!this.entry || !this.template || !this.loadedData)
+			throw new Error(
+				'cannot create a new route because entry, template or loadedData is missing',
+			);
+
+		const route = new Route(
+			this.url.href,
+			this.site,
+			this.entry,
+			this.template,
+			this.loadedData,
+			{
+				scrollY: this.scrollY ?? undefined,
+				index: this.index,
+				origin: this.origin,
+				state: objClone(this._state),
+				context: this._context,
+			},
+		);
+		route.entryChanged = !this.disableLoadData;
+
+		return route;
 	}
 
 	/** @hidden */
 	_updateOpts(opts: RequestOptions = {}) {
+		// todo maybe should check that if entry is updated
+		// template and loadedData is also updated
+
+		this.entry = opts.entry ?? this.entry;
+		this.template = opts.template ?? this.template;
+		this.loadedData = opts.loadedData ?? this.loadedData;
 		this.scrollY = opts.scrollY ?? this.scrollY;
 		this.index = opts.index ?? this.index;
 		this.origin = opts.origin ?? this.origin;
@@ -140,6 +216,12 @@ export default class Request extends Route {
 		this.disableScroll = opts.disableScroll ?? this.disableScroll;
 		this.disableLoadData = opts.disableLoadData ?? this.disableLoadData;
 		this.statusCode = opts.statusCode ?? this.statusCode;
+	}
+
+	/** @hidden */
+	_cancel() {
+		this._cancelled = true;
+		this._renderBarrier.cancel();
 	}
 }
 
@@ -178,15 +260,18 @@ class RenderBarrier {
 
 	/** @hidden */
 	cancel() {
+		// if the barrier is already open
+		// we don't wan't to flag the render as cancelled
+		// because it already happened
 		if (this.inner.isOpen()) return;
 
 		this.cancelled = true;
 		this.root.remove();
 	}
 
-	// returns if the render was cancelled
+	// returns true if the render was cancelled
 	/** @hidden */
-	ready(): Promise<boolean> {
+	ready(): Promise<boolean> | boolean {
 		return this.root.ready();
 	}
 }

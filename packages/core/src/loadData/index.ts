@@ -1,9 +1,8 @@
 import CrelteRequest from '../CrelteRequest.js';
 import { isGraphQlQuery, type GraphQlQuery } from '../graphql/GraphQl.js';
 import type Globals from './Globals.js';
-import type { Global } from './Globals.js';
 
-export type { Globals, Global };
+export type { Globals };
 
 export interface LoadDataFn<A1 = any> {
 	(cr: CrelteRequest, entryOrBlock: A1, ...args: any[]): Promise<any> | any;
@@ -136,6 +135,8 @@ export async function callLoadData<A1 = any>(
 
 /**
  * Spread the data of two loadData functions.
+ *
+ * Prefer to use the array syntax.
  *
  * ## Example
  * ```

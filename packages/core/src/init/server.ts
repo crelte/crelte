@@ -1,11 +1,19 @@
 import { CrelteBuilder } from '../Crelte.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
-import { pluginsBeforeRender, prepareLoadFn, setupPlugins } from './shared.js';
+import {
+	loadFn,
+	pluginsBeforeRender,
+	pluginsBeforeRequest,
+	setupPlugins,
+} from './shared.js';
 import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import CrelteRequest from '../CrelteRequest.js';
-import { GraphQlQuery } from '../graphql/GraphQl.js';
+import { svelteRender } from './svelteComponents.js';
+import { Writable } from 'crelte-std/stores';
+import ServerRouter from '../routing/ServerRouter.js';
+import InternalApp from './InternalApp.js';
 
 export type ServerData = {
 	url: string;
@@ -25,10 +33,6 @@ export type ServerData = {
 export type MainData = {
 	/** The App.svelte module */
 	app: any;
-	/** The entry query from queries/entry.graphql */
-	entryQuery: GraphQlQuery;
-	/** The global query from queries/global.graphql */
-	globalQuery?: GraphQlQuery;
 
 	/** Server data provided by crelte-node */
 	serverData: ServerData;
@@ -60,6 +64,9 @@ export async function main(data: MainData): Promise<{
 	html?: string;
 	setCookies?: string[];
 }> {
+	// todo if entryQuery or globalQuery is present show a hint
+	// they should be added to App.svelte and removed from here
+
 	const builder = new CrelteBuilder(data.app.config ?? {});
 
 	// setup viteEnv
@@ -73,39 +80,50 @@ export async function main(data: MainData): Promise<{
 	builder.setupGraphQl(endpoint);
 
 	const cookies = data.serverData.cookies ?? '';
-	builder.setupCookies(cookies);
+	builder.setupCookies(new ServerCookies(cookies));
 
 	builder.ssrCache.set('crelteSites', data.serverData.sites);
-	builder.setupRouter(data.serverData.sites);
+	const router = new ServerRouter(data.serverData.sites, {
+		debugTiming: builder.config.debugTiming ?? false,
+	});
+	builder.setupRouter(router);
 
 	const crelte = builder.build();
 
+	const app = new InternalApp(data.app);
+
 	// setup plugins
-	setupPlugins(crelte, data.app.plugins ?? []);
-	data.app.init?.(crelte);
+	setupPlugins(crelte, app.plugins);
+	app.init(crelte);
 
-	const loadFn = await prepareLoadFn(
-		crelte,
-		data.app,
-		data.entryQuery,
-		data.globalQuery,
-	);
-
-	// setup load Data
-
-	crelte.router._internal.onLoad = req => {
+	router.onNewCrelteRequest = req => {
 		const cr = new CrelteRequest(crelte, req);
-		return loadFn(cr);
+		cr._setRouter(cr.router._toRequest(req));
+		cr._setGlobals(cr.globals._toRequest());
+		return cr;
 	};
 
-	const { success, redirect, req, props } =
-		await crelte.router._internal.initServer(
-			data.serverData.url,
-			data.serverData.acceptLang,
-		);
-	if (!success) throw props;
+	router.onBeforeRequest = pluginsBeforeRequest;
 
-	if (redirect) {
+	router.loadRunner.loadFn = (cr, opts) => loadFn(cr, app, opts);
+
+	router.onRender = (cr, readyForRoute, _domUpdated) => {
+		const route = readyForRoute();
+		cr.router._requestCompleted();
+		cr.globals._syncToStores();
+		pluginsBeforeRender(cr, route);
+
+		return route;
+	};
+
+	// throws if there was an error
+	const [req, route] = await router.init(
+		data.serverData.url,
+		data.serverData.acceptLang,
+	);
+
+	// if redirect
+	if (!route) {
 		return {
 			status: req.statusCode ?? 302,
 			location: req.url.toString(),
@@ -119,23 +137,31 @@ export async function main(data: MainData): Promise<{
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 
-	const cr = new CrelteRequest(crelte, req);
-	pluginsBeforeRender(cr);
-	crelte.globals._updateSiteId(cr.site.id);
+	// app should not use getRoute but use the route store
+	// received from the props, since it will only update when
+	// the entryChanges
+	const routeProp = new Writable(route);
+
 	// eslint-disable-next-line prefer-const
-	let { html, head } = data.app.default.render(props, { context });
+	let { html, head } = svelteRender(data.app.default, {
+		props: { route: routeProp },
+		context,
+	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
 	head += crelte.ssrCache._exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
-	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', cr.site.language);
+	htmlTemplate = htmlTemplate.replace(
+		'<!--page-lang-->',
+		route.site.language,
+	);
 
 	const finalHtml = htmlTemplate
 		.replace('</head>', head + '\n\t</head>')
 		.replace('<!--ssr-body-->', html);
 
-	const entry = props.entry;
+	const entry = route.entry;
 
 	return {
 		status:
@@ -189,8 +215,14 @@ export async function mainError(
 
 	ssrCache.set('ERROR', data.error);
 
+	// todo on the client crelte is in the context
+	// but it should match this impl
+
 	// eslint-disable-next-line prefer-const
-	let { html, head } = data.errorPage.default.render(data.error, { context });
+	let { html, head } = svelteRender(data.errorPage.default, {
+		props: data.error,
+		context,
+	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
 	head += ssrCache._exportToHead();

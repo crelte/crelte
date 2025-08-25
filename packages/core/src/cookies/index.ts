@@ -24,7 +24,4 @@ export interface Cookies {
 	 * removes the cookie
 	 */
 	remove(name: string): void;
-
-	/** @hidden */
-	_init(cookies: string): void;
 }

@@ -7,27 +7,63 @@ cr.getGlobal('emergency')
 
 */
 
-import { Writable } from 'crelte-std/stores';
+import { Readable, Writable } from 'crelte-std/stores';
 
-export type GlobalWaiters<T> = [(g: T | null) => void];
+export type GlobalWaiters<T> = ((g: T | null) => void)[];
 
+/**
+ * Globals is sort of a queue
+ *
+ * each time a new request get's started
+ * a copy of globals is created which references some properties of the original one
+ *
+ * then if everything is loaded th original globals is "overriden" with the new one
+ * and we get a new state
+ */
 export default class Globals {
 	// while the globals are not loaded if somebody calls
 	// getAsync then we need to store the waiters
-	private waiters: Map<number, Map<string, GlobalWaiters<any>>>;
-	private data: Map<number, Map<string, any>>;
-	private stores: Map<string, Global<any>>;
-	private currentSiteId: number | null;
+	// this get's created as soon as a request was started
+	// and get's deleted as soon as all globals are loaded
+	private waiters: Map<string, GlobalWaiters<any>> | null;
 
-	constructor() {
-		this.waiters = new Map();
-		this.data = new Map();
-		this.stores = new Map();
-		this.currentSiteId = null;
+	// this get's created as soon as a request was started
+	// and deleted once they are synced to the stores
+	private newData: Map<string, any> | null;
+
+	// contains the current active globals
+	private stores: Map<string, Writable<any>>;
+
+	constructor(stores?: Map<string, Writable<any>>) {
+		this.waiters = null;
+		this.newData = null;
+		this.stores = stores ?? new Map();
 	}
 
-	get<T = any>(name: string, siteId: number): T | null {
-		return this.data.get(siteId)?.get(name) ?? null;
+	/**
+	 * returns a globalValue
+	 *
+	 * ## Note
+	 * This only works in loadData, in loadGlobalData this will
+	 * throw an error. In that context you should use `.getAsync`
+	 */
+	get<T = any>(name: string): T | null {
+		if (this.waiters)
+			throw new Error(
+				'calling get in loadGlobalData will not work. call getAsync',
+			);
+
+		if (!this.newData) {
+			throw new Error(
+				'calling get outside of a loadData is forbidden. use getStore',
+			);
+
+			// todo do we wan't to allow this?
+			// isn't it just a footgun?
+			// return this.getStore(name)?.get() ?? null;
+		}
+
+		return this.newData.get(name) ?? null;
 	}
 
 	/**
@@ -38,8 +74,8 @@ export default class Globals {
 	 * always return null. In that context you should use
 	 * `.getAsync`
 	 */
-	getStore<T = any>(name: string): Global<T> | null {
-		return this.stores.get(name) ?? null;
+	getStore<T = any>(name: string): Readable<T> | null {
+		return this.stores.get(name)?.readonly() ?? null;
 	}
 
 	/**
@@ -47,83 +83,34 @@ export default class Globals {
 	 *
 	 * ## Note
 	 * This is only useful in loadGlobalData in all other cases
-	 * you can use `.getGlobal` which does return a Promise
+	 * you can use `.get` which does not return a Promise
 	 */
-	getAsync<T = any>(name: string, siteId: number): Promise<T | null> {
-		if (this._wasLoaded(siteId))
-			return Promise.resolve(this.get(name, siteId));
+	getAsync<T = any>(name: string): Promise<T | null> | T | null {
+		if (this.newData) return this.newData.get(name) ?? null;
 
-		let listeners = this.waiters.get(siteId);
+		if (!this.waiters)
+			throw new Error(
+				'calling getAsync in non loadGlobalData contexts is pointless. Use getStore instead',
+			);
+
+		let listeners = this.waiters.get(name);
 		if (!listeners) {
-			listeners = new Map();
-			this.waiters.set(siteId, listeners);
+			listeners = [];
+			this.waiters.set(name, listeners);
 		}
 
-		let waiter = listeners.get(name);
-		if (!waiter) {
-			waiter = [] as any;
-			listeners.set(name, waiter!);
+		return new Promise(resolve => listeners.push(resolve));
+	}
+
+	/**
+	 * can only be called in loadGlobalData contexts
+	 */
+	set<T>(name: string, data: T) {
+		if (!this.newData) {
+			// this is not strictly necessary but
+			throw new Error('can only be called in loadGlobalData contexts');
 		}
 
-		return new Promise(resolve => {
-			waiter!.push(resolve);
-		});
-	}
-
-	/** @hidden */
-	_wasLoaded(siteId: number): boolean {
-		return this.data.has(siteId);
-	}
-
-	// data is the data from the global graphql
-	// so it contains some keys and data which should be parsed
-	// and created a store for each key
-	// do not call this if _wasLoaded returns true with the same siteId
-	/** @hidden */
-	_setData(siteId: number, data: any) {
-		const map = new Map(Object.entries(data));
-		this.data.set(siteId, map);
-
-		this.waiters.get(siteId)?.forEach((waiters, key) => {
-			waiters.forEach(waiter => waiter(map.get(key)));
-		});
-		this.waiters.delete(siteId);
-	}
-
-	/** @hidden */
-	_updateSiteId(siteId: number) {
-		if (this.currentSiteId === siteId) return;
-
-		const data = this.data.get(siteId) ?? new Map();
-
-		// we set all global data to null via setSilent
-		// then set them all with the new data
-		// and update all of them
-
-		this.stores.forEach(global => global._setSilent(null));
-
-		data.forEach((value, key) => {
-			let global = this.stores.get(key);
-			if (global) {
-				global._setSilent(value);
-			} else {
-				global = new Global(key, value);
-				this.stores.set(key, global);
-			}
-		});
-
-		this.stores.forEach(global => global._notify());
-	}
-}
-
-/**
- * A globalSet store
- */
-export class Global<T = any> {
-	/** @hidden */
-	private inner: Writable<T>;
-
-	constructor(name: string, data: T) {
 		// todo remove in v1.0
 		// In v0.2, we queried the global data for all sites.
 		// We now check if the siteId is present and notify the user to remove it.
@@ -137,33 +124,65 @@ export class Global<T = any> {
 			);
 		}
 
-		this.inner = new Writable(data);
+		this.newData?.set(name, data);
+
+		const listeners = this.waiters?.get(name);
+		if (listeners) {
+			this.waiters!.delete(name);
+			listeners.forEach(fn => fn(data));
+		}
 	}
 
 	/**
-	 * The function get's called once with the current value and then when the
-	 * values changes
-	 *
-	 * @return a function which should be called to unsubscribe
+	 * @hidden
+	 * call this before starting the loadGlobalData phase
 	 */
-	subscribe(fn: (val: T) => void): () => void {
-		return this.inner.subscribe(fn);
+	_toRequest() {
+		const nGlobals = new Globals(this.stores);
+		nGlobals.waiters = new Map();
+		nGlobals.newData = new Map();
+
+		return nGlobals;
 	}
 
 	/**
-	 * The current value
+	 * @hidden
+	 * call this after the loadGlobalData phase
 	 */
-	get(): T {
-		return this.inner.get();
+	_globalsLoaded() {
+		// todo should we check if there are still waiters?
+		// theoretically this should never happen
+		this.waiters = null;
 	}
 
-	/** @hidden */
-	_setSilent(value: T) {
-		this.inner.setSilent(value);
-	}
+	/**
+	 * @hidden
+	 * call this after the loadData phase once the CrelteRequest
+	 * gets completed
+	 */
+	_syncToStores() {
+		const setToNull = new Set(this.stores.keys());
 
-	/** @hidden */
-	_notify() {
-		this.inner.notify();
+		for (const [name, data] of this.newData!.entries()) {
+			setToNull.delete(name);
+
+			const store = this.stores.get(name);
+			if (store) {
+				// todo should we do this check always?
+				if (store.get() !== data) store.set(data);
+			} else {
+				this.stores.set(name, new Writable(data));
+			}
+		}
+
+		for (const name of setToNull) {
+			console.warn(
+				`global ${name} was not modified setting to null and removing it`,
+			);
+			this.stores.get(name)!.set(null);
+			this.stores.delete(name);
+		}
+
+		this.newData = null;
 	}
 }

@@ -1,17 +1,16 @@
-import ClientCookies from './cookies/ClientCookies.js';
 import { Cookies } from './cookies/index.js';
-import ServerCookies from './cookies/ServerCookies.js';
 import GraphQl, { GraphQlQuery } from './graphql/GraphQl.js';
-import Globals, { Global } from './loadData/Globals.js';
+import Globals from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
 import type Route from './routing/Route.js';
 import type Request from './routing/Request.js';
 import Router from './routing/Router.js';
-import { SiteFromGraphQl } from './routing/Site.js';
 import SsrCache from './ssr/SsrCache.js';
 import { type CrelteRequest } from './index.js';
 import { circles } from './utils.js';
+import BaseRouter from './routing/BaseRouter.js';
+import { Readable } from 'crelte-std/stores';
 
 export type Config = {
 	/**
@@ -70,7 +69,7 @@ export class CrelteBuilder {
 	graphQl?: GraphQl;
 	router?: Router;
 	globals: Globals;
-	cookies: Cookies;
+	cookies?: Cookies;
 
 	constructor(config: Config) {
 		this.config = { ...defaultConfig, ...config };
@@ -79,10 +78,6 @@ export class CrelteBuilder {
 		this.plugins = new Plugins();
 		this.events = new Events();
 		this.globals = new Globals();
-		// @ts-ignore
-		this.cookies = import.meta.env.SSR
-			? new ServerCookies()
-			: new ClientCookies();
 	}
 
 	setupGraphQl(endpoint: string) {
@@ -93,15 +88,12 @@ export class CrelteBuilder {
 		});
 	}
 
-	setupRouter(sites: SiteFromGraphQl[]) {
-		this.router = new Router(sites, {
-			preloadOnMouseOver: this.config.preloadOnMouseOver,
-			debugTiming: this.config.debugTiming,
-		});
+	setupRouter(router: BaseRouter) {
+		this.router = new Router(router);
 	}
 
-	setupCookies(cookies: string) {
-		this.cookies._init(cookies);
+	setupCookies(cookies: Cookies) {
+		this.cookies = cookies;
 	}
 
 	build(): Crelte {
@@ -155,7 +147,7 @@ export default class Crelte {
 	protected _cookies: Cookies;
 
 	constructor(builder: CrelteBuilder | Crelte) {
-		if (!builder.graphQl || !builder.router)
+		if (!builder.graphQl || !builder.router || !builder.cookies)
 			throw new Error('builder not ready');
 
 		this._ssrCache = builder.ssrCache;
@@ -243,7 +235,7 @@ export default class Crelte {
 	 * always return null. In that context you should use
 	 * `CrelteRequest.getGlobalAsync`
 	 */
-	getGlobalStore<T = any>(name: string): Global<T> | null {
+	getGlobalStore<T = any>(name: string): Readable<T> | null {
 		return this.globals.getStore(name) ?? null;
 	}
 
@@ -256,6 +248,8 @@ export default class Crelte {
 	 * to use in loadData context
 	 */
 	toRequest(req?: Route | Request): CrelteRequest {
+		// todo can we remove this function or is it still relevant?
+
 		// we do this to avoid cyclic dependencies
 		return circles.requestFromCrelte(this, req);
 	}

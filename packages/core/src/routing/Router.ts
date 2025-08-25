@@ -1,21 +1,8 @@
-import Route from './Route.js';
-import Site, { SiteFromGraphQl } from './Site.js';
-import InnerRouter from './InnerRouter.js';
-import PageLoader, { LoadFn, LoadResponse } from './PageLoader.js';
-import { ServerHistory } from './History.js';
-import { Readable, Writable } from 'crelte-std/stores';
-import { Listeners } from 'crelte-std/sync';
-import Request, { RequestOptions } from './Request.js';
-
-export type RouterOptions = {
-	preloadOnMouseOver?: boolean;
-	debugTiming?: boolean;
-};
-
-const defaultRouterOpts = {
-	preloadOnMouseOver: false,
-	debugTiming: false,
-};
+import { Readable } from 'crelte-std/stores';
+import BaseRouter from './BaseRouter.js';
+import { Request, RequestOptions, Route, Site } from './index.js';
+import { Entry } from '../entry/index.js';
+import CrelteRequest from '../CrelteRequest.js';
 
 /**
  * Allows to easely modify a Request
@@ -29,132 +16,15 @@ const defaultRouterOpts = {
  */
 export type UpdateRequest = (req: Request) => boolean | null | undefined | void;
 
-type LoadedMore = {
-	changeHistory: () => void;
-};
-
-/**
- * internal only
- */
-type Internal = {
-	onLoaded: (
-		success: boolean,
-		req: Request,
-		// call ready once your ready to update the dom
-		// this makes sure we trigger a route and site update
-		// almost at the same moment and probably the same tick
-		// to make sure we don't have any flickering
-		ready: () => any,
-	) => void;
-
-	// onNothingLoaded get's called if the request did not load new Data
-	// since maybe a push or replace was called
-	onNothingLoaded: (
-		req: Request,
-		// call ready once your ready to update the dom
-		// this makes sure we trigger a route and site update
-		// almost at the same moment and probably the same tick
-		// to make sure we don't have any flickering
-		ready: () => void,
-	) => void;
-
-	onLoad: LoadFn;
-
-	domReady: (req: Request) => void;
-
-	initClient: () => void;
-
-	initServer: (url: string, acceptLang?: string) => Promise<ServerInited>;
-};
-
-type ServerInited = {
-	success: boolean;
-	// redirect to the route url
-	redirect: boolean;
-	req: Request;
-	props: any;
-};
-
-// Make sure route and nextRoute are not the same object as _inner.route
+// Todo this router should be stateful like globals
+// allow to reference the correct route or request
 export default class Router {
-	/**
-	 * The current route
-	 *
-	 * ## Note
-	 * Will always contain a route expect in the first loadData call
-	 */
-	private _route: Writable<Route | null>;
-
-	/**
-	 * The current site
-	 *
-	 * ## Note
-	 * Will always contain a site expect in the first loadData call
-	 */
-	private _site: Writable<Site | null>;
-
-	// the next request if it is not only a preload request
+	private inner: BaseRouter;
 	private _request: Request | null;
 
-	/**
-	 * The loading flag, specifies if a page is currently
-	 * getting loaded
-	 */
-	private _loading: Writable<boolean>;
-
-	/**
-	 * The loading progress, the value is between 0 and 1
-	 */
-	private _loadingProgress: Writable<number>;
-
-	private _onRequest: Listeners<[Request]>;
-
-	/** @hidden */
-	_internal: Internal;
-
-	private inner: InnerRouter;
-	private pageLoader: PageLoader<LoadedMore>;
-
-	constructor(sites: SiteFromGraphQl[], opts: RouterOptions = {}) {
-		opts = { ...defaultRouterOpts, ...opts };
-
-		this.inner = new InnerRouter(sites, {
-			preloadOnMouseOver: opts.preloadOnMouseOver!,
-		});
-		this.pageLoader = new PageLoader({
-			debugTiming: opts.debugTiming!,
-		});
-
-		// in the first onRoute call we will update this value
-		this._route = new Writable(null!);
-		this._site = new Writable(null!);
+	constructor(inner: BaseRouter) {
+		this.inner = inner;
 		this._request = null;
-		this._loading = new Writable(false);
-		this._loadingProgress = new Writable(0);
-
-		this._onRequest = new Listeners();
-
-		// these functions are exposed to the init "module"
-		// but should not be used by anybody else
-		this._internal = {
-			onLoaded: () => {},
-			onNothingLoaded: () => {},
-			onLoad: () => {},
-			domReady: req => this.inner.domReady(req),
-			initClient: () => this._initClient(),
-			initServer: (url, acceptLang) => this._initServer(url, acceptLang),
-		};
-
-		this.inner.onRoute = (route, changeHistory) =>
-			this._onRoute(route, changeHistory);
-		this.inner.onPreload = route => this._onPreload(route);
-
-		this.pageLoader.onLoaded = (resp, req, more) =>
-			this._onLoaded(resp, req, more);
-		this.pageLoader.loadFn = (req, opts) =>
-			this._internal.onLoad(req, opts);
-		this.pageLoader.onProgress = (loading, progress) =>
-			this._onProgress(loading, progress);
 	}
 
 	/**
@@ -167,7 +37,7 @@ export default class Router {
 	 * in each loadData call.
 	 */
 	get route(): Readable<Route | null> {
-		return this._route.readclone();
+		return this.inner.route.readclone();
 	}
 
 	/**
@@ -182,7 +52,20 @@ export default class Router {
 	 * Else use `router.site.get() ?? router.req.site`
 	 */
 	get site(): Readable<Site | null> {
-		return this._site.readonly();
+		return this.inner.site.readonly();
+	}
+
+	/**
+	 * returns a store with the current entry
+	 *
+	 * ## Note
+	 * Will always contain an entry except in the first loadData call this
+	 * is intentional since you might get the wrong entry if a request is happening
+	 * and you call this in loadData. If possible use the CrelteRequest
+	 * provided in each loadData call.
+	 */
+	get entry(): Readable<Entry | null> {
+		return this.inner.entry.readonly();
 	}
 
 	/**
@@ -195,7 +78,11 @@ export default class Router {
 	 * the url of the newer request.
 	 */
 	get req(): Request | null {
-		return this._request;
+		// this._request is not used because that could be a weird
+		// behaviour for the user
+		// we will use that however internally
+		// todo maybe reconsider this?
+		return this.inner.request;
 	}
 
 	/**
@@ -209,14 +96,14 @@ export default class Router {
 	 * returns a store which indicates if the a page is loading
 	 */
 	get loading(): Readable<boolean> {
-		return this._loading.readonly();
+		return this.inner.loading.readonly();
 	}
 
 	/**
 	 * returns a store which indicates the loading progress between 0 and 1
 	 */
 	get loadingProgress(): Readable<number> {
-		return this._loadingProgress.readonly();
+		return this.inner.loadingProgress.readonly();
 	}
 
 	/**
@@ -240,23 +127,14 @@ export default class Router {
 	 * // the following page will be opened https://example.com/de/foo/bar
 	 * ```
 	 */
-	open(
+	async open(
 		target: string | URL | Route | Request | UpdateRequest,
 		opts: RequestOptions = {},
-	) {
-		const req = this.targetOrUpdateToRequest(target, opts, {
-			origin: 'manual',
-		});
+	): Promise<Route | void> {
+		const req = this.targetOrUpdateToRequest(target, opts);
 		if (!req) return;
 
-		if (req === this._request) {
-			throw new Error(
-				'Cannot open the same request object twice. Either clone the request ' +
-					'or just pass in the url.',
-			);
-		}
-
-		this.inner.open(req);
+		return await this.inner.open(req);
 	}
 
 	/**
@@ -292,20 +170,14 @@ export default class Router {
 	 * router.push(route);
 	 * ```
 	 */
-	push(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
-		// todo not sure if that is what we want?
-		if (import.meta.env.SSR) return this.open(route, opts);
-
-		// theoretically string and URL also work but we might
-		// change that in the future
-		const req = this.targetOrUpdateToRequest(route, opts, {
-			origin: 'push',
-			scrollY: opts.scrollY ?? undefined,
-			disableLoadData: opts.disableLoadData ?? true,
-		});
+	async push(
+		route: Route | Request | UpdateRequest,
+		opts: RequestOptions = {},
+	) {
+		const req = this.targetOrUpdateToRequest(route, opts);
 		if (!req) return;
 
-		this.inner.push(req);
+		return await this.inner.push(req);
 	}
 
 	/**
@@ -348,20 +220,16 @@ export default class Router {
 	 * router.replace(route);
 	 * ```
 	 */
-	replace(route: Route | Request | UpdateRequest, opts: RequestOptions = {}) {
-		// todo not sure if that is what we want?
-		if (import.meta.env.SSR) return this.open(route, opts);
-
-		// theoretically string and URL also work but we might
-		// change that in the future
-		const req = this.targetOrUpdateToRequest(route, opts, {
-			origin: 'replace',
-			scrollY: opts.scrollY ?? undefined,
-			disableLoadData: opts.disableLoadData ?? true,
-		});
+	async replace(
+		route: Route | Request | UpdateRequest,
+		opts: RequestOptions = {},
+	) {
+		const req = this.targetOrUpdateToRequest(route, opts);
 		if (!req) return;
 
-		this.inner.replace(req);
+		// we don't force disableLoadData here
+		// because the user might want to reload the data
+		return await this.inner.replace(req);
 	}
 
 	/**
@@ -374,16 +242,20 @@ export default class Router {
 
 	/**
 	 * Checks if there are previous routes which would allow it to go back
+	 *
+	 * On the server this will always return false
 	 */
 	canGoBack(): boolean {
-		return this.inner.route?.canGoBack() ?? false;
+		return this.inner.canGoBack();
 	}
 
 	/**
 	 * Go back in the history
+	 *
+	 * On the server this throw an error
 	 */
 	back() {
-		this.inner.history.back();
+		this.inner.back();
 	}
 
 	/**
@@ -398,13 +270,12 @@ export default class Router {
 	 *
 	 * This will trigger every time a new route is set
 	 * and is equivalent to router.route.subscribe(fn)
-	 * expect that it will not trigger instantly
+	 * except that it will not trigger instantly
 	 *
 	 * @returns a function to remove the listener
 	 */
 	onRoute(fn: (route: Route) => void): () => void {
-		let first = true;
-		return this.route.subscribe(r => (first ? (first = false) : fn(r!)));
+		return this.inner.onRouteListeners.add(fn);
 	}
 
 	/**
@@ -414,8 +285,8 @@ export default class Router {
 	 *
 	 * @returns a function to remove the listener
 	 */
-	onRequest(fn: (req: Request) => void): () => void {
-		return this._onRequest.add(fn);
+	onRequest(fn: (req: CrelteRequest) => void): () => void {
+		return this.inner.onRequestListeners.add(fn);
 	}
 
 	/**
@@ -432,165 +303,6 @@ export default class Router {
 		return this.inner.targetToRequest(target, opts);
 	}
 
-	private setNewRoute(route: Route) {
-		this._route.setSilent(route);
-		const siteChanged = this.site.get()?.id !== route.site.id;
-		this._site.setSilent(route.site);
-		this._route.notify();
-		if (siteChanged) this._site.notify();
-	}
-
-	private async _initClient() {
-		this.inner.initClient();
-	}
-
-	private async _initServer(
-		url: string,
-		acceptLang?: string,
-	): Promise<ServerInited> {
-		this.inner.initServer();
-
-		this._internal.onNothingLoaded = (_req, ready) => {
-			ready();
-		};
-
-		const prom: Promise<ServerInited> = new Promise(resolve => {
-			this._internal.onLoaded = (success, req, ready) => {
-				const props = ready();
-				this._internal.onLoaded = () => {};
-
-				resolve({
-					success,
-					redirect: false,
-					req,
-					props,
-				});
-			};
-		});
-
-		const req = this.inner.targetToRequest(url);
-		req.origin = 'init';
-
-		// let's see if the url matches any route and site
-		// if not let's redirect to the site which matches the acceptLang
-		if (!req.siteMatches()) {
-			const site = this.inner.siteByAcceptLang(acceptLang);
-
-			return {
-				success: true,
-				redirect: true,
-				req: new Request(site.url, site),
-				props: {},
-			};
-		}
-
-		this.inner.route = req.toRoute();
-		this.inner.onRoute(req, () => {});
-
-		const resp = await prom;
-
-		const hist = this.inner.history as ServerHistory;
-		if (hist.url || hist.req) {
-			const nReq = this.inner.targetToRequest(hist.req ?? hist.url!);
-			if (!req.eq(nReq)) {
-				return {
-					success: true,
-					redirect: true,
-					req: nReq,
-					props: {},
-				};
-			}
-		}
-
-		return resp;
-	}
-
-	// gets called by the InnerRouter when a new route is requested
-	private _onRoute(req: Request, changeHistory: () => void) {
-		this.destroyRequest();
-
-		this._request = req;
-
-		const barrier = req._renderBarrier;
-		if (barrier.isOpen()) {
-			throw new Error('render barrier is already open');
-		}
-
-		this._onRequest.trigger(req);
-
-		// route prepared
-		if (!req.disableLoadData) {
-			this.pageLoader.load(req, { changeHistory });
-		} else {
-			this.pageLoader.discard();
-			this._onNothingLoaded(req, { changeHistory });
-		}
-	}
-
-	private destroyRequest(requestToDestroy?: Request) {
-		if (!this._request) return;
-
-		if (this._request !== requestToDestroy) return;
-
-		this._request._renderBarrier.cancel();
-		this._request = null;
-	}
-
-	private _onPreload(req: Request) {
-		this.pageLoader.preload(req);
-	}
-
-	// gets called by the pageLoader when the loadData completes
-	private async _onLoaded(
-		resp: LoadResponse,
-		req: Request,
-		more: LoadedMore,
-	) {
-		// check if the render was cancelled
-		if (await req._renderBarrier.ready()) return;
-
-		// when the data is loaded let's update the route of the inner
-		// this will only happen if no other route has been requested
-		// in the meantime
-		more.changeHistory();
-
-		const route = req.toRoute();
-
-		// call the client or server saying we are ready for a new render
-		this._internal.onLoaded(resp.success, req, () => {
-			this.destroyRequest(req);
-			this.setNewRoute(route);
-			return resp.data;
-		});
-	}
-
-	// this gets called if loadData is not called
-	private async _onNothingLoaded(req: Request, more: LoadedMore) {
-		// check if the render was cancelled
-		if (await req._renderBarrier.ready()) return;
-
-		// when the data is loaded let's update the route of the inner
-		// this is will only happen if no other route has been requested
-		// in the meantime
-		more.changeHistory();
-
-		const route = req.toRoute();
-
-		// call the client or server saying there was an update in the route
-		// but no new data was loaded so no render should happen
-		this._internal.onNothingLoaded(req, () => {
-			this.destroyRequest(req);
-			this.setNewRoute(route);
-		});
-	}
-
-	// this is called by the pageLoader if we get a progress update
-	private _onProgress(loading: boolean, progress?: number): void {
-		if (this._loading.get() !== loading) this._loading.set(loading);
-
-		if (typeof progress === 'number') this._loadingProgress.set(progress);
-	}
-
 	/**
 	 * Transforms a target to a request
 	 *
@@ -599,32 +311,40 @@ export default class Router {
 	private targetOrUpdateToRequest(
 		target: string | URL | Route | Request | UpdateRequest,
 		opts: RequestOptions = {},
-		forcedOpts: RequestOptions = {},
 	): Request | null {
 		// we have an update request
 		if (typeof target === 'function') {
-			const route = this.route.get();
-			if (!route) {
+			const source = this._request ?? this.route.get();
+			if (!source) {
+				// todo should we use the request here?
 				throw new Error(
 					'route to update missing in first loadData call. ' +
-						'Use cr.req.clone() instead',
+						'Use `cr.router...` or `cr.req.clone()`',
 				);
 			}
 
 			// first get a req
-			const req = this.inner.targetToRequest(route, opts);
+			const req = this.inner.targetToRequest(source, opts);
 			// check if the request was canceled by the update request
 			if (target(req) === false) return null;
-
-			// now we add the forcedOpts
-			req._updateOpts(forcedOpts);
 
 			return req;
 		}
 
-		return this.inner.targetToRequest(target, {
-			...opts,
-			...forcedOpts,
-		});
+		return this.inner.targetToRequest(target, opts);
+	}
+
+	/**
+	 * @hidden
+	 * call this after creating a CrelteRequest
+	 */
+	_toRequest(req: Request) {
+		const nRouter = new Router(this.inner);
+		nRouter._request = req;
+		return nRouter;
+	}
+
+	_requestCompleted() {
+		this._request = null;
 	}
 }
