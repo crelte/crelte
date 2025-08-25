@@ -72,7 +72,8 @@ export async function loadFn(
 	const entryProm = (async () => {
 		let loadEntry = app.loadEntry;
 		if (isGraphQlQuery(loadEntry)) {
-			loadEntry = cr => queryEntry(cr, loadEntry as GraphQlQuery);
+			const entryQuery = loadEntry;
+			loadEntry = cr => queryEntry(cr, entryQuery);
 		}
 
 		let entry: Entry = await callLoadData(loadEntry, cr, null);

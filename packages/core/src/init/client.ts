@@ -24,10 +24,6 @@ export type MainData = {
 	app: any;
 	/** The Error.svelte module */
 	errorPage: any;
-	/** The entry query from queries/entry.graphql */
-	entryQuery: GraphQlQuery;
-	/** The global query from queries/global.graphql */
-	globalQuery?: GraphQlQuery;
 };
 
 const mainDataDefault = {
