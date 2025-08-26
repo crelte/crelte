@@ -78,17 +78,21 @@ export default class Globals {
 	 * you can use `.get` which does not return a Promise
 	 */
 	getAsync<T = any>(name: string): Promise<T | null> | T | null {
-		if (this.newData) return this.newData.get(name) ?? null;
+		if (this.newData?.has(name)) return this.newData.get(name) ?? null;
 
-		if (!this.waiters) return this.stores.get(name)?.get() ?? null;
+		if (this.waiters) {
+			let listeners = this.waiters.get(name);
+			if (!listeners) {
+				listeners = [];
+				this.waiters.set(name, listeners);
+			}
 
-		let listeners = this.waiters.get(name);
-		if (!listeners) {
-			listeners = [];
-			this.waiters.set(name, listeners);
+			return new Promise(resolve => listeners.push(resolve));
 		}
 
-		return new Promise(resolve => listeners.push(resolve));
+		if (this.newData) return this.newData.get(name) ?? null;
+
+		return this.stores.get(name)?.get() ?? null;
 	}
 
 	/**
@@ -139,8 +143,14 @@ export default class Globals {
 	 * call this after the loadGlobalData phase
 	 */
 	_globalsLoaded() {
-		// todo should we check if there are still waiters?
-		// theoretically this should never happen
+		if (!this.waiters) return;
+
+		for (const [name, listeners] of this.waiters.entries()) {
+			const data = this.stores.get(name)?.get() ?? null;
+			listeners.forEach(fn => fn(data));
+		}
+
+		this.waiters.clear();
 		this.waiters = null;
 	}
 
