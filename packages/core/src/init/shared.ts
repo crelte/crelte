@@ -8,6 +8,7 @@ import { LoadOptions } from '../routing/LoadRunner.js';
 import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
 import Route from '../routing/Route.js';
+import { timeout } from 'crelte-std';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -96,11 +97,24 @@ export async function loadFn(
 	// loading progress is at 20%
 	loadOpts?.setProgress(0.2);
 
-	const [_global, [entry, template]] = await Promise.all([
+	const loadGlobalDataProm = Promise.all([
 		globalProm,
 		entryProm,
 		...pluginsLoadGlobalData,
 	]);
+
+	if (
+		import.meta.env.DEV &&
+		!(await Promise.any([loadGlobalDataProm, timeout(2000)]))
+	) {
+		console.error(
+			'DEV: globals took longer than 2 seconds to load. ' +
+				'Resolving globals now to fix potential deadlocks',
+		);
+		cr.globals._globalsLoaded();
+	}
+
+	const [_global, [entry, template]] = await loadGlobalDataProm;
 	if (isCanceled()) return;
 
 	cr.globals._globalsLoaded();
