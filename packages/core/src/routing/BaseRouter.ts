@@ -11,7 +11,7 @@ import { matchAcceptLang } from './utils.js';
 import LoadRunner, { LoadRunnerOptions } from './LoadRunner.js';
 import { Entry, type CrelteRequest } from '../index.js';
 import { Listeners } from 'crelte-std/sync';
-import { isPromise, objClone } from '../utils.js';
+import { isPromise } from '../utils.js';
 
 export type BaseRouterOptions = {} & LoadRunnerOptions;
 
@@ -506,9 +506,9 @@ export default class BaseRouter {
 				'the first request is not allowed to disableLoadData',
 			);
 
-		req.entry = objClone(route.entry);
+		req.entry = route.entry;
 		req.template = route.template;
-		req.loadedData = objClone(route.loadedData);
+		req.loadedData = route.loadedData;
 	}
 
 	triggerRoute(route: Route) {
