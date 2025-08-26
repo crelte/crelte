@@ -204,7 +204,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 						`import { hydrate } from 'svelte';` +
 						`import { render } from 'svelte/server';` +
 						`export function internalSvelteMount(comp, options) {` +
-						`hydrate(comp, options);` +
+						`return hydrate(comp, options);` +
 						`}` +
 						`export function internalSvelteRender(comp, options) {` +
 						`return render(comp, options);` +
