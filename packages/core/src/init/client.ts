@@ -158,7 +158,7 @@ export async function main(data: MainData) {
 		let render = async () => {
 			const route = readyForRoute();
 			cr.router._requestCompleted();
-			cr.globals._syncToStores();
+			if (route.entryChanged) cr.globals._syncToStores();
 			// we should trigger the route update here
 			pluginsBeforeRender(cr, route);
 			renderApp(route);

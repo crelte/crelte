@@ -39,6 +39,7 @@ export default class Route extends BaseRoute {
 	 */
 	loadedData: Record<string, any>;
 
+	// todo should this be renamed to data changed? or loadData called?
 	/**
 	 * Wether the entry changed since the last Route change
 	 */
