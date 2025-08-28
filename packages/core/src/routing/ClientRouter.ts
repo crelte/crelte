@@ -90,22 +90,18 @@ export default class ClientRouter extends BaseRouter {
 		const url = req.url;
 		// todo a push should also store the previous scrollY
 
-		let nReq = req;
 		if (req.scrollY === null) {
 			// if there is no scrollY stored we store the current scrollY
 			// since a push does not cause a scroll top
 			// todo: probably should refactor something probably
 			// should not be here
-			nReq = req.clone();
-			nReq.scrollY = window.scrollY;
-
-			// todo this does not work? nReq is never used
-			// why not assign it without a clone?
+			req.scrollY = window.scrollY;
 		}
 
 		return await this.handleRequest(req, route => {
 			window.history.pushState(
 				route._toState(),
+				'',
 				url.pathname + url.search + url.hash,
 			);
 		});
@@ -114,24 +110,20 @@ export default class ClientRouter extends BaseRouter {
 	async replaceRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
 
-		let nReq = req;
 		if (req.scrollY === null) {
 			// if there is no scrollY stored we store the current scrollY
 			// since a replace does not cause a scrollTo and we wan't
 			// history back to work as intended
 			// todo: probably should refactor something probably
 			// should not be here
-			nReq = req.clone();
-			nReq.scrollY = window.scrollY;
-
-			// todo this does not work? nReq is never used
-			// why not assign it without a clone?
+			req.scrollY = window.scrollY;
 		}
 
 		try {
 			return await this.handleRequest(req, () => {
 				window.history.replaceState(
 					req._toState(),
+					'',
 					url.pathname + url.search + url.hash,
 				);
 			});
