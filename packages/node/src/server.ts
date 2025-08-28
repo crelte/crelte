@@ -30,6 +30,7 @@ setup route
 export type EnvData = {
 	env: Map<string, string>;
 	endpointUrl: string;
+	endpointToken?: string;
 	craftWebUrl: string;
 	viteEnv: Map<string, string>;
 	sites: SiteFromGraphQl[];
@@ -48,6 +49,8 @@ export async function initEnvData(cache?: SitesCache): Promise<EnvData> {
 	const endpointUrl = env.get('ENDPOINT_URL');
 	if (!endpointUrl) throw new Error('ENDPOINT_URL not set');
 
+	const endpointToken = env.get('ENDPOINT_TOKEN');
+
 	const craftWebUrl = env.get('CRAFT_WEB_URL');
 	if (!craftWebUrl) throw new Error('CRAFT_WEB_URL not set');
 
@@ -56,12 +59,15 @@ export async function initEnvData(cache?: SitesCache): Promise<EnvData> {
 		Array.from(env).filter(([key]) => key.startsWith('VITE_')),
 	);
 
-	const graphQl = new GraphQl(endpointUrl, new SsrCache());
+	const graphQl = new GraphQl(endpointUrl, new SsrCache(), {
+		bearerToken: endpointToken,
+	});
 	const sites = await loadSites(graphQl, cache);
 
 	return {
 		env,
 		endpointUrl,
+		endpointToken,
 		craftWebUrl,
 		viteEnv,
 		sites,

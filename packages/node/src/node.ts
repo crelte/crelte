@@ -48,7 +48,9 @@ export default async function createServer(serverMod: any, buildTime: string) {
 
 	let router: Router | null = null;
 	if (typeof serverMod.routes === 'function') {
-		router = new Router(env.endpointUrl, env.env, env.sites);
+		router = new Router(env.endpointUrl, env.env, env.sites, {
+			endpointToken: env.endpointToken,
+		});
 		await serverMod.routes(router);
 	}
 
