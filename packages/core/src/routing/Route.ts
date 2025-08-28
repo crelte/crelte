@@ -1,7 +1,8 @@
 import Site from './Site.js';
 import { objClone } from '../utils.js';
-import { Entry, LoadData } from '../index.js';
+import { LoadData } from '../index.js';
 import BaseRoute, { RouteOrigin } from './BaseRoute.js';
+import { Entry } from '../entry/index.js';
 
 export type RouteOptions = {
 	entryChanged?: boolean;

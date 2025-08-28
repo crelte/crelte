@@ -9,9 +9,10 @@ import Route from './Route.js';
 import Site, { SiteFromGraphQl, siteFromUrl } from './Site.js';
 import { matchAcceptLang } from './utils.js';
 import LoadRunner, { LoadRunnerOptions } from './LoadRunner.js';
-import { Entry, type CrelteRequest } from '../index.js';
+import { type CrelteRequest } from '../index.js';
 import { Listeners } from 'crelte-std/sync';
 import { isPromise } from '../utils.js';
+import { Entry } from '../entry/index.js';
 
 export type BaseRouterOptions = {} & LoadRunnerOptions;
 
