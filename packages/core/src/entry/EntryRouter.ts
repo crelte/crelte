@@ -1,6 +1,6 @@
 import { Pattern, Trouter } from 'trouter';
-import { Crelte, CrelteRequest, Entry, QueryOptions } from '../index.js';
-import { CrelteEntryRequest, EntryRequest } from './index.js';
+import { Crelte, CrelteRequest, QueryOptions } from '../index.js';
+import { CrelteEntryRequest, Entry, EntryRequest } from './index.js';
 import { GraphQlQuery } from '../graphql/GraphQl.js';
 
 export type EntryRouteHandler = (

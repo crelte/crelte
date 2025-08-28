@@ -1,3 +1,4 @@
+import { GraphQlQuery } from '../graphql/index.js';
 import { Crelte, CrelteRequest } from '../index.js';
 import { Request, RequestOptions, Site } from '../routing/index.js';
 import EntryRouter, { EntryRouteHandler, EntryRoutes } from './EntryRouter.js';
@@ -52,3 +53,51 @@ export class CrelteEntryRequest extends CrelteRequest {
 		this.req = req;
 	}
 }
+
+export async function queryEntry(
+	cr: CrelteRequest,
+	entryQuery: GraphQlQuery,
+): Promise<Entry> {
+	if (!cr.req.siteMatches())
+		throw new Error(
+			'to run the entryQuery the request needs to have a matching site',
+		);
+
+	let uri = decodeURI(cr.req.uri);
+	if (uri.startsWith('/')) uri = uri.substring(1);
+	if (uri === '' || uri === '/') uri = '__home__';
+
+	const vars = {
+		uri,
+		siteId: cr.site.id,
+	};
+
+	const page = await cr.query(entryQuery, vars);
+	return getEntry(page) ?? ERROR_404_ENTRY;
+}
+
+const ERROR_404_ENTRY: Entry = {
+	sectionHandle: 'error',
+	typeHandle: '404',
+};
+
+/**
+ * Get the entry from the page
+ *
+ * entries should export sectionHandle and typeHandle
+ *
+ * products should alias productTypeHandle with typeHandle,
+ * sectionHandle will be automatically set to product
+ */
+function getEntry(page: any): Entry | null {
+	if (page?.entry) return { ...page.entry };
+	if (page?.product)
+		return {
+			sectionHandle: 'product',
+			...page.product,
+		};
+
+	return null;
+}
+
+// todo maybe move everything here to /loadData

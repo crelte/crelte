@@ -1,7 +1,6 @@
 import Crelte from '../Crelte.js';
 import CrelteRequest from '../CrelteRequest.js';
-import { GraphQlQuery, isGraphQlQuery } from '../graphql/GraphQl.js';
-import { Entry } from '../index.js';
+import { isGraphQlQuery } from '../graphql/GraphQl.js';
 import { callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
@@ -9,6 +8,7 @@ import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
 import Route from '../routing/Route.js';
 import { timeout } from 'crelte-std';
+import { Entry, queryEntry } from '../entry/index.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -147,50 +147,4 @@ export async function loadFn(
 
 	// loading progress is at 100%
 	loadOpts?.setProgress(1);
-}
-
-export async function queryEntry(
-	cr: CrelteRequest,
-	entryQuery: GraphQlQuery,
-): Promise<Entry> {
-	if (!cr.req.siteMatches())
-		throw new Error(
-			'to run the entryQuery the request needs to have a matching site',
-		);
-
-	let uri = decodeURI(cr.req.uri);
-	if (uri.startsWith('/')) uri = uri.substring(1);
-	if (uri === '' || uri === '/') uri = '__home__';
-
-	const vars = {
-		uri,
-		siteId: cr.site.id,
-	};
-
-	const page = await cr.query(entryQuery, vars);
-	return getEntry(page) ?? ERROR_404_ENTRY;
-}
-
-const ERROR_404_ENTRY: Entry = {
-	sectionHandle: 'error',
-	typeHandle: '404',
-};
-
-/**
- * Get the entry from the page
- *
- * entries should export sectionHandle and typeHandle
- *
- * products should alias productTypeHandle with typeHandle,
- * sectionHandle will be automatically set to product
- */
-function getEntry(page: any): Entry | null {
-	if (page?.entry) return { ...page.entry };
-	if (page?.product)
-		return {
-			sectionHandle: 'product',
-			...page.product,
-		};
-
-	return null;
 }

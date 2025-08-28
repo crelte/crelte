@@ -25,7 +25,6 @@ export {
 	type LoadDataFn,
 	type LoadDataObj,
 	type LoadDataArray,
-	type Entry,
 };
 
 export type Init = (crelte: Crelte) => void;

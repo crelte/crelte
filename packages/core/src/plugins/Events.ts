@@ -1,4 +1,5 @@
-import { CrelteRequest, Entry } from '../index.js';
+import { Entry } from '../entry/index.js';
+import { CrelteRequest } from '../index.js';
 import { Route } from '../routing/index.js';
 
 export default class Events {
