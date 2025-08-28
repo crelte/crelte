@@ -11,8 +11,13 @@ export type Handler = (
 	csr: CrelteServerRequest,
 ) => Promise<Response | null | undefined> | Response | null | undefined;
 
+export type RouterOptions = {
+	endpointToken?: string;
+};
+
 export default class Router {
 	private endpointUrl: string;
+	private endpointToken?: string;
 	private env: Map<string, string>;
 	private _graphQl: GraphQl;
 	private _sites: Site[];
@@ -22,10 +27,14 @@ export default class Router {
 		endpointUrl: string,
 		env: Map<string, string>,
 		sites: SiteFromGraphQl[],
+		opts: RouterOptions = {},
 	) {
 		this.endpointUrl = endpointUrl;
+		this.endpointToken = opts.endpointToken;
 		this.env = env;
-		this._graphQl = new GraphQl(endpointUrl, new SsrCache());
+		this._graphQl = new GraphQl(endpointUrl, new SsrCache(), {
+			bearerToken: this.endpointToken,
+		});
 		this._sites = sites.map(site => new Site(site));
 		this.inner = new Trouter();
 
@@ -105,7 +114,9 @@ export default class Router {
 		const csr = new CrelteServerRequest(
 			this.env,
 			this.sites,
-			new GraphQl(this.getEnv('ENDPOINT_URL')!, new SsrCache()),
+			new GraphQl(this.getEnv('ENDPOINT_URL')!, new SsrCache(), {
+				bearerToken: this.endpointToken,
+			}),
 			nReq,
 		);
 
