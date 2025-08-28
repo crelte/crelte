@@ -73,7 +73,7 @@ export async function queryEntry(
 	};
 
 	const page = await cr.query(entryQuery, vars);
-	return getEntry(page) ?? ERROR_404_ENTRY;
+	return extractEntry(page) ?? ERROR_404_ENTRY;
 }
 
 const ERROR_404_ENTRY: Entry = {
@@ -89,7 +89,7 @@ const ERROR_404_ENTRY: Entry = {
  * products should alias productTypeHandle with typeHandle,
  * sectionHandle will be automatically set to product
  */
-function getEntry(page: any): Entry | null {
+export function extractEntry(page: any): Entry | null {
 	if (page?.entry) return { ...page.entry };
 	if (page?.product)
 		return {
