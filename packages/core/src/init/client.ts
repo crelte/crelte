@@ -194,6 +194,12 @@ export async function main(data: MainData) {
 		return await render();
 	};
 
+	// listen for a site change and update the lang attribute on the html tag
+	router.site.subscribe(site => {
+		if (!site) return;
+		document.documentElement.lang = site.language;
+	});
+
 	try {
 		await router.init();
 	} catch (e) {
