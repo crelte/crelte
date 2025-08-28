@@ -314,7 +314,7 @@ export default class Router {
 	): Request | null {
 		// we have an update request
 		if (typeof target === 'function') {
-			const source = this._request ?? this.route.get();
+			const source = this._request?.clone() ?? this.route.get();
 			if (!source) {
 				// todo should we use the request here?
 				throw new Error(
