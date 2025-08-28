@@ -55,6 +55,7 @@ export class GraphQlError extends Error {
  * Options for the GraphQl class
  */
 export type GraphQlOptions = {
+	bearerToken?: string;
 	XCraftSiteHeader?: boolean;
 	debug?: boolean;
 	debugTiming?: boolean;
@@ -98,6 +99,7 @@ export default class GraphQl {
 		[(resp: unknown) => void, (error: unknown) => void][]
 	>;
 
+	private bearerToken: string | null;
 	private XCraftSiteHeader: boolean;
 	private loggingRequests: boolean;
 	private loggingTiming: boolean;
@@ -114,6 +116,7 @@ export default class GraphQl {
 		this.ssrCache = ssrCache;
 		this.listeners = new Map();
 
+		this.bearerToken = opts?.bearerToken ?? null;
 		this.XCraftSiteHeader = opts?.XCraftSiteHeader ?? false;
 		this.loggingRequests = opts?.debug ?? false;
 		this.loggingTiming = opts?.debugTiming ?? false;
@@ -237,8 +240,8 @@ export default class GraphQl {
 		const headers = opts?.headers ?? {};
 		headers['Content-Type'] = 'application/json';
 
-		if (opts?.bearerToken)
-			headers['Authorization'] = 'Bearer ' + opts.bearerToken;
+		const bearerToken = opts?.bearerToken ?? this.bearerToken;
+		if (bearerToken) headers['Authorization'] = 'Bearer ' + bearerToken;
 
 		if (this.loggingRequests) {
 			console.log('query to ', url, variables, opts);
