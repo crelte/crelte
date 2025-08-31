@@ -1,4 +1,4 @@
-import SsrCache from './SsrCache.js';
+import SsrCache, { calcKey } from './SsrCache.js';
 import SsrComponents from './SsrComponents.js';
 
-export { SsrCache, SsrComponents };
+export { SsrCache, SsrComponents, calcKey };
