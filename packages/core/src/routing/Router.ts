@@ -145,8 +145,8 @@ export default class Router {
 	 *
 	 * ## Note
 	 * This will always set the origin to 'push'
-	 * And will clear the scrollY value if you not provide a new one via the `opts`
-	 * This will disableLoadData by default if you not provide an override via the `opts`
+	 * And will clear the scrollY value if you dont provide a new one via the `opts`
+	 * This will disableLoadData by default if you dont provide an override via the `opts`
 	 *
 	 * ## Example using the update function
 	 * ```
