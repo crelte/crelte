@@ -139,7 +139,7 @@ export default class GraphQl {
 			const search =
 				(opts.route as URL).searchParams ?? opts.route.search;
 
-			if (search.has('token') && search.get('x-craft-live-preview')) {
+			if (search.has('token')) {
 				opts.previewToken = search.get('token')!;
 			} else if (search.has('siteToken')) {
 				opts.siteToken = search.get('siteToken')!;
