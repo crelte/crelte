@@ -18,7 +18,7 @@ export interface Cookies {
 	 * sets the value of the cookie
 	 *
 	 * ## Note
-	 * in most cases you probably wan't to set the path to '/'
+	 * path defaults to '/'
 	 */
 	set(name: string, value: string, opts?: SetOptions): void;
 

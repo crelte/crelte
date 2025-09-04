@@ -13,7 +13,7 @@ export default class ClientCookies implements Cookies {
 	}
 
 	set(name: string, value: string, opts?: SetOptions): void {
-		const setCookie = { name, value, ...opts };
+		const setCookie = { name, value, path: '/', ...opts };
 
 		document.cookie = setCookieToString(setCookie);
 	}
