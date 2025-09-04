@@ -4,8 +4,14 @@ import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
 import type GraphQl from './graphql/GraphQl.js';
-import Crelte, { type QueryOptions, type Config } from './Crelte.js';
-import CrelteRequest from './CrelteRequest.js';
+import {
+	type BaseCrelte,
+	type Crelte,
+	type CrelteRequest,
+	type QueryOptions,
+	type Config,
+} from './crelte.js';
+// import CrelteRequest from './CrelteRequest.js';
 import type { Cookies } from './cookies/index.js';
 import type { Readable } from 'crelte-std/stores';
 import {
@@ -17,8 +23,9 @@ import {
 import { Entry } from './entry/index.js';
 
 export {
-	Crelte,
-	CrelteRequest,
+	type BaseCrelte,
+	type Crelte,
+	type CrelteRequest,
 	type Config,
 	type QueryOptions,
 	type LoadData,
@@ -79,7 +86,7 @@ export function getRoute(): Readable<Route> {
 	// the route will never be null because it is only null in the
 	// first loadData call and that happens before any component
 	// initialisation
-	return getRouter().route as Readable<Route>;
+	return getCrelte().route;
 }
 
 /**
@@ -92,7 +99,7 @@ export function getSite(): Readable<Site> {
 	// the site will never be null because it is only null in the
 	// first loadData call and that happens before any component
 	// initialisation
-	return getRouter().site as Readable<Site>;
+	return getCrelte().site;
 }
 
 /**
@@ -105,7 +112,7 @@ export function getEntry(): Readable<Entry> {
 	/// the entry will never be null because it is only null in the
 	// first loadData call and that happens before any component
 	// initialisation
-	return getRouter().entry as Readable<Entry>;
+	return getCrelte().entry;
 }
 
 /**
@@ -150,7 +157,7 @@ export function getLoadingProgress(): Readable<number> {
  * This only works during component initialisation.
  */
 export function getGlobal<T = any>(name: string): Readable<T> | null {
-	return getCrelte().globals.getStore(name);
+	return getCrelte().getGlobal(name);
 }
 
 /**
@@ -170,8 +177,7 @@ export function getCookies(): Cookies {
  * This only works during component initialisation.
  */
 export function onRoute(fn: (route: Route) => void) {
-	const crelte = getCrelte();
-	const rmListener = crelte.router.onRoute(route => fn(route));
+	const rmListener = getRouter().onRoute(route => fn(route));
 
 	onDestroy(rmListener);
 }
@@ -183,8 +189,7 @@ export function onRoute(fn: (route: Route) => void) {
  * This only works during component initialisation.
  */
 export function onRequest(fn: (cr: CrelteRequest) => void) {
-	const crelte = getCrelte();
-	const rmListener = crelte.router.onRequest(cr => fn(cr));
+	const rmListener = getRouter().onRequest(cr => fn(cr));
 
 	onDestroy(rmListener);
 }
