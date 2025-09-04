@@ -1,6 +1,4 @@
-import Crelte from '../Crelte.js';
-import CrelteRequest from '../CrelteRequest.js';
-import { isGraphQlQuery } from '../graphql/GraphQl.js';
+import GraphQl, { isGraphQlQuery } from '../graphql/GraphQl.js';
 import { callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
@@ -9,6 +7,9 @@ import InternalApp, { TemplateModule } from './InternalApp.js';
 import Route from '../routing/Route.js';
 import { timeout } from 'crelte-std';
 import { Entry, queryEntry } from '../entry/index.js';
+import SsrCache from '../ssr/SsrCache.js';
+import { Crelte, Config, CrelteRequest, crelteToRequest } from '../crelte.js';
+import Request from '../routing/Request.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -27,6 +28,30 @@ export function pluginsBeforeRequest(cr: CrelteRequest): Promise<void> | void {
 
 export function pluginsBeforeRender(cr: CrelteRequest, route: Route): void {
 	cr.events.trigger('beforeRender', cr, route);
+}
+
+export function newGraphQl(ssrCache: SsrCache, config: Required<Config>) {
+	const endpoint = ssrCache.get('ENDPOINT_URL') as string;
+	return new GraphQl(endpoint, ssrCache, {
+		XCraftSiteHeader: config.XCraftSiteHeader,
+		debug: config.debugGraphQl,
+		debugTiming: config.debugTiming,
+	});
+}
+
+export function onNewCrelteRequest(
+	crelte: Crelte,
+	req: Request,
+): CrelteRequest {
+	// crelte gets first modified into "requestMode" and then converted
+	// into a CrelteRequest because else some helper functions
+	// might refer to the wrong objects/classes
+	const nCrelte = {
+		...crelte,
+		router: crelte.router._toRequest(req),
+		globals: crelte.globals._toRequest(),
+	};
+	return crelteToRequest(nCrelte, req);
 }
 
 // This should be onRequest or handleRequest

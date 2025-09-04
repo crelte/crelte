@@ -1,4 +1,4 @@
-import CrelteRequest from '../CrelteRequest.js';
+import { CrelteRequest } from '../crelte.js';
 import { isGraphQlQuery, type GraphQlQuery } from '../graphql/GraphQl.js';
 import type Globals from './Globals.js';
 
