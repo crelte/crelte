@@ -1,4 +1,4 @@
-import { Cookies, SetOptions } from './index.js';
+import { Cookies, RemoveOptions, SetOptions } from './index.js';
 import { parseCookies, type SetCookie, setCookieToString } from './utils.js';
 
 /**
@@ -29,8 +29,8 @@ export default class ServerCookies implements Cookies {
 		this.setCookies.set(name, { name, value, ...opts });
 	}
 
-	remove(name: string): void {
-		this.set(name, '', { maxAge: 0 });
+	remove(name: string, opts?: RemoveOptions): void {
+		this.set(name, '', { ...opts, maxAge: 0 });
 	}
 
 	_getSetCookiesHeaders(): string[] {

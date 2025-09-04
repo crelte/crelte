@@ -6,6 +6,8 @@ export type SetOptions = {
 	httpOnly?: boolean;
 };
 
+export type RemoveOptions = Omit<SetOptions, 'maxAge'>;
+
 export interface Cookies {
 	/**
 	 * returns the value of the cookie
@@ -23,5 +25,5 @@ export interface Cookies {
 	/**
 	 * removes the cookie
 	 */
-	remove(name: string): void;
+	remove(name: string, opts?: RemoveOptions): void;
 }
