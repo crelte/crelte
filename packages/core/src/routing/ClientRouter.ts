@@ -1,4 +1,4 @@
-import CrelteRequest from '../CrelteRequest.js';
+import { CrelteRequest } from '../crelte.js';
 import BaseRouter, { BaseRouterOptions } from './BaseRouter.js';
 import { Request, RequestOptions } from './index.js';
 import Route from './Route.js';

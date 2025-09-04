@@ -1,8 +1,8 @@
-import { CrelteBuilder } from '../Crelte.js';
-import CrelteRequest from '../CrelteRequest.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
+	newGraphQl,
+	onNewCrelteRequest,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
 	setupPlugins,
@@ -12,8 +12,13 @@ import { svelteMount } from './svelteComponents.js';
 import ClientCookies from '../cookies/ClientCookies.js';
 import ClientRouter from '../routing/ClientRouter.js';
 import InternalApp from './InternalApp.js';
-import { Route } from '../routing/index.js';
+import { Route, Router } from '../routing/index.js';
 import { Writable } from 'crelte-std/stores';
+import { configWithDefaults, newCrelte } from '../crelte.js';
+import SsrCache from '../ssr/SsrCache.js';
+import Plugins from '../plugins/Plugins.js';
+import Events from '../plugins/Events.js';
+import Globals from '../loadData/Globals.js';
 
 /**
  * The main function to start the client side rendering
@@ -61,9 +66,10 @@ export async function main(data: MainData) {
 	// todo if entryQuery or globalQuery is present show a hint
 	// they should be added to App.svelte and removed from here
 
-	const builder = new CrelteBuilder(data.app.config ?? {});
+	const config = configWithDefaults(data.app.config ?? {});
+	const ssrCache = new SsrCache();
 
-	const serverError = builder.ssrCache.get('ERROR');
+	const serverError = ssrCache.get('ERROR');
 	if (serverError) {
 		// todo should this init the client, but maybe we just
 		// want it as minimal as possible
@@ -75,20 +81,25 @@ export async function main(data: MainData) {
 		return;
 	}
 
-	const endpoint = builder.ssrCache.get('ENDPOINT_URL') as string;
-	builder.setupGraphQl(endpoint);
+	const graphQl = newGraphQl(ssrCache, config);
+	const cookies = new ClientCookies();
 
-	// on the client the cookies are always coming from document.cookie
-	builder.setupCookies(new ClientCookies());
-
-	const csites = builder.ssrCache.get('crelteSites') as SiteFromGraphQl[];
+	const csites = ssrCache.get('crelteSites') as SiteFromGraphQl[];
 	const router = new ClientRouter(csites, {
-		debugTiming: builder.config.debugTiming ?? false,
-		preloadOnMouseOver: builder.config.preloadOnMouseOver ?? false,
+		debugTiming: config.debugTiming ?? false,
+		preloadOnMouseOver: config.preloadOnMouseOver ?? false,
 	});
-	builder.setupRouter(router);
 
-	const crelte = builder.build();
+	const crelte = newCrelte({
+		config,
+		ssrCache,
+		plugins: new Plugins(),
+		events: new Events(),
+		globals: new Globals(),
+		graphQl,
+		router: new Router(router),
+		cookies,
+	});
 
 	const app = new InternalApp(data.app);
 
@@ -96,12 +107,7 @@ export async function main(data: MainData) {
 	setupPlugins(crelte, app.plugins);
 	app.init(crelte);
 
-	router.onNewCrelteRequest = req => {
-		const cr = new CrelteRequest(crelte, req);
-		cr._setRouter(cr.router._toRequest(req));
-		cr._setGlobals(cr.globals._toRequest());
-		return cr;
-	};
+	router.onNewCrelteRequest = req => onNewCrelteRequest(crelte, req);
 
 	router.onBeforeRequest = pluginsBeforeRequest;
 
@@ -121,8 +127,8 @@ export async function main(data: MainData) {
 		appInstance = svelteMount(data.app.default, {
 			target: document.body,
 			props: { route: routeProp },
-			context: crelte._getContext(),
-			intro: builder.config.playIntro,
+			context: new Map([['crelte', crelte]]),
+			intro: config.playIntro,
 		});
 	};
 
@@ -153,7 +159,7 @@ export async function main(data: MainData) {
 			return route;
 		}
 
-		const startTime = builder.config.debugTiming ? Date.now() : null;
+		const startTime = config.debugTiming ? Date.now() : null;
 
 		let render = async () => {
 			const route = readyForRoute();
@@ -178,7 +184,7 @@ export async function main(data: MainData) {
 
 		// render with view Transition if enabled and not in hydration
 		if (
-			builder.config.viewTransition &&
+			config.viewTransition &&
 			appInstance &&
 			(document as any).startViewTransition
 		) {

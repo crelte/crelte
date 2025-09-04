@@ -56,10 +56,10 @@ export default class EntryRouter {
 
 		if (!handlers.length) return null;
 
-		const er = new EntryRequest(cr.req.url, cr.req.site, {
+		const req = new EntryRequest(cr.req.url, cr.req.site, {
 			params: new Map(Object.entries(params)),
 		});
-		const cer = new CrelteEntryRequest(cr, er);
+		const cer = { ...cr, req };
 
 		for (const handler of handlers) {
 			const res = await handler(cer);

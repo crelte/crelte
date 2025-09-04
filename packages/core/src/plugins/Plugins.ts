@@ -1,4 +1,4 @@
-import CrelteCore from '../Crelte.js';
+import { Crelte } from '../crelte.js';
 
 /**
  * A plugin
@@ -22,7 +22,7 @@ export interface Plugin {
  * export plugins = [createPlugin, configurePlugin({ enableFeature: true })];
  * ```
  */
-export type PluginCreator = (crelte: CrelteCore) => Plugin;
+export type PluginCreator = (crelte: Crelte) => Plugin;
 
 /**
  * A plugin manager

@@ -12,6 +12,3 @@ export function objClone(obj: any): any {
 export function isPromise<T>(p: Promise<T> | T): p is Promise<T> {
 	return typeof (p as any)?.then === 'function';
 }
-
-// this allows us to fix cyclic dependencies
-export const circles: Record<string, any> = {};

@@ -1,6 +1,5 @@
 <script context="module" lang="ts">
-	import CrelteRequest from '../CrelteRequest.js';
-
+	import { type CrelteRequest } from '../index.js';
 	/*
 	usage:
 

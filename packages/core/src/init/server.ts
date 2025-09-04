@@ -1,7 +1,8 @@
-import { CrelteBuilder } from '../Crelte.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
+	newGraphQl,
+	onNewCrelteRequest,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
 	setupPlugins,
@@ -9,11 +10,15 @@ import {
 import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
-import CrelteRequest from '../CrelteRequest.js';
 import { svelteRender } from './svelteComponents.js';
 import { Writable } from 'crelte-std/stores';
 import ServerRouter from '../routing/ServerRouter.js';
 import InternalApp from './InternalApp.js';
+import { configWithDefaults, newCrelte } from '../crelte.js';
+import Plugins from '../plugins/Plugins.js';
+import Events from '../plugins/Events.js';
+import Globals from '../loadData/Globals.js';
+import Router from '../routing/Router.js';
 
 export type ServerData = {
 	url: string;
@@ -67,28 +72,36 @@ export async function main(data: MainData): Promise<{
 	// todo if entryQuery or globalQuery is present show a hint
 	// they should be added to App.svelte and removed from here
 
-	const builder = new CrelteBuilder(data.app.config ?? {});
+	const config = configWithDefaults(data.app.config ?? {});
+	const ssrCache = new SsrCache();
 
 	// setup viteEnv
-	data.serverData.viteEnv.forEach((v, k) => {
-		builder.ssrCache.set(k, v);
-	});
+	data.serverData.viteEnv.forEach((v, k) => ssrCache.set(k, v));
 
 	const endpoint = data.serverData.endpoint;
-	builder.ssrCache.set('ENDPOINT_URL', endpoint);
-	builder.ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
-	builder.setupGraphQl(endpoint);
+	ssrCache.set('ENDPOINT_URL', endpoint);
+	ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
 
-	const cookies = data.serverData.cookies ?? '';
-	builder.setupCookies(new ServerCookies(cookies));
+	const graphQl = newGraphQl(ssrCache, config);
 
-	builder.ssrCache.set('crelteSites', data.serverData.sites);
+	const cookiesData = data.serverData.cookies ?? '';
+	const cookies = new ServerCookies(cookiesData);
+
+	ssrCache.set('crelteSites', data.serverData.sites);
 	const router = new ServerRouter(data.serverData.sites, {
-		debugTiming: builder.config.debugTiming ?? false,
+		debugTiming: config.debugTiming ?? false,
 	});
-	builder.setupRouter(router);
 
-	const crelte = builder.build();
+	const crelte = newCrelte({
+		config,
+		ssrCache,
+		plugins: new Plugins(),
+		events: new Events(),
+		globals: new Globals(),
+		graphQl,
+		router: new Router(router),
+		cookies,
+	});
 
 	const app = new InternalApp(data.app);
 
@@ -96,12 +109,7 @@ export async function main(data: MainData): Promise<{
 	setupPlugins(crelte, app.plugins);
 	app.init(crelte);
 
-	router.onNewCrelteRequest = req => {
-		const cr = new CrelteRequest(crelte, req);
-		cr._setRouter(cr.router._toRequest(req));
-		cr._setGlobals(cr.globals._toRequest());
-		return cr;
-	};
+	router.onNewCrelteRequest = req => onNewCrelteRequest(crelte, req);
 
 	router.onBeforeRequest = pluginsBeforeRequest;
 
@@ -133,7 +141,7 @@ export async function main(data: MainData): Promise<{
 		};
 	}
 
-	const context = crelte._getContext();
+	const context = new Map([['crelte', crelte]]);
 	const ssrComponents = new SsrComponents();
 	ssrComponents.addToContext(context);
 

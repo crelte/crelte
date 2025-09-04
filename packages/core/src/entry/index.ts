@@ -1,5 +1,5 @@
 import { GraphQlQuery } from '../graphql/index.js';
-import { Crelte, CrelteRequest } from '../index.js';
+import { CrelteRequest } from '../index.js';
 import { Request, RequestOptions, Site } from '../routing/index.js';
 import EntryRouter, { EntryRouteHandler, EntryRoutes } from './EntryRouter.js';
 
@@ -45,14 +45,9 @@ export class EntryRequest extends Request {
 	}
 }
 
-export class CrelteEntryRequest extends CrelteRequest {
+export type CrelteEntryRequest = CrelteRequest & {
 	req: EntryRequest;
-
-	constructor(inner: Crelte, req: EntryRequest) {
-		super(inner, req);
-		this.req = req;
-	}
-}
+};
 
 export async function queryEntry(
 	cr: CrelteRequest,
