@@ -26,7 +26,7 @@ export default class ServerCookies implements Cookies {
 	}
 
 	set(name: string, value: string, opts?: SetOptions): void {
-		this.setCookies.set(name, { name, value, ...opts });
+		this.setCookies.set(name, { name, value, path: '/', ...opts });
 	}
 
 	remove(name: string, opts?: RemoveOptions): void {
