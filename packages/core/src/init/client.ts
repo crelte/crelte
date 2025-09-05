@@ -1,7 +1,7 @@
 import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
-	newGraphQl,
+	newQueries,
 	onNewCrelteRequest,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
@@ -30,17 +30,6 @@ export type MainData = {
 	errorPage: any;
 };
 
-const mainDataDefault = {
-	preloadOnMouseOver: false,
-	viewTransition: false,
-	playIntro: false,
-	XCraftSiteHeader: false,
-
-	// will be passed down to ClientRenderer
-	graphQlDebug: false,
-	debugTiming: false,
-};
-
 /**
  * The main function to start the client side rendering
  *
@@ -61,13 +50,16 @@ const mainDataDefault = {
  * ```
  */
 export async function main(data: MainData) {
-	data = { ...mainDataDefault, ...data };
-
 	// todo if entryQuery or globalQuery is present show a hint
 	// they should be added to App.svelte and removed from here
 
 	const config = configWithDefaults(data.app.config ?? {});
 	const ssrCache = new SsrCache();
+
+	// since cors could cause an issue we wan't to override the FRONTEND_URL
+	// env variable, since the server will be reachable on any domain
+	// which the frontend also gets served from
+	ssrCache.set('FRONTEND_URL', window.location.origin);
 
 	const serverError = ssrCache.get('ERROR');
 	if (serverError) {
@@ -81,14 +73,14 @@ export async function main(data: MainData) {
 		return;
 	}
 
-	const graphQl = newGraphQl(ssrCache, config);
-	const cookies = new ClientCookies();
-
 	const csites = ssrCache.get('crelteSites') as SiteFromGraphQl[];
 	const router = new ClientRouter(csites, {
 		debugTiming: config.debugTiming ?? false,
 		preloadOnMouseOver: config.preloadOnMouseOver ?? false,
 	});
+
+	const queries = newQueries(ssrCache, router.route.readonly(), config);
+	const cookies = new ClientCookies();
 
 	const crelte = newCrelte({
 		config,
@@ -96,8 +88,8 @@ export async function main(data: MainData) {
 		plugins: new Plugins(),
 		events: new Events(),
 		globals: new Globals(),
-		graphQl,
 		router: new Router(router),
+		queries,
 		cookies,
 	});
 

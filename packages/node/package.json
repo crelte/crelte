@@ -26,6 +26,10 @@
 		".": "./dist/index.js",
 		"./vite": "./dist/vite.js",
 		"./node": "./dist/node.js",
+		"./queries": {
+			"types": "./dist/queries/index.d.ts",
+			"default": "./dist/queries/index.js"
+		},
 		"./types": {
 			"types": "./types.d.ts"
 		}

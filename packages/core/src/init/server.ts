@@ -1,7 +1,7 @@
 import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
-	newGraphQl,
+	newQueries,
 	onNewCrelteRequest,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
@@ -27,6 +27,7 @@ export type ServerData = {
 	acceptLang?: string;
 	endpoint: string;
 	craftWeb: string;
+	frontend: string;
 	viteEnv: Map<string, string>;
 	cookies: string;
 	sites: SiteFromGraphQl[];
@@ -81,8 +82,7 @@ export async function main(data: MainData): Promise<{
 	const endpoint = data.serverData.endpoint;
 	ssrCache.set('ENDPOINT_URL', endpoint);
 	ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
-
-	const graphQl = newGraphQl(ssrCache, config);
+	ssrCache.set('FRONTEND_URL', data.serverData.frontend);
 
 	const cookiesData = data.serverData.cookies ?? '';
 	const cookies = new ServerCookies(cookiesData);
@@ -92,14 +92,16 @@ export async function main(data: MainData): Promise<{
 		debugTiming: config.debugTiming ?? false,
 	});
 
+	const queries = newQueries(ssrCache, router.route.readonly(), config);
+
 	const crelte = newCrelte({
 		config,
 		ssrCache,
 		plugins: new Plugins(),
 		events: new Events(),
 		globals: new Globals(),
-		graphQl,
 		router: new Router(router),
+		queries,
 		cookies,
 	});
 

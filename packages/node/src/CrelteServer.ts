@@ -1,10 +1,9 @@
-import { QueryOptions } from 'crelte';
 import { Cookies } from 'crelte/cookies';
 import { ServerCookies } from 'crelte/cookies/internal';
-import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import ServerRequest from './Request.js';
-import { Site } from 'crelte/routing';
+import { Request, Site } from 'crelte/routing';
 import { siteFromUrl } from 'crelte/routing/internal';
+import { Queries, Query, QueryOptions } from 'crelte/queries';
 
 export default class CrelteServerRequest {
 	/**
@@ -14,27 +13,29 @@ export default class CrelteServerRequest {
 
 	private _env: Map<string, string>;
 	private _sites: Site[];
-	private _graphQl: GraphQl;
+	private _queries: Queries;
 	protected _cookies: Cookies;
 
 	constructor(
 		env: Map<string, string>,
 		sites: Site[],
-		graphQl: GraphQl,
+		queries: Queries,
 		req: ServerRequest,
 	) {
 		this._env = env;
 		this._sites = sites;
-		this._graphQl = graphQl;
+		this._queries = queries._toRequest(
+			new Request(new URL(req.url), sites[0]),
+		);
 		this.req = req;
 		this._cookies = new ServerCookies(req.headers.get('Cookie') ?? '');
 	}
 
 	/**
-	 * Get the GraphQl instance
+	 * Get the Queries instance
 	 */
-	get graphQl(): GraphQl {
-		return this._graphQl;
+	get graphQl(): Queries {
+		return this._queries;
 	}
 
 	/**
@@ -71,7 +72,7 @@ export default class CrelteServerRequest {
 	}
 
 	/**
-	 * Run a GraphQl Query
+	 * Run a Queries Query
 	 *
 	 * @param query the default export from a graphql file or the gql`query {}`
 	 * function
@@ -79,15 +80,11 @@ export default class CrelteServerRequest {
 	 * graphql query
 	 */
 	async query(
-		query: GraphQlQuery,
+		query: Query,
 		variables: Record<string, unknown> = {},
 		opts: QueryOptions = {},
 	): Promise<unknown> {
-		// this function is added as convenience
-		return this.graphQl.query(query, variables, {
-			route: new URL(this.req.url),
-			...opts,
-		});
+		return this.graphQl.query(query, variables, opts);
 	}
 
 	/** @hidden */

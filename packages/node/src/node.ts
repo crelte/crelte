@@ -11,6 +11,7 @@ import {
 } from './server.js';
 import Router from './Router.js';
 import { fileURLToPath } from 'node:url';
+import { initQueryRoutes } from './queries/queries.js';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -46,11 +47,19 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		await readFile(localDir('ssr-manifest.json')),
 	);
 
-	let router: Router | null = null;
-	if (typeof serverMod.routes === 'function') {
-		router = new Router(env.endpointUrl, env.env, env.sites, {
+	const router = new Router(
+		env.endpointUrl,
+		env.frontendUrl,
+		env.env,
+		env.sites,
+		{
 			endpointToken: env.endpointToken,
-		});
+		},
+	);
+
+	await initQueryRoutes(serverMod, router);
+
+	if (typeof serverMod.routes === 'function') {
 		await serverMod.routes(router);
 	}
 
@@ -70,12 +79,10 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		let thrownError: any = null;
 
 		try {
-			if (router) {
-				const response = await router._handle(req);
-				if (response) {
-					await webResponseToResponse(response, res);
-					return;
-				}
+			const routeResp = await router._handle(req);
+			if (routeResp) {
+				await webResponseToResponse(routeResp, res);
+				return;
 			}
 
 			const response = await modRender(env, serverMod, template, req, {

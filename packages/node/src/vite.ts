@@ -20,6 +20,7 @@ import {
 } from './server.js';
 import Router from './Router.js';
 import sveltePackage from 'svelte/package.json' with { type: 'json' };
+import { initQueryRoutes } from './queries/queries.js';
 
 const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
 const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
@@ -97,8 +98,20 @@ if (ctx && ctx instanceof Set) {
 function graphQlFiles(
 	code: string,
 	path: string,
+	ssr: boolean,
 ): TransformResult | string | undefined {
 	if (!path.endsWith('.graphql')) return;
+
+	const filename = path.split('/').pop()!;
+	const name = filename.substring(0, filename.length - '.graphql'.length);
+
+	if (!ssr) {
+		return `
+export default {
+	queryName: ${JSON.stringify(name)}
+};
+`;
+	}
 
 	const json = JSON.stringify(code)
 		.replace(/\u2028/g, '\\u2028')
@@ -106,15 +119,18 @@ function graphQlFiles(
 
 	return `
 export default {
+	queryName: ${JSON.stringify(name)}
+};
+
+export const query = {
 	path: ${JSON.stringify(path)},
-	query: ${json},
+	query: ${json}
 };
 `;
 }
 
 function isSvelte5(): boolean {
 	if (sveltePackage && sveltePackage.version) {
-		console.log('sveltepackage', sveltePackage.version);
 		return sveltePackage.version.startsWith('5.');
 	}
 	// Fallback or error handling if version cannot be determined
@@ -226,7 +242,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 		transform(code, id, options) {
 			return (
 				usedSsrComponents(code, id, options, svelte5) ||
-				graphQlFiles(code, id)
+				graphQlFiles(code, id, !!options?.ssr)
 			);
 		},
 
@@ -320,25 +336,33 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			return;
 		}
 
-		if (typeof serverMod.routes === 'function') {
-			// check if a route matches (todo can i move this out of the middleware?)
-			const router = new Router(env.endpointUrl, env.env, env.sites, {
+		// check if a route matches (todo can i move this out of the middleware?)
+		const router = new Router(
+			env.endpointUrl,
+			env.frontendUrl,
+			env.env,
+			env.sites,
+			{
 				endpointToken: env.endpointToken,
-			});
+			},
+		);
 
+		await initQueryRoutes(serverMod, router);
+
+		if (typeof serverMod.routes === 'function') {
 			await serverMod.routes(router);
+		}
 
-			try {
-				const response = await router._handle(req);
-				if (response) {
-					await webResponseToResponse(response, res);
-					return;
-				}
-			} catch (e: any) {
-				vite.ssrFixStacktrace(e);
-				next(e);
+		try {
+			const response = await router._handle(req);
+			if (response) {
+				await webResponseToResponse(response, res);
 				return;
 			}
+		} catch (e: any) {
+			vite.ssrFixStacktrace(e);
+			next(e);
+			return;
 		}
 
 		let template = await readFile('./index.html');

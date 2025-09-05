@@ -1,11 +1,10 @@
 import { Methods, Pattern, Trouter } from 'trouter';
 import CrelteServerRequest from './CrelteServer.js';
-import { GraphQl, GraphQlQuery } from 'crelte/graphql';
 import { SsrCache } from 'crelte/ssr';
 import ServerRequest from './Request.js';
-import { QueryOptions } from 'crelte';
 import { SiteFromGraphQl } from './server.js';
 import { Site } from 'crelte/routing';
+import { Queries, Query, QueryOptions } from 'crelte/queries';
 
 export type Handler = (
 	csr: CrelteServerRequest,
@@ -17,22 +16,25 @@ export type RouterOptions = {
 
 export default class Router {
 	private endpointUrl: string;
+	private frontendUrl: string;
 	private endpointToken?: string;
 	private env: Map<string, string>;
-	private _graphQl: GraphQl;
+	private _queries: Queries;
 	private _sites: Site[];
 	private inner: Trouter<Handler>;
 
 	constructor(
 		endpointUrl: string,
+		frontendUrl: string,
 		env: Map<string, string>,
 		sites: SiteFromGraphQl[],
 		opts: RouterOptions = {},
 	) {
 		this.endpointUrl = endpointUrl;
+		this.frontendUrl = frontendUrl;
 		this.endpointToken = opts.endpointToken;
 		this.env = env;
-		this._graphQl = new GraphQl(endpointUrl, new SsrCache(), {
+		this._queries = Queries.new(endpointUrl, frontendUrl, new SsrCache(), {
 			bearerToken: this.endpointToken,
 		});
 		this._sites = sites.map(site => new Site(site));
@@ -84,7 +86,7 @@ export default class Router {
 	}
 
 	/**
-	 * Run a GraphQl Query
+	 * Run a Queries Query
 	 *
 	 * @param query the default export from a graphql file or the gql`query {}`
 	 * function
@@ -92,12 +94,12 @@ export default class Router {
 	 * graphql query
 	 */
 	async query(
-		query: GraphQlQuery,
+		query: Query,
 		variables: Record<string, unknown> = {},
 		opts: QueryOptions = {},
 	): Promise<unknown> {
 		// this function is added as convenience
-		return this._graphQl.query(query, variables, opts);
+		return this._queries.query(query, variables, opts);
 	}
 
 	/** @hidden */
@@ -114,7 +116,8 @@ export default class Router {
 		const csr = new CrelteServerRequest(
 			this.env,
 			this.sites,
-			new GraphQl(this.getEnv('ENDPOINT_URL')!, new SsrCache(), {
+			// we create a new Queries here, because each request should have its own SsrCache
+			Queries.new(this.endpointUrl, this.frontendUrl, new SsrCache(), {
 				bearerToken: this.endpointToken,
 			}),
 			nReq,

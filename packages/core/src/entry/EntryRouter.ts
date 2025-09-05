@@ -1,7 +1,7 @@
 import { Pattern, Trouter } from 'trouter';
-import { Crelte, CrelteRequest, QueryOptions } from '../index.js';
+import { Crelte, CrelteRequest } from '../index.js';
 import { CrelteEntryRequest, Entry, EntryRequest } from './index.js';
-import { GraphQlQuery } from '../graphql/GraphQl.js';
+import { Query, QueryOptions } from '../queries/Queries.js';
 
 export type EntryRouteHandler = (
 	cr: CrelteEntryRequest,
@@ -42,12 +42,12 @@ export default class EntryRouter {
 	 * graphql query
 	 */
 	async query(
-		query: GraphQlQuery,
+		query: Query,
 		variables: Record<string, unknown> = {},
 		opts: QueryOptions = {},
 	): Promise<unknown> {
 		// this function is added as convenience
-		return this._crelte.graphQl.query(query, variables, opts);
+		return this._crelte.queries.query(query, variables, opts);
 	}
 
 	/** @hidden */

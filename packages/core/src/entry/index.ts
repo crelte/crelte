@@ -1,5 +1,5 @@
-import { GraphQlQuery } from '../graphql/index.js';
 import { CrelteRequest } from '../index.js';
+import { Query } from '../queries/Queries.js';
 import { Request, RequestOptions, Site } from '../routing/index.js';
 import EntryRouter, { EntryRouteHandler, EntryRoutes } from './EntryRouter.js';
 
@@ -51,7 +51,7 @@ export type CrelteEntryRequest = CrelteRequest & {
 
 export async function queryEntry(
 	cr: CrelteRequest,
-	entryQuery: GraphQlQuery,
+	entryQuery: Query,
 ): Promise<Entry> {
 	if (!cr.req.siteMatches())
 		throw new Error(
