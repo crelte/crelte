@@ -1,5 +1,5 @@
 import { CrelteRequest } from '../crelte.js';
-import { isGraphQlQuery, type GraphQlQuery } from '../graphql/GraphQl.js';
+import { isQuery, Query } from '../queries/Queries.js';
 import type Globals from './Globals.js';
 
 export type { Globals };
@@ -84,7 +84,7 @@ export interface LoadDataArray<A1 = any> extends Array<LoadData<A1>> {}
  */
 export type LoadData<A1 = any> =
 	| LoadDataFn<A1>
-	| GraphQlQuery
+	| Query
 	| LoadDataObj<A1>
 	| LoadDataArray<A1>
 	| string
@@ -109,7 +109,7 @@ export async function callLoadData<A1 = any>(
 	}
 
 	// or a graphql query
-	if (isGraphQlQuery(ld)) {
+	if (isQuery(ld)) {
 		return await cr.query(ld);
 	}
 

@@ -1,5 +1,4 @@
 import { Cookies } from './cookies/index.js';
-import GraphQl, { GraphQlQuery } from './graphql/GraphQl.js';
 import Globals from './loadData/Globals.js';
 import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
@@ -10,6 +9,7 @@ import SsrCache from './ssr/SsrCache.js';
 import { Readable } from 'crelte-std/stores';
 import Site from './routing/Site.js';
 import { Entry } from './entry/index.js';
+import Queries, { Query, QueryOptions } from './queries/Queries.js';
 
 export type Config = {
 	/**
@@ -42,7 +42,7 @@ export type Config = {
 	 * Enable graphql query debugging
 	 * @default false
 	 */
-	debugGraphQl?: boolean;
+	debugQueries?: boolean;
 
 	/**
 	 * Enable request and render timing measurement
@@ -57,39 +57,10 @@ export function configWithDefaults(config: Config = {}): Required<Config> {
 		viewTransition: config.viewTransition ?? false,
 		playIntro: config.playIntro ?? false,
 		XCraftSiteHeader: config.XCraftSiteHeader ?? false,
-		debugGraphQl: config.debugGraphQl ?? false,
+		debugQueries: config.debugQueries ?? false,
 		debugTiming: config.debugTiming ?? false,
 	};
 }
-
-/**
- * Options to configure the request
- */
-export type QueryOptions = {
-	/**
-	 * Ignore the response status code
-	 * @default false
-	 */
-	ignoreStatusCode?: boolean;
-
-	/**
-	 * Configure caching
-	 * @default true
-	 */
-	caching?: boolean;
-
-	/**
-	 * Status code of the response
-	 * This will be set after the request if
-	 * `ignoreStatusCode` is set to `true`
-	 */
-	status?: number;
-
-	/**
-	 * A GraphQl Token generated in Craft
-	 */
-	bearerToken?: string;
-};
 
 /**
  * This is Crelte a container of useful features and functions.
@@ -113,9 +84,9 @@ export type Crelte = {
 	ssrCache: SsrCache;
 
 	/**
-	 * Get the GraphQl instance
+	 * Get the Queries instance
 	 */
-	graphQl: GraphQl;
+	queries: Queries;
 
 	/**
 	 * Get the Router instance
@@ -150,10 +121,11 @@ export type Crelte = {
 	/**
 	 * returns an env variable from the craft/.env file.
 	 * All env variables need to start with VITE_
-	 * except ENDPOINT_URL and CRAFT_WEB_URL
+	 * except ENDPOINT_URL, CRAFT_WEB_URL and FRONTEND_URL
 	 */
 	getEnv(name: 'ENDPOINT_URL'): string;
 	getEnv(name: 'CRAFT_WEB_URL'): string;
+	getEnv(name: 'FRONTEND_URL'): string;
 	getEnv(name: string): string | null;
 
 	/**
@@ -185,7 +157,7 @@ export type Crelte = {
 	 * graphql query
 	 */
 	query(
-		query: GraphQlQuery,
+		query: Query,
 		variables?: Record<string, unknown>,
 		opts?: QueryOptions,
 	): Promise<unknown>;
@@ -252,20 +224,6 @@ export type CrelteRequest = Crelte & {
 	 * you can use `.getGlobal` which does not return a Promise
 	 */
 	getGlobalAsync<T = any>(name: string): T | Promise<T | null> | null;
-
-	/**
-	 * Run a GraphQl Query
-	 *
-	 * @param query the default export from a graphql file or the gql`query {}`
-	 * function
-	 * @param variables variables that should be passed to the
-	 * graphql query
-	 */
-	query(
-		query: GraphQlQuery,
-		variables?: Record<string, unknown>,
-		opts?: QueryOptions,
-	): Promise<unknown>;
 };
 
 export function newCrelte({
@@ -274,8 +232,8 @@ export function newCrelte({
 	plugins,
 	events,
 	globals,
-	graphQl,
 	router,
+	queries,
 	cookies,
 }: {
 	config: Required<Config>;
@@ -283,8 +241,8 @@ export function newCrelte({
 	plugins: Plugins;
 	events: Events;
 	globals: Globals;
-	graphQl: GraphQl;
 	router: Router;
+	queries: Queries;
 	cookies: Cookies;
 }): Crelte {
 	return {
@@ -293,8 +251,8 @@ export function newCrelte({
 		plugins,
 		events,
 		globals,
-		graphQl,
 		router,
+		queries,
 		cookies,
 
 		getPlugin: name => plugins.get(name),
@@ -306,11 +264,7 @@ export function newCrelte({
 				throw new Error('need to call toRequest with a this context');
 			return crelteToRequest(this, req);
 		},
-		query: (query, variables, opts) =>
-			graphQl.query(query, variables, {
-				route: router.route.get() ?? undefined,
-				...opts,
-			}),
+		query: (query, vars, opts) => queries.query(query, vars, opts),
 	};
 }
 
@@ -333,7 +287,6 @@ export function crelteToRequest(
 		},
 		getGlobal: name => crelte.globals.get(name),
 		getGlobalAsync: name => crelte.globals.getAsync(name),
-		query: (query, vars, opts) =>
-			crelte.graphQl.query(query, vars, { route: req, ...opts }),
+		query: (query, vars, opts) => crelte.queries.query(query, vars, opts),
 	};
 }

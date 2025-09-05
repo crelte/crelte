@@ -1,8 +1,8 @@
 import { readFile as readFileAsync } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import * as http from 'node:http';
-import { gql, GraphQl } from 'crelte/graphql';
 import { SsrCache } from 'crelte/ssr';
+import { gql, Queries } from 'crelte/queries';
 
 async function readFile(path: string): Promise<string> {
 	// maybe not necessary
@@ -32,6 +32,7 @@ export type EnvData = {
 	endpointUrl: string;
 	endpointToken?: string;
 	craftWebUrl: string;
+	frontendUrl: string;
 	viteEnv: Map<string, string>;
 	sites: SiteFromGraphQl[];
 };
@@ -54,21 +55,25 @@ export async function initEnvData(cache?: SitesCache): Promise<EnvData> {
 	const craftWebUrl = env.get('CRAFT_WEB_URL');
 	if (!craftWebUrl) throw new Error('CRAFT_WEB_URL not set');
 
+	const frontendUrl = env.get('FRONTEND_URL');
+	if (!frontendUrl) throw new Error('FRONTEND_URL not set');
+
 	// parse all vite related env variables
 	const viteEnv = new Map(
 		Array.from(env).filter(([key]) => key.startsWith('VITE_')),
 	);
 
-	const graphQl = new GraphQl(endpointUrl, new SsrCache(), {
+	const queries = Queries.new(endpointUrl, frontendUrl, new SsrCache(), {
 		bearerToken: endpointToken,
 	});
-	const sites = await loadSites(graphQl, cache);
+	const sites = await loadSites(queries, cache);
 
 	return {
 		env,
 		endpointUrl,
 		endpointToken,
 		craftWebUrl,
+		frontendUrl,
 		viteEnv,
 		sites,
 	};
@@ -91,7 +96,7 @@ export type SitesCache = {
 
 // requires, GraphQl, SsrCache
 async function loadSites(
-	graphQl: GraphQl,
+	queries: Queries,
 	cache?: SitesCache,
 ): Promise<SiteFromGraphQl[]> {
 	if ('CRAFT_SITES_CACHED' in globalThis) {
@@ -109,7 +114,7 @@ async function loadSites(
 		}
 	}
 
-	const resp = (await graphQl.query(
+	const resp = (await queries.query(
 		gql`
 			query {
 				crelteSites {
@@ -149,6 +154,7 @@ export type RenderRequest = {
 	acceptLang: string | null;
 	endpoint: string;
 	craftWeb: string;
+	frontend: string;
 	viteEnv: Map<string, string>;
 	cookies: string;
 	sites: SiteFromGraphQl[];
@@ -174,6 +180,7 @@ export async function modRender(
 		acceptLang,
 		endpoint: env.endpointUrl,
 		craftWeb: env.craftWebUrl,
+		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
 		cookies,
 		sites: env.sites,
@@ -206,6 +213,7 @@ export type RenderErrorRequest = {
 	acceptLang: string | null;
 	endpoint: string;
 	craftWeb: string;
+	frontend: string;
 	viteEnv: Map<string, string>;
 	sites: SiteFromGraphQl[];
 };
@@ -241,6 +249,7 @@ export async function modRenderError(
 		acceptLang,
 		endpoint: env.endpointUrl,
 		craftWeb: env.craftWebUrl,
+		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
 		sites: env.sites,
 		...opts,

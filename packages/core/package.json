@@ -36,9 +36,9 @@
 			"types": "./dist/init/server.d.ts",
 			"default": "./dist/init/server.js"
 		},
-		"./graphql": {
-			"types": "./dist/graphql/index.d.ts",
-			"default": "./dist/graphql/index.js"
+		"./queries": {
+			"types": "./dist/queries/index.d.ts",
+			"default": "./dist/queries/index.js"
 		},
 		"./routing": {
 			"types": "./dist/routing/index.d.ts",

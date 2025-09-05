@@ -1,4 +1,3 @@
-import GraphQl, { isGraphQlQuery } from '../graphql/GraphQl.js';
 import { callLoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
@@ -10,6 +9,8 @@ import { Entry, queryEntry } from '../entry/index.js';
 import SsrCache from '../ssr/SsrCache.js';
 import { Crelte, Config, CrelteRequest, crelteToRequest } from '../crelte.js';
 import Request from '../routing/Request.js';
+import { Readable } from 'crelte-std/stores';
+import Queries, { isQuery } from '../queries/Queries.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -30,13 +31,23 @@ export function pluginsBeforeRender(cr: CrelteRequest, route: Route): void {
 	cr.events.trigger('beforeRender', cr, route);
 }
 
-export function newGraphQl(ssrCache: SsrCache, config: Required<Config>) {
-	const endpoint = ssrCache.get('ENDPOINT_URL') as string;
-	return new GraphQl(endpoint, ssrCache, {
-		XCraftSiteHeader: config.XCraftSiteHeader,
-		debug: config.debugGraphQl,
-		debugTiming: config.debugTiming,
-	});
+export function newQueries(
+	ssrCache: SsrCache,
+	route: Readable<Route | null>,
+	config: Required<Config>,
+) {
+	return Queries.new(
+		ssrCache.get('ENDPOINT_URL') as string,
+		// on the client this will be the same as window.location.origin
+		ssrCache.get('FRONTEND_URL') as string,
+		ssrCache,
+		{
+			route,
+			XCraftSiteHeader: config.XCraftSiteHeader,
+			debug: config.debugQueries,
+			debugTiming: config.debugTiming,
+		},
+	);
 }
 
 export function onNewCrelteRequest(
@@ -49,15 +60,11 @@ export function onNewCrelteRequest(
 	const nCrelte = {
 		...crelte,
 		router: crelte.router._toRequest(req),
+		queries: crelte.queries._toRequest(req),
 		globals: crelte.globals._toRequest(),
 	};
 	return crelteToRequest(nCrelte, req);
 }
-
-// This should be onRequest or handleRequest
-//
-// it should also handle the site redirect and stuff like that
-// we should have a onRequest
 
 export async function loadFn(
 	cr: CrelteRequest,
@@ -97,9 +104,9 @@ export async function loadFn(
 	// checked to be empty before doing it
 	const entryProm = (async () => {
 		let loadEntry = app.loadEntry;
-		if (isGraphQlQuery(loadEntry)) {
+		if (isQuery(loadEntry)) {
 			const entryQuery = loadEntry;
-			loadEntry = cr => queryEntry(cr, entryQuery);
+			loadEntry = (cr: CrelteRequest) => queryEntry(cr, entryQuery);
 		}
 
 		let entry: Entry = await callLoadData(loadEntry, cr, null);
@@ -128,6 +135,8 @@ export async function loadFn(
 		...pluginsLoadGlobalData,
 	]);
 
+	// if globals take longer than 2 seconds to load in dev mode
+	// we force resolve them to prevent deadlocks
 	if (
 		import.meta.env.DEV &&
 		!(await Promise.any([loadGlobalDataProm, timeout(2000)]))

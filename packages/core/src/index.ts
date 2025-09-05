@@ -3,12 +3,10 @@ import type Route from './routing/Route.js';
 import type Router from './routing/Router.js';
 import type SsrCache from './ssr/SsrCache.js';
 import type Site from './routing/Site.js';
-import type GraphQl from './graphql/GraphQl.js';
 import {
 	type Crelte,
 	type CrelteRequest,
 	type CrelteWithRoute,
-	type QueryOptions,
 	type Config,
 } from './crelte.js';
 import type { Cookies } from './cookies/index.js';
@@ -20,13 +18,13 @@ import {
 	LoadDataObj,
 } from './loadData/index.js';
 import { Entry } from './entry/index.js';
+import Queries from './queries/Queries.js';
 
 export {
 	type Crelte,
 	type CrelteWithRoute,
 	type CrelteRequest,
 	type Config,
-	type QueryOptions,
 	type LoadData,
 	type LoadDataFn,
 	type LoadDataObj,
@@ -81,13 +79,13 @@ export function getSsrCache(): SsrCache {
 }
 
 /**
- * Get the GraphQl from the current context
+ * Get the Queries from the current context
  *
  * ## Note
  * This only works during component initialisation.
  */
-export function getGraphQl(): GraphQl {
-	return innerGetCrelte().graphQl;
+export function getQueries(): Queries {
+	return innerGetCrelte().queries;
 }
 
 /**
@@ -123,13 +121,14 @@ export function getEntry(): Readable<Entry> {
 /**
  * returns an env variable from the craft/.env file.
  * All env variables need to start with VITE_
- * except ENDPOINT_URL and CRAFT_WEB_URL
+ * except ENDPOINT_URL, CRAFT_WEB_URL and FRONTEND_URL
  *
  * ## Note
  * This only works during component initialisation.
  */
 export function getEnv(name: 'ENDPOINT_URL'): string;
 export function getEnv(name: 'CRAFT_WEB_URL'): string;
+export function getEnv(name: 'FRONTEND_URL'): string;
 export function getEnv(name: string): string | null;
 export function getEnv(name: string): string | null {
 	return innerGetCrelte().getEnv(name);
