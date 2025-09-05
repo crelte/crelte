@@ -1,6 +1,6 @@
-import { objClone } from '../utils.js';
-import Site from './Site.js';
-import { trimSlashEnd } from './utils.js';
+import { objClone } from '../../utils.js';
+import Site from '../Site.js';
+import { trimSlashEnd } from '../utils.js';
 
 export type BaseRouteOptions = {
 	scrollY?: number;

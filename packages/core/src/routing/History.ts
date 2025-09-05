@@ -1,4 +1,4 @@
-import Request from './Request.js';
+import Request from './route/Request.js';
 
 export default interface History {
 	scrollY(): number | null;

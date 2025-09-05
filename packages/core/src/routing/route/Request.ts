@@ -1,7 +1,7 @@
 import { Barrier } from 'crelte-std/sync';
-import Site from './Site.js';
-import { objClone } from '../utils.js';
-import { Entry } from '../entry/index.js';
+import Site from '../Site.js';
+import { objClone } from '../../utils.js';
+import { Entry } from '../../entry/index.js';
 import BaseRoute, { RouteOrigin } from './BaseRoute.js';
 import Route, { TemplateModule } from './Route.js';
 

@@ -10,7 +10,7 @@ import {
 import { tick } from 'svelte';
 import { svelteMount } from './svelteComponents.js';
 import ClientCookies from '../cookies/ClientCookies.js';
-import ClientRouter from '../routing/ClientRouter.js';
+import ClientRouter from '../routing/router/ClientRouter.js';
 import InternalApp from './InternalApp.js';
 import { Route, Router } from '../routing/index.js';
 import { Writable } from 'crelte-std/stores';
