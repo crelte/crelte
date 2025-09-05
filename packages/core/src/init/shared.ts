@@ -3,12 +3,11 @@ import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
 import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
-import Route from '../routing/Route.js';
+import { Route, Request } from '../routing/index.js';
 import { timeout } from 'crelte-std';
 import { Entry, queryEntry } from '../entry/index.js';
 import SsrCache from '../ssr/SsrCache.js';
 import { Crelte, Config, CrelteRequest, crelteToRequest } from '../crelte.js';
-import Request from '../routing/Request.js';
 import { Readable } from 'crelte-std/stores';
 import Queries, { isQuery } from '../queries/Queries.js';
 

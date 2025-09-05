@@ -1,7 +1,7 @@
 import BaseRouter, { BaseRouterOptions } from './BaseRouter.js';
-import { Request, RequestOptions } from './index.js';
-import Route from './Route.js';
-import Site, { SiteFromGraphQl } from './Site.js';
+import { Request, RequestOptions } from '../index.js';
+import Route from '../route/Route.js';
+import Site, { SiteFromGraphQl } from '../Site.js';
 
 export default class ServerRouter extends BaseRouter {
 	acceptLang: string | null;
