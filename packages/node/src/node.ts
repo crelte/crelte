@@ -3,6 +3,7 @@ import path, { join } from 'node:path';
 import fs from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
 import {
+	EnvData,
 	initEnvData,
 	modRender,
 	modRenderError,
@@ -84,6 +85,8 @@ export default async function createServer(serverMod: any, buildTime: string) {
 				await webResponseToResponse(routeResp, res);
 				return;
 			}
+
+			if (await basicAuthCheck(nReq, res, env)) return;
 
 			const response = await modRender(env, serverMod, template, req, {
 				ssrManifest,
@@ -198,4 +201,44 @@ async function servePublic(
 	} catch (_e: any) {
 		return false;
 	}
+}
+
+/**
+ * This is not a secure basicAuth but a simple way to add some protection
+ * for staging or unlisted instances.
+ */
+async function basicAuthCheck(
+	req: IncomingMessage,
+	res: ServerResponse,
+	{ env }: EnvData,
+): Promise<boolean> {
+	const user = env.get('BASIC_AUTH_USER');
+	const password = env.get('BASIC_AUTH_PASSWORD');
+
+	// ignore if one information is missing
+	if (!user || !password) return false;
+
+	const authHeader = req.headers['authorization'];
+
+	if (!authHeader || !authHeader.startsWith('Basic ')) {
+		res.statusCode = 401;
+		res.setHeader('WWW-Authenticate', 'Basic realm="Restricted"');
+		res.end('Unauthorized');
+		return true;
+	}
+
+	const base64Credentials = authHeader.substring('Basic '.length);
+	const credentials = Buffer.from(base64Credentials, 'base64').toString(
+		'ascii',
+	);
+	const [username, pwd] = credentials.split(':');
+
+	if (username !== user || pwd !== password) {
+		res.statusCode = 401;
+		res.setHeader('WWW-Authenticate', 'Basic realm="Restricted"');
+		res.end('Unauthorized');
+		return true;
+	}
+
+	return false;
 }
