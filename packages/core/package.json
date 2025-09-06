@@ -75,6 +75,10 @@
 		"./blocks": {
 			"types": "./dist/blocks/index.d.ts",
 			"default": "./dist/blocks/index.js"
+		},
+		"./static": {
+			"types": "./dist/static/index.d.ts",
+			"default": "./dist/static/index.js"
 		}
 	},
 	"dependencies": {
