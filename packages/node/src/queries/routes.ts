@@ -35,6 +35,7 @@ export class QueryRoute {
 		// add default vars and cacheIfFn if we know the route
 		if (this.name === 'entry') this.fillEntryDefaults();
 		else if (this.name === 'global') this.fillGlobalDefaults();
+		else this.fillBasicDefaults();
 	}
 
 	private fillEntryDefaults() {
@@ -46,18 +47,32 @@ export class QueryRoute {
 			siteId: vars.siteId()._setName('siteId'),
 			uri: vars.string()._setName('uri'),
 		};
-
-		if (!this.cacheIfFn) {
-			this.cacheIfFn = res => !!extractEntry(res);
-		}
+		this.cacheIfFn = res => !!extractEntry(res);
 	}
 
 	private fillGlobalDefaults() {
 		if (this.vars) return;
 
 		this.vars = { siteId: vars.siteId()._setName('siteId') };
+		this.cacheIfFn = () => true;
+	}
 
-		if (!this.cacheIfFn) {
+	/**
+	 * This adds caching to queries containing `query {` or
+	 * `query ($siteId: [QueryArgument) {` without any additional vars
+	 */
+	private fillBasicDefaults() {
+		if (this.vars) return;
+
+		const NO_VAR_TEST = /(^|\s)query\s*{/;
+		const SITE_ID_VAR_TEST =
+			/(^|\s)query\s*\(\s*\$siteId\s*:\s*\[\s*QueryArgument\s*\]\s*\)\s*{/;
+
+		if (NO_VAR_TEST.test(this.query)) {
+			this.vars = {};
+			this.cacheIfFn = () => true;
+		} else if (SITE_ID_VAR_TEST.test(this.query)) {
+			this.vars = { siteId: vars.siteId()._setName('siteId') };
 			this.cacheIfFn = () => true;
 		}
 	}
