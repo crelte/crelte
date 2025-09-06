@@ -1,9 +1,5 @@
 import { CrelteRequest } from '../index.js';
 import { Query } from '../queries/Queries.js';
-import { Request, RequestOptions, Site } from '../routing/index.js';
-import EntryRouter, { EntryRouteHandler, EntryRoutes } from './EntryRouter.js';
-
-export { EntryRouter, type EntryRouteHandler, type EntryRoutes };
 
 export type Entry = {
 	sectionHandle: string;
@@ -14,45 +10,12 @@ export type Entry = {
 export type EntryQueryVars = {
 	uri: string;
 	siteId: number;
+	// todo should we allow an entry to have some addition vars?
+	// this would also require to modify the caching
 	[key: string]: any;
 };
 
-export type EntryRequestOptions = RequestOptions & {
-	params?: Map<string, string>;
-};
-
-export class EntryRequest extends Request {
-	private params: Map<string, string>;
-
-	constructor(url: string | URL, site: Site, opts: EntryRequestOptions = {}) {
-		super(url, site, opts);
-
-		this.params = opts.params ?? new Map();
-	}
-
-	/**
-	 * returns the url params from the request
-	 *
-	 * @example
-	 * ```js
-	 * router.get('/blog/:slug', async (cs, req) => {
-	 *     return Response.json({ slug: cs.getParam('slug') });
-	 * });
-	 * ```
-	 */
-	getParam(name: string): string | null {
-		return this.params.get(name) ?? null;
-	}
-}
-
-export type CrelteEntryRequest = CrelteRequest & {
-	req: EntryRequest;
-};
-
-export async function queryEntry(
-	cr: CrelteRequest,
-	entryQuery: Query,
-): Promise<Entry> {
+export function entryQueryVars(cr: CrelteRequest): EntryQueryVars {
 	if (!cr.req.siteMatches())
 		throw new Error(
 			'to run the entryQuery the request needs to have a matching site',
@@ -62,16 +25,22 @@ export async function queryEntry(
 	if (uri.startsWith('/')) uri = uri.substring(1);
 	if (uri === '' || uri === '/') uri = '__home__';
 
-	const vars = {
+	return {
 		uri,
 		siteId: cr.site.id,
 	};
-
-	const page = await cr.query(entryQuery, vars);
-	return extractEntry(page) ?? ERROR_404_ENTRY;
 }
 
-const ERROR_404_ENTRY: Entry = {
+export async function queryEntry(
+	cr: CrelteRequest,
+	entryQuery: Query,
+	vars: EntryQueryVars,
+): Promise<Entry> {
+	const page = await cr.query(entryQuery, vars);
+	return extractEntry(page) ?? ENTRY_ERROR_404;
+}
+
+export const ENTRY_ERROR_404: Entry = {
 	sectionHandle: 'error',
 	typeHandle: '404',
 };
@@ -85,6 +54,7 @@ const ERROR_404_ENTRY: Entry = {
  * sectionHandle will be automatically set to product
  */
 export function extractEntry(page: any): Entry | null {
+	// todo instead of only spreading we should maybe objClone?
 	if (page?.entry) return { ...page.entry };
 	if (page?.product)
 		return {

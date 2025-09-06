@@ -131,7 +131,6 @@ export async function main(data: MainData) {
 		window.location.reload();
 	};
 
-	// let firstLoad = true;
 	router.onRender = async (cr, readyForRoute, domUpdated) => {
 		if (appInstance && cr.req.disableLoadData) {
 			// if the app is already rendered and entry did not change
