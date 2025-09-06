@@ -12,7 +12,7 @@ export default class QueriesCaching {
 	constructor(cs: Router) {
 		this.router = cs;
 
-		const enableCaching = !!cs.getEnv('FRONTEND_FROM_CRAFT_URL');
+		const enableCaching = !!cs.getEnv('CRAFT_FRONTEND_URL');
 		const endpointToken = cs.getEnv('ENDPOINT_TOKEN');
 		if (enableCaching) {
 			if (!endpointToken)
