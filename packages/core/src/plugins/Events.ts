@@ -1,4 +1,4 @@
-import { Entry } from '../entry/index.js';
+import { Entry, EntryQueryVars } from '../entry/index.js';
 import { CrelteRequest } from '../index.js';
 import { Route } from '../routing/index.js';
 
@@ -17,6 +17,14 @@ export default class Events {
 	 * for something. This allows a push request to be done without a microtask.
 	 * Allowing for a better DX.
 	 *
+	 * ## loadEntry
+	 * This will execute all listeners in sequence and stop on the first one
+	 * which returns an entry.
+	 *
+	 * ## beforeQueryEntry
+	 * This allows to modify the entry query variables before the entry query
+	 * is executed.
+	 *
 	 * @returns a function to remove the listener
 	 */
 	// override this function to add your own function signatures
@@ -29,6 +37,14 @@ export default class Events {
 		fn: (cr: CrelteRequest) => Promise<any>,
 	): () => void;
 	on(
+		ev: 'loadEntry',
+		fn: (cr: CrelteRequest) => Promise<Entry | null> | Entry | null,
+	): () => void;
+	on(
+		ev: 'beforeQueryEntry',
+		fn: (cr: CrelteRequest, vars: EntryQueryVars) => Promise<void> | void,
+	): () => void;
+	on(
 		ev: 'afterLoadEntry',
 		fn: (cr: CrelteRequest) => Promise<any>,
 	): () => void;
@@ -37,16 +53,6 @@ export default class Events {
 		fn: (cr: CrelteRequest, entry: Entry) => Promise<any>,
 	): () => void;
 	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
-	// todo maybe add this
-	// on(
-	// 	ev: 'loadEntry',
-	// 	fn: (
-	// 		cr: CrelteRequest,
-	// 		vars: EntryQueryVars | null,
-	// 		/** this might contain other plugin calls */
-	// 		runQuery: (vars: EntryQueryVars | null) => Promise<Entry | null>,
-	// 	) => Promise<Entry | null>,
-	// ): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {
 		let set = this.inner.get(ev);
 		if (!set) {
@@ -84,6 +90,11 @@ export default class Events {
 	 */
 	trigger(ev: 'beforeRequest', cr: CrelteRequest): (Promise<void> | void)[];
 	trigger(ev: 'loadGlobalData', cr: CrelteRequest): Promise<any>[];
+	trigger(
+		ev: 'beforeQueryEntry',
+		cr: CrelteRequest,
+		vars: EntryQueryVars,
+	): (Promise<void> | void)[];
 	trigger(ev: 'afterLoadEntry', cr: CrelteRequest): Promise<any>[];
 	trigger(ev: 'loadData', cr: CrelteRequest, entry: Entry): Promise<any>[];
 	trigger(ev: 'beforeRender', cr: CrelteRequest, route: Route): void[];
@@ -94,17 +105,13 @@ export default class Events {
 		return Array.from(set).map(fn => fn(...args));
 	}
 
-	// /**
-	//  * Get all listeners for an event
-	//  */
-	// // getListeners(
-	// // 	ev: 'queryEntry',
-	// // ): ((
-	// // 	cr: CrelteRequest,
-	// // 	vars: EntryQueryVars | null,
-	// // 	runQuery: (vars: EntryQueryVars | null) => Promise<Entry | null>,
-	// // ) => Promise<Entry | null>)[];
-	// getListeners(ev: string): any[] {
-	// 	return Array.from(this.inner.get(ev) ?? []);
-	// }
+	/**
+	 * Get all listeners for an event
+	 */
+	getListeners(
+		ev: 'loadEntry',
+	): ((cr: CrelteRequest) => Promise<Entry | null> | Entry | null)[];
+	getListeners(ev: string): any[] {
+		return Array.from(this.inner.get(ev) ?? []);
+	}
 }

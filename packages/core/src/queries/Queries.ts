@@ -199,6 +199,7 @@ class Inner {
 			key = await ssrCacheCalcKey({ query, vars });
 
 			const inCache = this.ssrCache.get(key);
+			// todo maybe we should objClone here?
 			if (inCache) return inCache;
 
 			// check if a listeners exists meaning the same request is already
@@ -217,6 +218,7 @@ class Inner {
 		try {
 			const resp = await this.queryNotCached(query, vars, opts);
 			if (key) {
+				// todo maybe we should objClone here?
 				this.ssrCache.set(key, resp);
 
 				// ! because the listeners get's in the previous if statement and will

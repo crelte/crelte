@@ -10,7 +10,7 @@ export interface App {
 
 	loadGlobalData?: LoadData<null>;
 
-	loadEntry: LoadData<null>;
+	loadEntry?: LoadData<null>;
 
 	// todo: add a generic
 	loadEntryData?: LoadData<Entry>;
@@ -48,21 +48,14 @@ export default class InternalApp {
 					'loadEntryData depending on if you need access to the entry or not?',
 			);
 		}
-
-		if (!inner.loadEntry) {
-			throw new Error(
-				'loadEntry is required in the app. `export const loadEntry ' +
-					'= entryQuery;`',
-			);
-		}
 	}
 
 	get plugins(): PluginCreator[] {
 		return this.inner.plugins ?? [];
 	}
 
-	get loadGlobalData(): LoadData<null> | undefined {
-		return this.inner.loadGlobalData;
+	get loadGlobalData(): LoadData<null> {
+		return this.inner.loadGlobalData ?? { queryName: 'global' };
 	}
 
 	init(crelte: Crelte): void {
@@ -70,7 +63,8 @@ export default class InternalApp {
 	}
 
 	get loadEntry(): LoadData<null> {
-		return this.inner.loadEntry;
+		// if no loadEntry property was defined we expect a graphql entry file
+		return this.inner.loadEntry ?? { queryName: 'entry' };
 	}
 
 	async loadTemplate(entry: Entry): Promise<TemplateModule> {

@@ -5,11 +5,11 @@ import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
 import { Route, Request } from '../routing/index.js';
 import { timeout } from 'crelte-std';
-import { Entry, queryEntry } from '../entry/index.js';
+import { Entry, entryQueryVars, queryEntry } from '../entry/index.js';
 import SsrCache from '../ssr/SsrCache.js';
 import { Crelte, Config, CrelteRequest, crelteToRequest } from '../crelte.js';
 import { Readable } from 'crelte-std/stores';
-import Queries, { isQuery } from '../queries/Queries.js';
+import Queries, { isQuery, Query } from '../queries/Queries.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {
@@ -65,6 +65,26 @@ export function onNewCrelteRequest(
 	return crelteToRequest(nCrelte, req);
 }
 
+async function pluginsLoadEntry(cr: CrelteRequest): Promise<Entry | null> {
+	const listeners = cr.events.getListeners('loadEntry');
+
+	for (const loadEntry of listeners) {
+		const entry = await loadEntry(cr);
+		if (entry) return entry;
+	}
+
+	return null;
+}
+
+async function loadEntryFromQuery(
+	cr: CrelteRequest,
+	entryQuery: Query,
+): Promise<Entry> {
+	const queryVars = entryQueryVars(cr);
+	await Promise.all(cr.events.trigger('beforeQueryEntry', cr, queryVars));
+	return queryEntry(cr, entryQuery, queryVars);
+}
+
 export async function loadFn(
 	cr: CrelteRequest,
 	app: InternalApp,
@@ -74,41 +94,46 @@ export async function loadFn(
 
 	// loadGlobalData phase
 
-	let globalProm: Promise<any> | null = null;
+	// we need to set the globals as soon as loadGlobalData completes
+	// because other loadGlobalData functions might wait on the result
+	const globalProm = (async () => {
+		// todo theoretically we could if the loadData is a an LoadObject
+		// assign each to the global as soon as we have it. Which might
+		// prevent some deadlocks but i don't think this will happen
+		// often
+		const globals = await callLoadData(app.loadGlobalData, cr, null);
+		if (!globals) return globals;
 
-	if (app.loadGlobalData) {
-		// we need to set the globals as soon as loadGlobalData completes
-		// because other loadGlobalData functions might wait on the result
-		globalProm = (async () => {
-			// todo theoretically we could if the loadData is a an LoadObject
-			// assign each to the global as soon as we have it. Which might
-			// prevent some deadlocks but i don't think this will happen
-			// often
-			const globals = await callLoadData(app.loadGlobalData, cr, null);
-			if (!globals) return globals;
+		if (typeof globals !== 'object') {
+			throw new Error(
+				'loadGlobalData needs to return an object or nothing',
+			);
+		}
 
-			if (typeof globals !== 'object') {
-				throw new Error(
-					'loadGlobalData needs to return an object or nothing',
-				);
-			}
-
-			for (const [k, v] of Object.entries(globals)) {
-				cr.globals.set(k, v);
-			}
-		})();
-	}
+		for (const [k, v] of Object.entries(globals)) {
+			cr.globals.set(k, v);
+		}
+	})();
 
 	// todo maybe each setting of the property on the request should be
 	// checked to be empty before doing it
 	const entryProm = (async () => {
-		let loadEntry = app.loadEntry;
-		if (isQuery(loadEntry)) {
-			const entryQuery = loadEntry;
-			loadEntry = (cr: CrelteRequest) => queryEntry(cr, entryQuery);
-		}
+		// first let's try to call the plugin loadEntry
+		let entry = await pluginsLoadEntry(cr);
+		if (isCanceled()) return [];
 
-		let entry: Entry = await callLoadData(loadEntry, cr, null);
+		// if no plugin provides an entry we load it from the app
+		if (!entry) {
+			// todo, maybe we should remove loadEntry from app
+			// since you can do almost everything with a event?
+			let loadEntry = app.loadEntry;
+			if (isQuery(loadEntry)) {
+				const entryQuery = loadEntry;
+				loadEntry = cr => loadEntryFromQuery(cr, entryQuery);
+			}
+
+			entry = (await callLoadData(loadEntry, cr, null)) as Entry;
+		}
 		if (isCanceled()) return [];
 		cr.req.entry = entry;
 
