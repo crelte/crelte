@@ -4,10 +4,10 @@ import Events from './plugins/Events.js';
 import Plugins, { Plugin } from './plugins/Plugins.js';
 import { type Route, Request, Router } from './routing/index.js';
 import SsrCache from './ssr/SsrCache.js';
-import { Readable } from 'crelte-std/stores';
 import Site from './routing/Site.js';
-import { Entry } from './entry/index.js';
 import Queries, { Query, QueryOptions } from './queries/Queries.js';
+import { Readable } from './std/stores/index.js';
+import { Entry } from './loadData/index.js';
 
 export type Config = {
 	/**

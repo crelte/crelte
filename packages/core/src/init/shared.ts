@@ -1,15 +1,19 @@
-import { callLoadData } from '../loadData/index.js';
+import {
+	callLoadData,
+	Entry,
+	entryQueryVars,
+	queryEntry,
+} from '../loadData/index.js';
 import { PluginCreator } from '../plugins/Plugins.js';
 import { LoadOptions } from '../routing/LoadRunner.js';
 import { isPromise } from '../utils.js';
 import InternalApp, { TemplateModule } from './InternalApp.js';
 import { Route, Request } from '../routing/index.js';
-import { timeout } from 'crelte-std';
-import { Entry, entryQueryVars, queryEntry } from '../entry/index.js';
 import SsrCache from '../ssr/SsrCache.js';
 import { Crelte, Config, CrelteRequest, crelteToRequest } from '../crelte.js';
-import { Readable } from 'crelte-std/stores';
 import Queries, { isQuery, Query } from '../queries/Queries.js';
+import { Readable } from '../std/stores/index.js';
+import { timeout } from '../std/index.js';
 
 export function setupPlugins(crelte: Crelte, plugins: PluginCreator[]) {
 	for (const plugin of plugins) {

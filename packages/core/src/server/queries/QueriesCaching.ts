@@ -1,15 +1,16 @@
-import fs from 'node:fs/promises';
-import npath from 'node:path';
-import Router from '../Router.js';
 import CrelteServerRequest from '../CrelteServer.js';
 import { newError } from './routes.js';
+import ServerRouter from '../ServerRouter.js';
+import { Platform } from '../platform.js';
 
 export default class QueriesCaching {
+	private platform: Platform;
 	private cacheDir: string | null;
 	private validBearerToken: string | null;
-	router: Router;
+	router: ServerRouter;
 
-	constructor(cs: Router) {
+	constructor(platform: Platform, cs: ServerRouter) {
+		this.platform = platform;
 		this.router = cs;
 
 		const enableCaching = !!cs.getEnv('CRAFT_FRONTEND_URL');
@@ -35,10 +36,10 @@ export default class QueriesCaching {
 	async getCache<T = any>(key: string): Promise<T | null> {
 		if (!this.cacheDir) return null;
 
-		const path = npath.join(this.cacheDir, key + '.json');
+		const path = this.platform.joinPath(this.cacheDir, key + '.json');
 		let str: string;
 		try {
-			str = await fs.readFile(path, 'utf-8');
+			str = await this.platform.readFile(path);
 		} catch (_e) {
 			return null;
 		}
@@ -55,11 +56,11 @@ export default class QueriesCaching {
 	async setCache<T>(key: string, data: T): Promise<void> {
 		if (!this.cacheDir) return;
 
-		const path = npath.join(this.cacheDir, key + '.json');
+		const path = this.platform.joinPath(this.cacheDir, key + '.json');
 
-		await fs.mkdir(this.cacheDir, { recursive: true });
+		await this.platform.mkdir(this.cacheDir, { recursive: true });
 
-		await fs.writeFile(path, JSON.stringify(data), 'utf-8');
+		await this.platform.writeFile(path, JSON.stringify(data));
 	}
 
 	/// only call this if caching is enabled
@@ -69,7 +70,10 @@ export default class QueriesCaching {
 			return newError('unauthorized', 401);
 
 		try {
-			await fs.rm(this.cacheDir!, { recursive: true, force: true });
+			await this.platform.rm(this.cacheDir!, {
+				recursive: true,
+				force: true,
+			});
 		} catch (_e) {
 			//
 		}

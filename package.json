@@ -2,9 +2,7 @@
 	"name": "crelte-workspace",
 	"type": "module",
 	"workspaces": [
-		"packages/std",
 		"packages/core",
-		"packages/node",
 		"packages/cli"
 	],
 	"scripts": {

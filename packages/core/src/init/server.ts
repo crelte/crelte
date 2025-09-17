@@ -11,7 +11,6 @@ import SsrComponents from '../ssr/SsrComponents.js';
 import SsrCache from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import { svelteRender } from './svelteComponents.js';
-import { Writable } from 'crelte-std/stores';
 import ServerRouter from '../routing/router/ServerRouter.js';
 import InternalApp from './InternalApp.js';
 import { configWithDefaults, newCrelte } from '../crelte.js';
@@ -19,6 +18,7 @@ import Plugins from '../plugins/Plugins.js';
 import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
 import { Router } from '../routing/index.js';
+import { Writable } from '../std/stores/index.js';
 
 export type ServerData = {
 	url: string;

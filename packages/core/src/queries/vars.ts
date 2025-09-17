@@ -1,4 +1,4 @@
-import Router from '../Router.js';
+import ServerRouter from '../server/ServerRouter.js';
 
 export const vars = {
 	any: (): QueryVar<any> => new QueryVar(),
@@ -14,7 +14,7 @@ export const vars = {
 
 /// either throw with an error which will get returned in a 400 response or
 // return false if the value is not valid
-export type ValidIf<T> = (v: T, cs: Router) => boolean;
+export type ValidIf<T> = (v: T, cs: ServerRouter) => boolean;
 
 export class QueryVar<T = any> {
 	private name: string | null;
@@ -55,7 +55,7 @@ export class QueryVar<T = any> {
 		return this;
 	}
 
-	validValue(v: any, cs: Router): T | null {
+	validValue(v: any, cs: ServerRouter): T | null {
 		// undefined is treated as null
 		if (typeof v === 'undefined') v = null;
 

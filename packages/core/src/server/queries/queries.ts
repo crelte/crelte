@@ -1,7 +1,8 @@
-import Router from '../Router.js';
+import ServerRouter from '../ServerRouter.js';
 import QueriesCaching from './QueriesCaching.js';
 import { CacheIfFn, QueryRoute } from './routes.js';
-import { isQueryVar, QueryVar } from './vars.js';
+import { isQueryVar, QueryVar } from '../../queries/vars.js';
+import { Platform } from '../platform.js';
 
 type ModQuery = {
 	default: { name: string };
@@ -22,7 +23,11 @@ type PreRoute = {
 	cacheIfFn: CacheIfFn | null;
 };
 
-export async function initQueryRoutes(mod: any, router: Router): Promise<void> {
+export async function initQueryRoutes(
+	platform: Platform,
+	mod: any,
+	router: ServerRouter,
+): Promise<void> {
 	if (typeof mod.queries !== 'object') {
 		throw new Error(
 			"expected `export const queries = import.meta.glob('@/queries/*', { eager: true });` in server.js",
@@ -72,7 +77,7 @@ export async function initQueryRoutes(mod: any, router: Router): Promise<void> {
 		}
 	}
 
-	const caching = new QueriesCaching(router);
+	const caching = new QueriesCaching(platform, router);
 
 	for (const [name, pr] of preRoutes.entries()) {
 		if (!pr.query) throw new Error(`no .graphql file for query ${name}`);

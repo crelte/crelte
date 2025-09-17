@@ -9,15 +9,15 @@ import {
 	type Config,
 } from './crelte.js';
 import type { Cookies } from './cookies/index.js';
-import type { Readable } from 'crelte-std/stores';
 import {
+	Entry,
 	LoadData,
 	LoadDataArray,
 	LoadDataFn,
 	LoadDataObj,
 } from './loadData/index.js';
-import { Entry } from './entry/index.js';
 import Queries from './queries/Queries.js';
+import { Readable } from './std/stores/index.js';
 
 export {
 	type Crelte,

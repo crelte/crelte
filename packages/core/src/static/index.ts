@@ -1,8 +1,8 @@
 import { Pattern, Trouter } from 'trouter';
 import { Crelte, CrelteRequest } from '../crelte.js';
-import { Entry } from '../entry/index.js';
 import { Plugin, PluginCreator } from '../plugins/Plugins.js';
 import { getCrelte } from '../index.js';
+import { Entry } from '../loadData/index.js';
 
 export type CrelteStaticRequest = CrelteRequest & {
 	params: Map<string, string>;

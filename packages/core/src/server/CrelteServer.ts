@@ -1,9 +1,9 @@
-import { Cookies } from 'crelte/cookies';
-import { ServerCookies } from 'crelte/cookies/internal';
+import { Cookies } from '../cookies/index.js';
+import ServerCookies from '../cookies/ServerCookies.js';
+import { Queries, Query, QueryOptions } from '../queries/index.js';
+import { Request, Site } from '../routing/index.js';
+import { siteFromUrl } from '../routing/Site.js';
 import ServerRequest from './Request.js';
-import { Request, Site } from 'crelte/routing';
-import { siteFromUrl } from 'crelte/routing/internal';
-import { Queries, Query, QueryOptions } from 'crelte/queries';
 
 export default class CrelteServerRequest {
 	/**

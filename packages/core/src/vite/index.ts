@@ -15,12 +15,15 @@ import {
 	initEnvData,
 	modRender,
 	modRenderError,
+} from '../server/shared.js';
+import ServerRouter from '../server/ServerRouter.js';
+import sveltePackage from 'svelte/package.json' with { type: 'json' };
+import { initQueryRoutes } from '../server/queries/queries.js';
+import {
+	PLATFORM,
 	requestToWebRequest,
 	webResponseToResponse,
-} from './server.js';
-import Router from './Router.js';
-import sveltePackage from 'svelte/package.json' with { type: 'json' };
-import { initQueryRoutes } from './queries/queries.js';
+} from '../node/utils.js';
 
 const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
 const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
@@ -247,7 +250,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 		},
 
 		async configureServer(vite) {
-			const env = await initEnvData();
+			const env = await initEnvData(PLATFORM);
 
 			return () => {
 				serveVite(env, vite);
@@ -337,7 +340,7 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 		}
 
 		// check if a route matches (todo can i move this out of the middleware?)
-		const router = new Router(
+		const router = new ServerRouter(
 			env.endpointUrl,
 			env.frontendUrl,
 			env.env,
@@ -347,7 +350,7 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			},
 		);
 
-		await initQueryRoutes(serverMod, router);
+		await initQueryRoutes(PLATFORM, serverMod, router);
 
 		if (typeof serverMod.routes === 'function') {
 			await serverMod.routes(router);

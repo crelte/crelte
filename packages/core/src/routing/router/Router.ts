@@ -1,8 +1,8 @@
-import { Readable } from 'crelte-std/stores';
 import BaseRouter from './BaseRouter.js';
 import { Request, RequestOptions, Route, Site } from '../index.js';
-import { Entry } from '../../entry/index.js';
 import { CrelteRequest } from '../../crelte.js';
+import { Readable } from '../../std/stores/index.js';
+import { Entry } from '../../loadData/index.js';
 
 /**
  * Allows to easely modify a Request

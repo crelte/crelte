@@ -1,13 +1,7 @@
-import { readFile as readFileAsync } from 'node:fs/promises';
-import { Readable } from 'node:stream';
-import * as http from 'node:http';
-import { SsrCache } from 'crelte/ssr';
-import { gql, Queries } from 'crelte/queries';
-
-async function readFile(path: string): Promise<string> {
-	// maybe not necessary
-	return await readFileAsync(path, 'utf-8');
-}
+import Queries from '../queries/Queries.js';
+import { SsrCache } from '../ssr/index.js';
+import { gql } from '../queries/index.js';
+import { Platform } from './platform.js';
 
 export type ServerOptions = {
 	// typescript client.ts & server.ts
@@ -37,12 +31,15 @@ export type EnvData = {
 	sites: SiteFromGraphQl[];
 };
 
-export async function initEnvData(cache?: SitesCache): Promise<EnvData> {
+export async function initEnvData(
+	os: Platform,
+	cache?: SitesCache,
+): Promise<EnvData> {
 	const envPath = '../craft/.env';
 
 	let env;
 	try {
-		env = readEnv(await readFile(envPath));
+		env = readEnv(await os.readFile(envPath));
 	} catch (_e) {
 		throw new Error('failed to read ' + envPath + ' file');
 	}
@@ -280,52 +277,4 @@ function readEnv(fileCtn: string): Map<string, string> {
 	}
 
 	return map;
-}
-
-export function requestToWebRequest(
-	baseUrl: string,
-	nodeReq: http.IncomingMessage,
-): Request {
-	const method = nodeReq.method ?? 'GET';
-
-	let body;
-	if (method !== 'GET' && method !== 'HEAD') {
-		body = Readable.toWeb(nodeReq) as BodyInit;
-	}
-
-	const url = baseUrl + ((nodeReq as any).originalUrl ?? nodeReq.url);
-
-	// 4. Construct a new Request
-	return new Request(url, {
-		// we need this to be able to listen on the request body
-		// @ts-ignore
-		duplex: 'half',
-		method,
-		headers: nodeReq.headers as Record<string, string>,
-		body,
-	});
-}
-
-export async function webResponseToResponse(
-	webResponse: Response,
-	nodeRes: http.ServerResponse,
-): Promise<void> {
-	nodeRes.statusCode = webResponse.status;
-	nodeRes.statusMessage = webResponse.statusText || '';
-
-	for (const [key, value] of webResponse.headers.entries()) {
-		nodeRes.setHeader(key, value);
-	}
-
-	if (!webResponse.body) {
-		nodeRes.end();
-		return;
-	}
-
-	const nodeStream = Readable.fromWeb(webResponse.body as any);
-	nodeStream.pipe(nodeRes);
-
-	nodeStream.on('error', err => {
-		nodeRes.destroy(err);
-	});
 }

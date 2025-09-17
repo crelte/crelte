@@ -1,10 +1,10 @@
 import { Methods, Pattern, Trouter } from 'trouter';
 import CrelteServerRequest from './CrelteServer.js';
-import { SsrCache } from 'crelte/ssr';
 import ServerRequest from './Request.js';
-import { SiteFromGraphQl } from './server.js';
-import { Site } from 'crelte/routing';
-import { Queries, Query, QueryOptions } from 'crelte/queries';
+import { SiteFromGraphQl } from './shared.js';
+import { Queries, Query, QueryOptions } from '../queries/index.js';
+import { Site } from '../routing/index.js';
+import { SsrCache } from '../ssr/index.js';
 
 export type Handler = (
 	csr: CrelteServerRequest,
@@ -14,7 +14,7 @@ export type RouterOptions = {
 	endpointToken?: string;
 };
 
-export default class Router {
+export default class ServerRouter {
 	private endpointUrl: string;
 	private frontendUrl: string;
 	private endpointToken?: string;

@@ -7,7 +7,8 @@ cr.getGlobal('emergency')
 
 */
 
-import { Readable, Writable } from 'crelte-std/stores';
+import Readable from '../std/stores/Readable.js';
+import Writable from '../std/stores/Writable.js';
 
 export type GlobalWaiters<T> = ((g: T | null) => void)[];
 

@@ -1,5 +1,5 @@
-import { Entry, EntryQueryVars } from '../entry/index.js';
 import { CrelteRequest } from '../index.js';
+import { Entry, EntryQueryVars } from '../loadData/index.js';
 import { Route } from '../routing/index.js';
 
 export default class Events {

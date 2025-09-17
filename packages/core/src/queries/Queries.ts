@@ -1,7 +1,7 @@
-import { Readable } from 'crelte-std/stores';
 import SsrCache, { calcKey as ssrCacheCalcKey } from '../ssr/SsrCache.js';
 import { BaseRoute, Request, Route } from '../routing/index.js';
 import QueryError from './QueryError.js';
+import { Readable } from '../std/stores/index.js';
 
 /**
  * Options for the Queries class

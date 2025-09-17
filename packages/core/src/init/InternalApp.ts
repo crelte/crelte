@@ -1,6 +1,5 @@
-import { Entry } from '../entry/index.js';
 import { Crelte } from '../index.js';
-import { LoadData } from '../loadData/index.js';
+import { Entry, LoadData } from '../loadData/index.js';
 import { PluginCreator } from '../plugins/index.js';
 
 export interface App {

@@ -13,12 +13,12 @@ import ClientCookies from '../cookies/ClientCookies.js';
 import ClientRouter from '../routing/router/ClientRouter.js';
 import InternalApp from './InternalApp.js';
 import { Route, Router } from '../routing/index.js';
-import { Writable } from 'crelte-std/stores';
 import { configWithDefaults, newCrelte } from '../crelte.js';
 import SsrCache from '../ssr/SsrCache.js';
 import Plugins from '../plugins/Plugins.js';
 import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
+import { Writable } from '../std/stores/index.js';
 
 /**
  * The main function to start the client side rendering

@@ -1,4 +1,4 @@
-import { QueryVar, ValidIf, vars } from './vars.js';
+import { QueryVar, ValidIf, vars } from '../../queries/vars.js';
 
 export { vars, QueryVar, type ValidIf };
 

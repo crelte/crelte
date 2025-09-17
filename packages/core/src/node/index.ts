@@ -7,17 +7,16 @@ import {
 	initEnvData,
 	modRender,
 	modRenderError,
+} from '../server/shared.js';
+import ServerRouter from '../server/ServerRouter.js';
+import { fileURLToPath } from 'node:url';
+import { initQueryRoutes } from '../server/queries/queries.js';
+import {
+	PLATFORM,
+	readFile,
 	requestToWebRequest,
 	webResponseToResponse,
-} from './server.js';
-import Router from './Router.js';
-import { fileURLToPath } from 'node:url';
-import { initQueryRoutes } from './queries/queries.js';
-
-async function readFile(path: string): Promise<string> {
-	// maybe not necessary
-	return await fs.readFile(path, 'utf-8');
-}
+} from './utils.js';
 
 async function writeFile(path: string, data: string): Promise<void> {
 	// maybe not necessary
@@ -37,7 +36,7 @@ async function writeSitesCache(data: any): Promise<void> {
 }
 
 export default async function createServer(serverMod: any, buildTime: string) {
-	const env = await initEnvData({
+	const env = await initEnvData(PLATFORM, {
 		enabled: process.env.NODE_ENV === 'production',
 		writeSitesCache,
 		readSitesCache,
@@ -48,7 +47,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		await readFile(localDir('ssr-manifest.json')),
 	);
 
-	const router = new Router(
+	const router = new ServerRouter(
 		env.endpointUrl,
 		env.frontendUrl,
 		env.env,
@@ -58,7 +57,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		},
 	);
 
-	await initQueryRoutes(serverMod, router);
+	await initQueryRoutes(PLATFORM, serverMod, router);
 
 	if (typeof serverMod.routes === 'function') {
 		await serverMod.routes(router);

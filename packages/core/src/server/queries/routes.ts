@@ -1,9 +1,9 @@
-import { calcKey } from 'crelte/ssr';
 import CrelteServerRequest from '../CrelteServer.js';
-import Router from '../Router.js';
 import QueriesCaching from './QueriesCaching.js';
-import { QueryVar, vars } from './vars.js';
-import { extractEntry } from 'crelte/entry';
+import { QueryVar, vars } from '../../queries/vars.js';
+import { extractEntry } from '../../loadData/index.js';
+import ServerRouter from '../ServerRouter.js';
+import { calcKey } from '../../ssr/index.js';
 
 export type CacheIfFn = (response: any, vars: Record<string, any>) => boolean;
 
@@ -81,7 +81,7 @@ export class QueryRoute {
 	 * Returns the validated variables if some vars where defined
 	 * else just returns all vars
 	 */
-	validateVars(vars: any, cs: Router): Record<string, any> {
+	validateVars(vars: any, cs: ServerRouter): Record<string, any> {
 		if (!vars || typeof vars !== 'object')
 			throw new Error('expected an object as vars');
 

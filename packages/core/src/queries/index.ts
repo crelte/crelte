@@ -6,6 +6,7 @@ import Queries, {
 } from '../queries/Queries.js';
 import { gql } from './gql.js';
 import QueryError from './QueryError.js';
+import { isQueryVar, QueryVar, ValidIf, vars } from './vars.js';
 
 export {
 	Queries,
@@ -15,4 +16,8 @@ export {
 	isQuery,
 	QueryError,
 	gql,
+	vars,
+	type ValidIf,
+	QueryVar,
+	isQueryVar,
 };
