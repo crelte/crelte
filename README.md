@@ -86,19 +86,12 @@ Router {
 
 ```svelte
 <script context="module">
-	import entryQuery from '@/queries/entry.graphql';
-	import globalQuery from '@/queries/global.graphql';
-
 	/** @type {import('crelte').Config} */
 	export const config = {
 		preloadOnMouseOver: true,
 	};
 
 	export const templates = import.meta.glob('@/templates/*.svelte');
-
-	export const loadGlobalData = globalQuery;
-
-	export const loadEntry = entryQuery;
 </script>
 
 <script>
