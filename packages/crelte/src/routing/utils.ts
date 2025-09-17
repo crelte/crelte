@@ -54,3 +54,8 @@ export function matchAcceptLang(
 		{ lang: null, q: 0 },
 	).lang;
 }
+
+// same as ?? but only for undefined
+export function orDef<T>(a: T | undefined, def: T): T {
+	return a === undefined ? def : a;
+}

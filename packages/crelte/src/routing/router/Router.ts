@@ -131,10 +131,25 @@ export default class Router {
 		target: string | URL | Route | Request | UpdateRequest,
 		opts: RequestOptions = {},
 	): Promise<Route | void> {
-		const req = this.targetOrUpdateToRequest(target, opts);
+		const req = this.targetOrUpdateToRequest(target, {
+			...opts,
+			origin: 'manual',
+		});
 		if (!req) return;
 
-		return await this.inner.open(req);
+		if (req === this.inner.request) {
+			throw new Error(
+				'Cannot open the same request object twice. Either clone the request ' +
+					'or just pass in the url.',
+			);
+		}
+
+		try {
+			return await this.inner.openRequest(req);
+		} catch (e) {
+			console.warn('opening route failed', e);
+			throw e;
+		}
 	}
 
 	/**
@@ -174,10 +189,23 @@ export default class Router {
 		route: Route | Request | UpdateRequest,
 		opts: RequestOptions = {},
 	) {
-		const req = this.targetOrUpdateToRequest(route, opts);
+		// theoretically string and URL also work but we might
+		// change that in the future
+		const req = this.targetOrUpdateToRequest(route, {
+			...opts,
+			origin: 'push',
+			// this will always override the scrollY
+			scrollY: opts.scrollY ?? null,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
 		if (!req) return;
 
-		return await this.inner.push(req);
+		try {
+			return await this.inner.pushRequest(req, opts);
+		} catch (e) {
+			console.warn('pushing route failed', e);
+			throw e;
+		}
 	}
 
 	/**
@@ -224,12 +252,21 @@ export default class Router {
 		route: Route | Request | UpdateRequest,
 		opts: RequestOptions = {},
 	) {
-		const req = this.targetOrUpdateToRequest(route, opts);
+		const req = this.targetOrUpdateToRequest(route, {
+			...opts,
+			origin: 'replace',
+			// this will always override the scrollY
+			scrollY: opts.scrollY ?? null,
+			disableLoadData: opts.disableLoadData ?? true,
+		});
 		if (!req) return;
 
-		// we don't force disableLoadData here
-		// because the user might want to reload the data
-		return await this.inner.replace(req);
+		try {
+			return await this.inner.replaceRequest(req, opts);
+		} catch (e) {
+			console.warn('replacing route failed', e);
+			throw e;
+		}
 	}
 
 	/**

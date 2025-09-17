@@ -208,107 +208,9 @@ export default class BaseRouter {
 		return req;
 	}
 
-	/**
-	 * Open a new route
-	 *
-	 * @param target the target to open can be an url, a route or a request
-	 * the url needs to start with http or with a / which will be considered as
-	 * the site baseUrl
-	 *
-	 * ## Note
-	 * The origin will always be set to 'manual'
-	 *
-	 * ## Example
-	 * ```
-	 * import { getRouter } from 'crelte';
-	 *
-	 * const router = getRouter();
-	 * console.log(router.site.get().url.href); // 'https://example.com/de';
-	 *
-	 * router.open('/foo/bar');
-	 * // the following page will be opened https://example.com/de/foo/bar
-	 * ```
-	 */
-	async open(
-		target: string | URL | Route | Request,
-		opts: RequestOptions = {},
-	): Promise<Route | void> {
-		const req = this.targetToRequest(target, {
-			...opts,
-			origin: 'manual',
-		});
-		if (!req) return;
-
-		if (req === this.request) {
-			throw new Error(
-				'Cannot open the same request object twice. Either clone the request ' +
-					'or just pass in the url.',
-			);
-		}
-
-		try {
-			return await this.openRequest(req);
-		} catch (e) {
-			console.warn('opening route failed', e);
-			throw e;
-		}
-	}
-
+	/** You are not allowed to pass in the same request twice */
 	async openRequest(_req: Request): Promise<Route | void> {
 		throw new Error('environment specific');
-	}
-
-	/**
-	 * This pushes the new route without triggering a new pageload
-	 *
-	 * You can use this when using pagination for example change the route object
-	 * (search argument) and then call push
-	 *
-	 * ## Note
-	 * This will always set the origin to 'push'
-	 * And will clear the scrollY value if you not provide a new one via the `opts`
-	 * This will disableLoadData by default if you not provide an override via the `opts`
-	 *
-	 * ## Example using the update function
-	 * ```
-	 * import { getRouter } from 'crelte';
-	 *
-	 * const router = getRouter();
-	 *
-	 * const page = 1;
-	 * router.push(req => req.setSearchParam('page', page || null));
-	 * ```
-	 *
-	 * ## Example using the route object
-	 * ```
-	 * import { getRouter } from 'crelte';
-	 *
-	 * const router = getRouter();
-	 *
-	 * const page = 1;
-	 * const route = router.route.get();
-	 * route.setSearchParam('page', page > 0 ? page : null);
-	 * router.push(route);
-	 * ```
-	 */
-	async push(route: Route | Request, opts: RequestOptions = {}) {
-		// theoretically string and URL also work but we might
-		// change that in the future
-		const req = this.targetToRequest(route, {
-			...opts,
-			origin: 'push',
-			scrollY: opts.scrollY ?? undefined,
-			disableLoadData: opts.disableLoadData ?? true,
-		});
-
-		if (!req) return;
-
-		try {
-			return await this.pushRequest(req, opts);
-		} catch (e) {
-			console.warn('pushing route failed', e);
-			throw e;
-		}
 	}
 
 	pushRequest(
@@ -316,57 +218,6 @@ export default class BaseRouter {
 		_opts: RequestOptions = {},
 	): Promise<Route | void> {
 		throw new Error('environment specific');
-	}
-
-	/**
-	 * This replaces the state of the route without triggering a new pageload
-	 *
-	 * You can use this when using some filters for example a search filter
-	 *
-	 * ## Note
-	 * This will always set the origin to 'replace'
-	 * And will clear the scrollY value if you don't provide a new one via the `opts`
-	 * This will disableLoadData by default if you don't provide an override via the `opts`
-	 *
-	 * ## Example using the update function
-	 * ```
-	 * import { getRouter } from 'crelte';
-	 *
-	 * const router = getRouter();
-	 *
-	 * const search = 'foo';
-	 * router.replace(req => req.setSearchParam('search', search));
-	 * ```
-	 *
-	 * ## Example using the route object
-	 * ```
-	 * import { getRouter } from 'crelte';
-	 *
-	 * const router = getRouter();
-	 *
-	 * const search = 'foo';
-	 * const route = router.route.get();
-	 * route.setSearchParam('search', search);
-	 * router.replace(route);
-	 * ```
-	 */
-	async replace(route: Route | Request, opts: RequestOptions = {}) {
-		// theoretically string and URL also work but we might
-		// change that in the future
-		const req = this.targetToRequest(route, {
-			...opts,
-			origin: 'replace',
-			scrollY: opts.scrollY ?? undefined,
-			disableLoadData: opts.disableLoadData ?? true,
-		});
-		if (!req) return;
-
-		try {
-			return await this.replaceRequest(req, opts);
-		} catch (e) {
-			console.warn('replacing route failed', e);
-			throw e;
-		}
 	}
 
 	async replaceRequest(

@@ -88,15 +88,6 @@ export default class ClientRouter extends BaseRouter {
 
 	async pushRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
-		// todo a push should also store the previous scrollY
-
-		if (req.scrollY === null) {
-			// if there is no scrollY stored we store the current scrollY
-			// since a push does not cause a scroll top
-			// todo: probably should refactor something probably
-			// should not be here
-			req.scrollY = window.scrollY;
-		}
 
 		return await this.handleRequest(req, route => {
 			window.history.pushState(
@@ -109,15 +100,6 @@ export default class ClientRouter extends BaseRouter {
 
 	async replaceRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
-
-		if (req.scrollY === null) {
-			// if there is no scrollY stored we store the current scrollY
-			// since a replace does not cause a scrollTo and we wan't
-			// history back to work as intended
-			// todo: probably should refactor something probably
-			// should not be here
-			req.scrollY = window.scrollY;
-		}
 
 		try {
 			return await this.handleRequest(req, () => {
@@ -196,43 +178,7 @@ export default class ClientRouter extends BaseRouter {
 			});
 		}
 
-		// store the scrollY position every 200ms
-		// we can't do this at the time of the open call since the pop event
-		// has already changed to a new history state so we can't update our
-		// current/previous state
-		// eslint-disable-next-line no-constant-condition
-		if (true) {
-			window.addEventListener('scroll', () => {
-				const current = this.route.get();
-				if (!current) return;
-
-				// store the scroll position
-				current.scrollY = window.scrollY;
-
-				if (this.scrollDebounceTimeout) return;
-
-				// this might cause `Attempt to use history.replaceState() more than
-				// 100 times per 30 seconds` in safari
-				// since we wait a moment we should almost ever be fine
-				this.scrollDebounceTimeout = setTimeout(() => {
-					const routerRoute = this.route.get();
-					if (!routerRoute || !current.eq(routerRoute)) return;
-
-					// use the latest state
-					window.history.replaceState(routerRoute._toState(), '');
-
-					if (current.inLivePreview()) {
-						sessionStorage.setItem(
-							'live-preview-scroll',
-							// use the latest scrollY
-							routerRoute.scrollY + '',
-						);
-					}
-
-					this.scrollDebounceTimeout = null;
-				}, 280);
-			});
-		}
+		window.addEventListener('scroll', () => this.onScroll());
 
 		window.addEventListener('popstate', async e => {
 			if (!e.state?.route) return;
@@ -246,6 +192,42 @@ export default class ClientRouter extends BaseRouter {
 		});
 	}
 
+	// store the scrollY position every 200ms
+	// we can't do this at the time of the open call since the pop event
+	// has already changed to a new history state so we can't update our
+	// current/previous state
+	onScroll() {
+		const current = this.route.get();
+		if (!current) return;
+
+		// store the scroll position
+		current.scrollY = window.scrollY;
+
+		if (this.scrollDebounceTimeout) return;
+
+		// this might cause `Attempt to use history.replaceState() more than
+		// 100 times per 30 seconds` in safari
+		// since we wait a moment we should almost ever be fine
+		this.scrollDebounceTimeout = setTimeout(() => {
+			const routerRoute = this.route.get();
+			if (!routerRoute || !current.eq(routerRoute)) return;
+
+			// use the latest state
+			window.history.replaceState(routerRoute._toState(), '');
+
+			if (current.inLivePreview()) {
+				sessionStorage.setItem(
+					'live-preview-scroll',
+					// use the latest scrollY
+					routerRoute.scrollY + '',
+				);
+			}
+
+			this.scrollDebounceTimeout = null;
+		}, 280);
+	}
+
+	// this is called after the route was set
 	updateScroll(cr: CrelteRequest, _route: Route): void {
 		const req = cr.req;
 
@@ -296,7 +278,7 @@ export default class ClientRouter extends BaseRouter {
 
 		// make sure push and replace don't cause a scroll if it is not intended
 		if (!scrollTo && (req.origin === 'push' || req.origin === 'replace'))
-			return;
+			return this.onScroll(); // make sure the current scrollY get's stored to the history
 
 		// scroll to the top if nothing else matches
 		if (!scrollTo) {

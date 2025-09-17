@@ -4,6 +4,7 @@ import BaseRoute, { RouteOrigin } from './BaseRoute.js';
 import Route, { TemplateModule } from './Route.js';
 import { Entry } from '../../loadData/index.js';
 import { Barrier } from '../../std/sync/index.js';
+import { orDef } from '../utils.js';
 
 /**
  * Options to create a Request
@@ -12,14 +13,14 @@ export type RequestOptions = {
 	entry?: Entry;
 	template?: TemplateModule;
 	loadedData?: Record<string, any>;
-	scrollY?: number;
+	scrollY?: number | null;
 	index?: number;
 	origin?: RouteOrigin;
 	state?: Record<string, any>;
 	context?: Record<string, any>;
 	disableScroll?: boolean;
 	disableLoadData?: boolean;
-	statusCode?: number;
+	statusCode?: number | null;
 };
 
 /**
@@ -205,17 +206,20 @@ export default class Request extends BaseRoute {
 		// todo maybe should check that if entry is updated
 		// template and loadedData is also updated
 
-		this.entry = opts.entry ?? this.entry;
-		this.template = opts.template ?? this.template;
-		this.loadedData = opts.loadedData ?? this.loadedData;
-		this.scrollY = opts.scrollY ?? this.scrollY;
-		this.index = opts.index ?? this.index;
-		this.origin = opts.origin ?? this.origin;
-		this._state = opts.state ?? this._state;
-		this._context = opts.context ?? this._context;
-		this.disableScroll = opts.disableScroll ?? this.disableScroll;
-		this.disableLoadData = opts.disableLoadData ?? this.disableLoadData;
-		this.statusCode = opts.statusCode ?? this.statusCode;
+		this.entry = orDef(opts.entry, this.entry);
+		this.template = orDef(opts.template, this.template);
+		this.loadedData = orDef(opts.loadedData, this.loadedData);
+		this.scrollY = orDef(opts.scrollY, this.scrollY);
+		this.index = orDef(opts.index, this.index);
+		this.origin = orDef(opts.origin, this.origin);
+		this._state = orDef(opts.state, this._state);
+		this._context = orDef(opts.context, this._context);
+		this.disableScroll = orDef(opts.disableScroll, this.disableScroll);
+		this.disableLoadData = orDef(
+			opts.disableLoadData,
+			this.disableLoadData,
+		);
+		this.statusCode = orDef(opts.statusCode, this.statusCode);
 	}
 
 	/** @hidden */

@@ -3,7 +3,7 @@ import Site from '../Site.js';
 import { trimSlashEnd } from '../utils.js';
 
 export type BaseRouteOptions = {
-	scrollY?: number;
+	scrollY?: number | null;
 	index?: number;
 	origin?: RouteOrigin;
 	state?: Record<string, any>;
