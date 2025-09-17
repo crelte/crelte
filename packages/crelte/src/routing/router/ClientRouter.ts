@@ -28,12 +28,22 @@ export default class ClientRouter extends BaseRouter {
 	async init() {
 		this.listen();
 
-		// let's first try to load from the state
-		const req = this.targetToRequest(window.location.href);
+		const req = this.targetToRequest(window.location.href, {
+			origin: 'init',
+			// disable scroll because we will do the scrolling instantly
+			disableScroll: true,
+		});
 		req._fillFromState(window.history.state);
 
-		req.origin = 'init';
 		window.history.scrollRestoration = 'manual';
+		if (req.scrollY) {
+			// restore scroll position instantly (instead of waiting until svelte
+			// is initialized)
+			window.scrollTo({
+				top: req.scrollY,
+				behavior: 'instant',
+			});
+		}
 
 		return await this.handleRequest(req, () => {});
 	}
