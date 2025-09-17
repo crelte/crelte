@@ -12,3 +12,10 @@ export function objClone(obj: any): any {
 export function isPromise<T>(p: Promise<T> | T): p is Promise<T> {
 	return typeof (p as any)?.then === 'function';
 }
+
+// the pathname is always replaced
+export function urlWithPath(url: string, path?: string): URL {
+	const u = new URL(url);
+	u.pathname = path ?? '';
+	return u;
+}

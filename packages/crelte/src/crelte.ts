@@ -8,6 +8,7 @@ import Site from './routing/Site.js';
 import Queries, { Query, QueryOptions } from './queries/Queries.js';
 import { Readable } from './std/stores/index.js';
 import { Entry } from './loadData/index.js';
+import { urlWithPath } from './utils.js';
 
 export type Config = {
 	/**
@@ -125,6 +126,24 @@ export type Crelte = {
 	getEnv(name: 'CRAFT_WEB_URL'): string;
 	getEnv(name: 'FRONTEND_URL'): string;
 	getEnv(name: string): string | null;
+
+	/**
+	 * returns the frontend url with an optional path
+	 *
+	 * ## Note
+	 * On the client this will always be the current origin
+	 * and on the server it will be the from the env `FRONTEND_URL` env
+	 * variable
+	 */
+	frontendUrl(path?: string): URL;
+
+	/**
+	 * returns the backend url with an optional path
+	 *
+	 * ## Note
+	 * For the origin the `ENDPOINT_URL` env variable is used
+	 */
+	backendUrl(path?: string): URL;
 
 	/**
 	 * returns a store which contains a globalSet
@@ -255,6 +274,8 @@ export function newCrelte({
 
 		getPlugin: name => plugins.get(name),
 		getEnv: key => ssrCache.get(key as any) as any,
+		frontendUrl: path => urlWithPath(ssrCache.get('FRONTEND_URL')!, path),
+		backendUrl: path => urlWithPath(ssrCache.get('ENDPOINT_URL')!, path),
 		getGlobalStore: name => globals.getStore(name),
 		toRequest(req) {
 			// @ts-ignore
