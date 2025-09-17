@@ -91,6 +91,10 @@
 		"./std/stores": {
 			"types": "./dist/std/stores/index.d.ts",
 			"default": "./dist/std/stores/index.js"
+		},
+		"./std/intl": {
+			"types": "./dist/std/intl/index.d.ts",
+			"default": "./dist/std/intl/index.js"
 		}
 	},
 	"dependencies": {

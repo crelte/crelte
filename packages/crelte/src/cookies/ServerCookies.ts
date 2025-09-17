@@ -9,8 +9,8 @@ export default class ServerCookies implements Cookies {
 	requestCookies: Map<string, string>;
 	setCookies: Map<string, SetCookie>;
 
-	constructor(cookies: string) {
-		this.requestCookies = parseCookies(cookies);
+	constructor(headers: Headers) {
+		this.requestCookies = parseCookies(headers.get('cookie') ?? '');
 		this.setCookies = new Map();
 	}
 
@@ -33,9 +33,9 @@ export default class ServerCookies implements Cookies {
 		this.set(name, '', { ...opts, maxAge: 0 });
 	}
 
-	_getSetCookiesHeaders(): string[] {
-		return Array.from(this.setCookies.values()).map(setCookie =>
-			setCookieToString(setCookie),
-		);
+	_populateHeaders(headers: Headers) {
+		for (const setCookie of this.setCookies.values()) {
+			headers.append('set-cookie', setCookieToString(setCookie));
+		}
 	}
 }

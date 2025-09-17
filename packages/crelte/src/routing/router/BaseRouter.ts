@@ -6,13 +6,13 @@
 import Request, { isRequest, RequestOptions } from '../route/Request.js';
 import Route from '../route/Route.js';
 import Site, { SiteFromGraphQl, siteFromUrl } from '../Site.js';
-import { matchAcceptLang } from '../utils.js';
 import LoadRunner, { LoadRunnerOptions } from '../LoadRunner.js';
 import { type CrelteRequest } from '../../index.js';
 import { isPromise } from '../../utils.js';
 import { Listeners } from '../../std/sync/index.js';
 import { Writable } from '../../std/stores/index.js';
 import { Entry } from '../../loadData/index.js';
+import { preferredSite } from '../utils.js';
 
 export type BaseRouterOptions = {} & LoadRunnerOptions;
 
@@ -20,7 +20,7 @@ const INF_LOOP_CHECK = '__REQ_FROM_REQ_START__';
 
 export default class BaseRouter {
 	sites: Site[];
-	private sitesByLanguage: Map<string, Site>;
+	languages: string[];
 
 	/**
 	 * The current route
@@ -86,9 +86,13 @@ export default class BaseRouter {
 		domUpdated: (cr: CrelteRequest, route: Route) => void,
 	) => Promise<Route> | Route;
 
-	constructor(sites: SiteFromGraphQl[], opts: BaseRouterOptions) {
+	constructor(
+		sites: SiteFromGraphQl[],
+		languages: string[],
+		opts: BaseRouterOptions,
+	) {
 		this.sites = sites.map(s => new Site(s));
-		this.sitesByLanguage = new Map(this.sites.map(s => [s.language, s]));
+		this.languages = languages;
 		this.route = new Writable(null);
 		this.site = new Writable(null);
 		this.entry = new Writable(null);
@@ -112,37 +116,21 @@ export default class BaseRouter {
 	}
 
 	/**
-	 * Get the default site
+	 * Get the primary site
 	 */
 	primarySite(): Site {
 		return this.sites.find(s => s.primary) ?? this.sites[0];
 	}
 
 	/**
-	 * Should be override by environment specific router
-	 *
-	 * This should be based on the language
-	 *
 	 * todo check that the router uses the correct sites for each function
 	 */
 	defaultSite(): Site {
-		return this.primarySite();
+		return this.preferredSite() ?? this.primarySite();
 	}
 
-	/**
-	 * Get a site and if possible use the accept lang header.
-	 *
-	 * @param acceptLang Accept Language header.
-	 */
-	siteByAcceptLang(acceptLang: string | null = null): Site {
-		if (!acceptLang) return this.primarySite();
-
-		const lang = matchAcceptLang(
-			acceptLang,
-			Array.from(this.sitesByLanguage.keys()),
-		);
-
-		return lang ? this.sitesByLanguage.get(lang)! : this.primarySite();
+	preferredSite(): Site | null {
+		return preferredSite(this.sites, this.languages);
 	}
 
 	/**

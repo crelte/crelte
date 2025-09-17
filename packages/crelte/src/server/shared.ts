@@ -12,7 +12,7 @@ export type RenderResponse = {
 	status: number;
 	location?: string;
 	html?: string;
-	setCookies?: string[];
+	headers: Headers;
 };
 
 /*
@@ -138,7 +138,7 @@ async function loadSites(
 }
 
 export type ModRenderOptions = {
-	ssrManifest?: Record<string, string>;
+	ssrManifest?: Record<string, string[]>;
 };
 
 type RenderFn = (req: RenderRequest) => Promise<RenderResponse>;
@@ -147,14 +147,13 @@ type RenderFn = (req: RenderRequest) => Promise<RenderResponse>;
 export type RenderRequest = {
 	url: string;
 	htmlTemplate: string;
-	ssrManifest: Record<string, string>;
-	acceptLang: string | null;
+	ssrManifest: Record<string, string[]>;
 	endpoint: string;
 	craftWeb: string;
 	frontend: string;
 	viteEnv: Map<string, string>;
-	cookies: string;
 	sites: SiteFromGraphQl[];
+	headers: Headers;
 };
 
 export async function modRender(
@@ -164,29 +163,26 @@ export async function modRender(
 	req: Request,
 	opts: ModRenderOptions = {},
 ): Promise<Response> {
-	const acceptLang = req.headers.get('accept-language') ?? null;
-	const cookies = req.headers.get('Cookie') ?? '';
-	const nHeaders = new Headers();
+	// const acceptLang = req.headers.get('accept-language') ?? null;
+	// const cookies = req.headers.get('cookie') ?? '';
 
-	const { status, location, html, setCookies } = await (
-		mod.render as RenderFn
-	)({
+	const {
+		status,
+		location,
+		html,
+		headers: nHeaders,
+	} = await (mod.render as RenderFn)({
 		url: req.url,
 		htmlTemplate: template,
 		ssrManifest: {},
-		acceptLang,
 		endpoint: env.endpointUrl,
 		craftWeb: env.craftWebUrl,
 		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
-		cookies,
 		sites: env.sites,
+		headers: req.headers,
 		...opts,
 	});
-
-	if (setCookies) {
-		setCookies.forEach(cookie => nHeaders.append('Set-Cookie', cookie));
-	}
 
 	if (status === 301 || status === 302) {
 		nHeaders.append('Location', location ?? '');
@@ -206,7 +202,7 @@ type RenderErrorFn = (
 export type RenderErrorRequest = {
 	url: string;
 	htmlTemplate: string;
-	ssrManifest: Record<string, string>;
+	ssrManifest: Record<string, string[]>;
 	acceptLang: string | null;
 	endpoint: string;
 	craftWeb: string;

@@ -1,4 +1,3 @@
-import { SiteFromGraphQl } from '../routing/Site.js';
 import {
 	loadFn,
 	newQueries,
@@ -19,19 +18,9 @@ import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
 import { Router } from '../routing/index.js';
 import { Writable } from '../std/stores/index.js';
+import { RenderRequest, RenderResponse } from '../server/shared.js';
 
-export type ServerData = {
-	url: string;
-	htmlTemplate: string;
-	ssrManifest: Record<string, string[]>;
-	acceptLang?: string;
-	endpoint: string;
-	craftWeb: string;
-	frontend: string;
-	viteEnv: Map<string, string>;
-	cookies: string;
-	sites: SiteFromGraphQl[];
-};
+export type ServerData = RenderRequest;
 
 /**
  * The main function to start the server side rendering
@@ -64,12 +53,7 @@ export type MainData = {
  * }
  * ```
  */
-export async function main(data: MainData): Promise<{
-	status: number;
-	location?: string;
-	html?: string;
-	setCookies?: string[];
-}> {
+export async function main(data: MainData): Promise<RenderResponse> {
 	// todo if entryQuery or globalQuery is present show a hint
 	// they should be added to App.svelte and removed from here
 
@@ -84,13 +68,14 @@ export async function main(data: MainData): Promise<{
 	ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
 	ssrCache.set('FRONTEND_URL', data.serverData.frontend);
 
-	const cookiesData = data.serverData.cookies ?? '';
-	const cookies = new ServerCookies(cookiesData);
+	const cookies = new ServerCookies(data.serverData.headers);
 
 	ssrCache.set('crelteSites', data.serverData.sites);
-	const router = new ServerRouter(data.serverData.sites, {
-		debugTiming: config.debugTiming ?? false,
-	});
+	const router = new ServerRouter(
+		data.serverData.sites,
+		data.serverData.headers.get('accept-language') ?? '',
+		{ debugTiming: config.debugTiming ?? false },
+	);
 
 	const queries = newQueries(ssrCache, router.route.readonly(), config);
 
@@ -112,9 +97,7 @@ export async function main(data: MainData): Promise<{
 	app.init(crelte);
 
 	router.onNewCrelteRequest = req => onNewCrelteRequest(crelte, req);
-
 	router.onBeforeRequest = pluginsBeforeRequest;
-
 	router.loadRunner.loadFn = (cr, opts) => loadFn(cr, app, opts);
 
 	router.onRender = (cr, readyForRoute, _domUpdated) => {
@@ -127,19 +110,17 @@ export async function main(data: MainData): Promise<{
 	};
 
 	// throws if there was an error
-	const [req, route] = await router.init(
-		data.serverData.url,
-		data.serverData.acceptLang,
-	);
+	const [req, route] = await router.init(data.serverData.url);
 
 	// if redirect
 	if (!route) {
+		const headers = new Headers();
+		(crelte.cookies as ServerCookies)._populateHeaders(headers);
+
 		return {
 			status: req.statusCode ?? 302,
 			location: req.url.toString(),
-			setCookies: (
-				crelte.cookies as ServerCookies
-			)._getSetCookiesHeaders(),
+			headers,
 		};
 	}
 
@@ -173,6 +154,9 @@ export async function main(data: MainData): Promise<{
 
 	const entry = route.entry;
 
+	const headers = new Headers();
+	(crelte.cookies as ServerCookies)._populateHeaders(headers);
+
 	return {
 		status:
 			req.statusCode ??
@@ -180,7 +164,7 @@ export async function main(data: MainData): Promise<{
 				? parseInt(entry.typeHandle)
 				: 200),
 		html: finalHtml,
-		setCookies: (crelte.cookies as ServerCookies)._getSetCookiesHeaders(),
+		headers,
 	};
 }
 

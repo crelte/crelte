@@ -2,20 +2,33 @@ import BaseRouter, { BaseRouterOptions } from './BaseRouter.js';
 import { Request, RequestOptions } from '../index.js';
 import Route from '../route/Route.js';
 import Site, { SiteFromGraphQl } from '../Site.js';
+import { preferredSite } from '../utils.js';
+import { parseAcceptLang } from '../../std/intl/index.js';
 
 export default class ServerRouter extends BaseRouter {
-	acceptLang: string | null;
+	private prefSite: Site | null;
 	redirect: Request | null;
 
-	constructor(sites: SiteFromGraphQl[], opts: BaseRouterOptions) {
-		super(sites, opts);
+	constructor(
+		sites: SiteFromGraphQl[],
+		acceptLang: string,
+		opts: BaseRouterOptions,
+	) {
+		const langs = parseAcceptLang(acceptLang).map(([l]) => l);
+		super(sites, langs, opts);
 
-		this.acceptLang = null;
+		this.prefSite = preferredSite(this.sites, this.languages);
+
 		this.redirect = null;
 	}
 
-	defaultSite(): Site {
-		return this.siteByAcceptLang(this.acceptLang);
+	/**
+	 * Returns a site which is preffered based on the users language
+	 *
+	 * Returns null if no site could be determined
+	 */
+	preferredSite(): Site | null {
+		return this.prefSite;
 	}
 
 	async openRequest(req: Request) {
@@ -53,12 +66,7 @@ export default class ServerRouter extends BaseRouter {
 	 * ## Throws
 	 * If the request fails
 	 */
-	async init(
-		url: string,
-		acceptLang?: string,
-	): Promise<[Request, Route | null]> {
-		this.acceptLang = acceptLang ?? null;
-
+	async init(url: string): Promise<[Request, Route | null]> {
 		const req = this.targetToRequest(url);
 		req.origin = 'init';
 

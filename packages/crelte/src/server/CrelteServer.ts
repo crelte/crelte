@@ -3,6 +3,8 @@ import ServerCookies from '../cookies/ServerCookies.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Request, Site } from '../routing/index.js';
 import { siteFromUrl } from '../routing/Site.js';
+import { preferredSite } from '../routing/utils.js';
+import { parseAcceptLang } from '../std/intl/index.js';
 import ServerRequest from './Request.js';
 
 export default class CrelteServerRequest {
@@ -12,6 +14,7 @@ export default class CrelteServerRequest {
 	req: ServerRequest;
 
 	private _env: Map<string, string>;
+	private prefSite: Site | null;
 	private _sites: Site[];
 	private _queries: Queries;
 	protected _cookies: Cookies;
@@ -24,11 +27,17 @@ export default class CrelteServerRequest {
 	) {
 		this._env = env;
 		this._sites = sites;
+
+		const langs = parseAcceptLang(
+			req.headers.get('accept-language') ?? '',
+		).map(([l]) => l);
+		this.prefSite = preferredSite(this.sites, langs);
+
 		this._queries = queries.z_toRequest(
-			new Request(new URL(req.url), sites[0]),
+			new Request(new URL(req.url), this.prefSite ?? this.primarySite()),
 		);
 		this.req = req;
-		this._cookies = new ServerCookies(req.headers.get('Cookie') ?? '');
+		this._cookies = new ServerCookies(req.headers);
 	}
 
 	/**
@@ -63,9 +72,25 @@ export default class CrelteServerRequest {
 	}
 
 	/**
+	 * Returns the primary site
+	 */
+	primarySite(): Site {
+		return this._sites.find(s => s.primary) ?? this._sites[0];
+	}
+
+	/**
+	 * Returns a site which is preferred based on the users language
+	 *
+	 * Returns null if no site could be determined
+	 */
+	preferredSite(): Site | null {
+		return this.prefSite;
+	}
+
+	/**
 	 * Get the site from a url
 	 */
-	getSiteFromUrl(url: string | URL): Site | null {
+	siteFromUrl(url: string | URL): Site | null {
 		url = typeof url === 'string' ? new URL(url) : url;
 
 		return siteFromUrl(url, this.sites);
@@ -89,8 +114,6 @@ export default class CrelteServerRequest {
 
 	/** @hidden */
 	z_finishResponse(resp: Response) {
-		(this.cookies as ServerCookies)
-			._getSetCookiesHeaders()
-			.forEach(cookie => resp.headers.append('Set-Cookie', cookie));
+		(this.cookies as ServerCookies)._populateHeaders(resp.headers);
 	}
 }

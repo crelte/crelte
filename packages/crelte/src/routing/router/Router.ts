@@ -93,6 +93,15 @@ export default class Router {
 	}
 
 	/**
+	 * The languages which the user prefers
+	 *
+	 * This comes from Accept-Language header or the navigator.languages
+	 */
+	get preferredLanguages(): string[] {
+		return this.inner.languages;
+	}
+
+	/**
 	 * returns a store which indicates if the a page is loading
 	 */
 	get loading(): Readable<boolean> {
@@ -104,6 +113,22 @@ export default class Router {
 	 */
 	get loadingProgress(): Readable<number> {
 		return this.inner.loadingProgress.readonly();
+	}
+
+	/**
+	 * Returns the primary site
+	 */
+	primarySite(): Site {
+		return this.inner.primarySite();
+	}
+
+	/**
+	 * Returns a site which is preffered based on the users language
+	 *
+	 * Returns null if no site could be determined
+	 */
+	preferredSite(): Site | null {
+		return this.inner.preferredSite();
 	}
 
 	/**

@@ -15,7 +15,7 @@ export default class ClientRouter extends BaseRouter {
 	onError: (e: any) => void;
 
 	constructor(sites: SiteFromGraphQl[], opts: ClientRouterOptions) {
-		super(sites, opts);
+		super(sites, navigator.languages.slice(), opts);
 
 		this.scrollDebounceTimeout = null;
 		this.preloadOnMouseOver = opts.preloadOnMouseOver;
