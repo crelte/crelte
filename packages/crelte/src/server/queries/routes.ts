@@ -125,7 +125,7 @@ export class QueryRoute {
 		}
 
 		let cacheKey: string | null = null;
-		const useCache = !previewToken;
+		const useCache = !previewToken && caching.isEnabled();
 		if (useCache) {
 			cacheKey = await calcKey({ name: this.name, ...vars });
 			const cached = await caching.getCache(cacheKey);
@@ -196,8 +196,9 @@ export class QueryRoute {
 			} catch (e) {
 				console.error('could not cache gql response', e);
 			}
-		} else {
-			if (logInfo) console.warn('!! ' + logInfo + ' caching not allowed');
+			// if caching is generally disabled we don't warn
+		} else if (cacheKey && logInfo) {
+			console.warn('!! ' + logInfo + ' caching not allowed');
 		}
 
 		return Response.json(jsonResp, { headers: respHeaders });

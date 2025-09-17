@@ -46,6 +46,10 @@ export default class QueriesCaching {
 			cs.post('/queries/webhook', csr => this.handleWebhook(csr));
 	}
 
+	isEnabled(): boolean {
+		return !!this.cacheDir;
+	}
+
 	async getCache<T = any>(key: string): Promise<T | null> {
 		if (!this.cacheDir) return null;
 
