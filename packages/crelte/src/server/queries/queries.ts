@@ -105,7 +105,7 @@ function parseVars(vars: any): Record<string, QueryVar> {
 				'expected all values in vars to be QueryVar (' + name + ')',
 			);
 
-		v._setName(name);
+		v.z_setName(name);
 	}
 
 	return vars;

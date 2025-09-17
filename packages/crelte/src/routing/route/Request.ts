@@ -62,7 +62,7 @@ export default class Request extends BaseRoute {
 	statusCode: number | null;
 
 	/** @hidden */
-	_renderBarrier: RenderBarrier;
+	z_renderBarrier: RenderBarrier;
 
 	private _cancelled: boolean;
 
@@ -78,7 +78,7 @@ export default class Request extends BaseRoute {
 		this.disableScroll = opts.disableScroll ?? false;
 		this.disableLoadData = opts.disableLoadData ?? false;
 		this.statusCode = opts.statusCode ?? null;
-		this._renderBarrier = new RenderBarrier();
+		this.z_renderBarrier = new RenderBarrier();
 		this._cancelled = false;
 	}
 
@@ -93,8 +93,8 @@ export default class Request extends BaseRoute {
 			scrollY: route.scrollY ?? undefined,
 			index: route.index,
 			origin: route.origin,
-			state: route._state,
-			context: route._context,
+			state: route.z_state,
+			context: route.z_context,
 			...opts,
 		});
 	}
@@ -132,7 +132,7 @@ export default class Request extends BaseRoute {
 	 * ```
 	 */
 	delayRender(): DelayRender {
-		return this._renderBarrier.add();
+		return this.z_renderBarrier.add();
 	}
 
 	/**
@@ -154,8 +154,8 @@ export default class Request extends BaseRoute {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
-			state: objClone(this._state),
-			context: this._context,
+			state: objClone(this.z_state),
+			context: this.z_context,
 			disableScroll: this.disableScroll,
 			disableLoadData: this.disableLoadData,
 			statusCode: this.statusCode ?? undefined,
@@ -192,8 +192,8 @@ export default class Request extends BaseRoute {
 				scrollY: this.scrollY ?? undefined,
 				index: this.index,
 				origin: this.origin,
-				state: objClone(this._state),
-				context: this._context,
+				state: objClone(this.z_state),
+				context: this.z_context,
 			},
 		);
 		route.entryChanged = !this.disableLoadData;
@@ -202,7 +202,7 @@ export default class Request extends BaseRoute {
 	}
 
 	/** @hidden */
-	_updateOpts(opts: RequestOptions = {}) {
+	z_updateOpts(opts: RequestOptions = {}) {
 		// todo maybe should check that if entry is updated
 		// template and loadedData is also updated
 
@@ -212,8 +212,8 @@ export default class Request extends BaseRoute {
 		this.scrollY = orDef(opts.scrollY, this.scrollY);
 		this.index = orDef(opts.index, this.index);
 		this.origin = orDef(opts.origin, this.origin);
-		this._state = orDef(opts.state, this._state);
-		this._context = orDef(opts.context, this._context);
+		this.z_state = orDef(opts.state, this.z_state);
+		this.z_context = orDef(opts.context, this.z_context);
 		this.disableScroll = orDef(opts.disableScroll, this.disableScroll);
 		this.disableLoadData = orDef(
 			opts.disableLoadData,
@@ -223,9 +223,9 @@ export default class Request extends BaseRoute {
 	}
 
 	/** @hidden */
-	_cancel() {
+	z_cancel() {
 		this._cancelled = true;
-		this._renderBarrier.cancel();
+		this.z_renderBarrier.cancel();
 	}
 }
 

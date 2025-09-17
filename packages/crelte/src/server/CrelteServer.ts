@@ -24,7 +24,7 @@ export default class CrelteServerRequest {
 	) {
 		this._env = env;
 		this._sites = sites;
-		this._queries = queries._toRequest(
+		this._queries = queries.z_toRequest(
 			new Request(new URL(req.url), sites[0]),
 		);
 		this.req = req;
@@ -88,7 +88,7 @@ export default class CrelteServerRequest {
 	}
 
 	/** @hidden */
-	_finishResponse(resp: Response) {
+	z_finishResponse(resp: Response) {
 		(this.cookies as ServerCookies)
 			._getSetCookiesHeaders()
 			.forEach(cookie => resp.headers.append('Set-Cookie', cookie));

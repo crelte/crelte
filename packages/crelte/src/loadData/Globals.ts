@@ -131,7 +131,7 @@ export default class Globals {
 	 * @hidden
 	 * call this before starting the loadGlobalData phase
 	 */
-	_toRequest() {
+	z_toRequest() {
 		const nGlobals = new Globals(this.stores);
 		nGlobals.waiters = new Map();
 		nGlobals.newData = new Map();
@@ -143,7 +143,7 @@ export default class Globals {
 	 * @hidden
 	 * call this after the loadGlobalData phase
 	 */
-	_globalsLoaded() {
+	z_globalsLoaded() {
 		if (!this.waiters) return;
 
 		for (const [name, listeners] of this.waiters.entries()) {
@@ -160,7 +160,7 @@ export default class Globals {
 	 * call this after the loadData phase once the CrelteRequest
 	 * gets completed
 	 */
-	_syncToStores() {
+	z_syncToStores() {
 		const setToNull = new Set(this.stores.keys());
 
 		for (const [name, data] of this.newData!.entries()) {

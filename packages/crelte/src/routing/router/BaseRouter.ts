@@ -185,7 +185,7 @@ export default class BaseRouter {
 			return Request.fromRoute(target, opts);
 		}
 
-		target._updateOpts(opts);
+		target.z_updateOpts(opts);
 		return target;
 	}
 
@@ -258,7 +258,7 @@ export default class BaseRouter {
 	cancelRequest() {
 		// destroy the old request
 		if (this.request) {
-			this.request._cancel();
+			this.request.z_cancel();
 			this.request = null;
 		}
 	}
@@ -279,7 +279,7 @@ export default class BaseRouter {
 		// cancel the previous request
 		this.cancelRequest();
 
-		const barrier = req._renderBarrier;
+		const barrier = req.z_renderBarrier;
 		if (barrier.isOpen()) throw new Error('the request was already used');
 
 		// not sure this really helps
@@ -322,7 +322,7 @@ export default class BaseRouter {
 
 		// check if the render was cancelled
 		// else wait until the renderBarrier gets opened
-		const readyProm = req._renderBarrier.ready();
+		const readyProm = req.z_renderBarrier.ready();
 		const wasCancelled = isPromise(readyProm) ? await readyProm : readyProm;
 		if (wasCancelled || isCancelled()) return;
 

@@ -44,8 +44,8 @@ export class QueryRoute {
 		// the _setName step happens in parseVars which happens before setting
 		// the defaults
 		this.vars = {
-			siteId: vars.siteId()._setName('siteId'),
-			uri: vars.string()._setName('uri'),
+			siteId: vars.siteId().z_setName('siteId'),
+			uri: vars.string().z_setName('uri'),
 		};
 		this.cacheIfFn = res => !!extractEntry(res);
 	}
@@ -53,7 +53,7 @@ export class QueryRoute {
 	private fillGlobalDefaults() {
 		if (this.vars) return;
 
-		this.vars = { siteId: vars.siteId()._setName('siteId') };
+		this.vars = { siteId: vars.siteId().z_setName('siteId') };
 		this.cacheIfFn = () => true;
 	}
 
@@ -72,7 +72,7 @@ export class QueryRoute {
 			this.vars = {};
 			this.cacheIfFn = () => true;
 		} else if (SITE_ID_VAR_TEST.test(this.query)) {
-			this.vars = { siteId: vars.siteId()._setName('siteId') };
+			this.vars = { siteId: vars.siteId().z_setName('siteId') };
 			this.cacheIfFn = () => true;
 		}
 	}

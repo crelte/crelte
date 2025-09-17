@@ -163,7 +163,7 @@ export class QueryVar<T = any> {
 	 * @hidden
 	 * Internal method to set the name of the variable
 	 */
-	_setName(name: string): QueryVar<T> {
+	z_setName(name: string): QueryVar<T> {
 		this.name = name;
 		return this;
 	}

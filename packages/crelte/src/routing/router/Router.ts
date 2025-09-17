@@ -375,7 +375,7 @@ export default class Router {
 	 * @hidden
 	 * call this after creating a CrelteRequest
 	 */
-	_toRequest(req: Request) {
+	z_toRequest(req: Request) {
 		const nRouter = new Router(this.inner);
 		nRouter._request = req;
 		return nRouter;

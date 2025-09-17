@@ -120,7 +120,7 @@ export async function main(data: MainData): Promise<{
 	router.onRender = (cr, readyForRoute, _domUpdated) => {
 		const route = readyForRoute();
 		cr.router._requestCompleted();
-		cr.globals._syncToStores();
+		cr.globals.z_syncToStores();
 		pluginsBeforeRender(cr, route);
 
 		return route;
@@ -159,7 +159,7 @@ export async function main(data: MainData): Promise<{
 	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += crelte.ssrCache._exportToHead();
+	head += crelte.ssrCache.exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace(
@@ -235,7 +235,7 @@ export async function mainError(
 	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += ssrCache._exportToHead();
+	head += ssrCache.exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', 'de');

@@ -81,7 +81,7 @@ export default class BaseRoute {
 	 * @hidden
 	 * State data that can be used to store additional information
 	 */
-	_state: Record<string, any>;
+	z_state: Record<string, any>;
 
 	/**
 	 * @hidden
@@ -94,7 +94,7 @@ export default class BaseRoute {
 	 * Consider using state instead. This will not be cloned in the clone
 	 * call so will always be the same object
 	 */
-	_context: Record<string, any>;
+	z_context: Record<string, any>;
 
 	/**
 	 * Creates a new Route
@@ -106,8 +106,8 @@ export default class BaseRoute {
 		this.scrollY = opts.scrollY ?? null;
 		this.index = opts.index ?? 0;
 		this.origin = opts.origin ?? 'manual';
-		this._state = opts.state ?? {};
-		this._context = opts.context ?? {};
+		this.z_state = opts.state ?? {};
+		this.z_context = opts.context ?? {};
 	}
 
 	/**
@@ -252,7 +252,7 @@ export default class BaseRoute {
 	 * Returns a state value if it exists.
 	 */
 	getState<T = any>(key: string): T | null {
-		return this._state[key] ?? null;
+		return this.z_state[key] ?? null;
 	}
 
 	/**
@@ -267,9 +267,9 @@ export default class BaseRoute {
 	 */
 	setState<T>(key: string, value: T | null | undefined) {
 		if (typeof value === 'undefined' || value === null) {
-			delete this._state[key];
+			delete this.z_state[key];
 		} else {
-			this._state[key] = value;
+			this.z_state[key] = value;
 		}
 	}
 
@@ -277,7 +277,7 @@ export default class BaseRoute {
 	 * Returns a context value if it exists.
 	 */
 	getContext<T = any>(key: string): T | null {
-		return this._context[key] ?? null;
+		return this.z_context[key] ?? null;
 	}
 
 	/**
@@ -291,9 +291,9 @@ export default class BaseRoute {
 	 */
 	setContext<T>(key: string, value: T | null | undefined) {
 		if (typeof value === 'undefined' || value === null) {
-			delete this._context[key];
+			delete this.z_context[key];
 		} else {
-			this._context[key] = value;
+			this.z_context[key] = value;
 		}
 	}
 	/**
@@ -389,13 +389,13 @@ export default class BaseRoute {
 			scrollY: this.scrollY ?? undefined,
 			index: this.index,
 			origin: this.origin,
-			state: objClone(this._state),
-			context: this._context,
+			state: objClone(this.z_state),
+			context: this.z_context,
 		});
 	}
 
 	/** @hidden */
-	_fillFromState(state: any) {
+	z_fillFromState(state: any) {
 		// todo should this be here?
 		// not better in the request?
 		if (typeof state?.route?.scrollY === 'number')
@@ -405,18 +405,18 @@ export default class BaseRoute {
 			this.index = state.route.index;
 
 		if (typeof state?.state === 'object' && state.state !== null) {
-			this._state = state.state;
+			this.z_state = state.state;
 		}
 	}
 
 	/** @hidden */
-	_toState(): any {
+	z_toState(): any {
 		return {
 			route: {
 				scrollY: this.scrollY,
 				index: this.index,
 			},
-			state: this._state,
+			state: this.z_state,
 		};
 	}
 }

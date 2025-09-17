@@ -144,7 +144,7 @@ export default class Queries {
 	 * @hidden
 	 * call this before starting the loadGlobalData phase
 	 */
-	_toRequest(req: Request) {
+	z_toRequest(req: Request) {
 		return new Queries(this.inner, this.route, req);
 	}
 }

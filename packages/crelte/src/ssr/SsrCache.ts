@@ -73,7 +73,7 @@ export default class SsrCache {
 	}
 
 	/** @hidden */
-	_exportToHead(): string {
+	exportToHead(): string {
 		return `\n\t\t<script>window.SSR_STORE = ${this.exportAsJson()};</script>`;
 	}
 }

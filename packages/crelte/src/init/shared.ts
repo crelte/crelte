@@ -62,9 +62,9 @@ export function onNewCrelteRequest(
 	// might refer to the wrong objects/classes
 	const nCrelte = {
 		...crelte,
-		router: crelte.router._toRequest(req),
-		queries: crelte.queries._toRequest(req),
-		globals: crelte.globals._toRequest(),
+		router: crelte.router.z_toRequest(req),
+		queries: crelte.queries.z_toRequest(req),
+		globals: crelte.globals.z_toRequest(),
 	};
 	return crelteToRequest(nCrelte, req);
 }
@@ -173,13 +173,13 @@ export async function loadFn(
 			'DEV: globals took longer than 2 seconds to load. ' +
 				'Resolving globals now to fix potential deadlocks',
 		);
-		cr.globals._globalsLoaded();
+		cr.globals.z_globalsLoaded();
 	}
 
 	const [_global, [entry, template]] = await loadGlobalDataProm;
 	if (isCanceled()) return;
 
-	cr.globals._globalsLoaded();
+	cr.globals.z_globalsLoaded();
 
 	// loading progress is at 60%
 	loadOpts?.setProgress(0.6);

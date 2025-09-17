@@ -84,8 +84,8 @@ export default class Route extends BaseRoute {
 				scrollY: this.scrollY ?? undefined,
 				index: this.index,
 				origin: this.origin,
-				state: objClone(this._state),
-				context: this._context,
+				state: objClone(this.z_state),
+				context: this.z_context,
 			},
 		);
 	}

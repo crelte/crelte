@@ -103,7 +103,7 @@ export default class ServerRouter {
 	}
 
 	/** @hidden */
-	async _handle(req: Request): Promise<Response | null> {
+	async z_handle(req: Request): Promise<Response | null> {
 		const { params, handlers } = this.inner.find(
 			req.method as Methods,
 			new URL(req.url).pathname,
@@ -126,7 +126,7 @@ export default class ServerRouter {
 		for (const handler of handlers) {
 			const res = await handler(csr);
 			if (res) {
-				csr._finishResponse(res);
+				csr.z_finishResponse(res);
 				return res;
 			}
 		}

@@ -33,7 +33,7 @@ export default class ClientRouter extends BaseRouter {
 			// disable scroll because we will do the scrolling instantly
 			disableScroll: true,
 		});
-		req._fillFromState(window.history.state);
+		req.z_fillFromState(window.history.state);
 
 		window.history.scrollRestoration = 'manual';
 		if (req.scrollY) {
@@ -70,7 +70,7 @@ export default class ClientRouter extends BaseRouter {
 			const scrollY = window.scrollY;
 			if (typeof scrollY === 'number') {
 				current.scrollY = scrollY;
-				window.history.replaceState(current._toState(), '');
+				window.history.replaceState(current.z_toState(), '');
 			}
 		}
 
@@ -89,7 +89,7 @@ export default class ClientRouter extends BaseRouter {
 		return await this.handleRequestAndError(req, route => {
 			const url = route.url;
 			window.history.pushState(
-				route._toState(),
+				route.z_toState(),
 				'',
 				url.pathname + url.search + url.hash,
 			);
@@ -101,7 +101,7 @@ export default class ClientRouter extends BaseRouter {
 
 		return await this.handleRequest(req, route => {
 			window.history.pushState(
-				route._toState(),
+				route.z_toState(),
 				'',
 				url.pathname + url.search + url.hash,
 			);
@@ -114,7 +114,7 @@ export default class ClientRouter extends BaseRouter {
 		try {
 			return await this.handleRequest(req, () => {
 				window.history.replaceState(
-					req._toState(),
+					req.z_toState(),
 					'',
 					url.pathname + url.search + url.hash,
 				);
@@ -194,7 +194,7 @@ export default class ClientRouter extends BaseRouter {
 			if (!e.state?.route) return;
 
 			const req = this.targetToRequest(window.location.href);
-			req._fillFromState(e.state);
+			req.z_fillFromState(e.state);
 			req.origin = 'pop';
 
 			// todo handle errors
@@ -223,7 +223,7 @@ export default class ClientRouter extends BaseRouter {
 			if (!routerRoute || !current.eq(routerRoute)) return;
 
 			// use the latest state
-			window.history.replaceState(routerRoute._toState(), '');
+			window.history.replaceState(routerRoute.z_toState(), '');
 
 			if (current.inLivePreview()) {
 				sessionStorage.setItem(

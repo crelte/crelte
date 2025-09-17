@@ -75,7 +75,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		let thrownError: any = null;
 
 		try {
-			const routeResp = await router._handle(req);
+			const routeResp = await router.z_handle(req);
 			if (routeResp) {
 				await webResponseToResponse(routeResp, res);
 				return;

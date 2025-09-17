@@ -357,7 +357,7 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 		}
 
 		try {
-			const response = await router._handle(req);
+			const response = await router.z_handle(req);
 			if (response) {
 				await webResponseToResponse(response, res);
 				return;
