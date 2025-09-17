@@ -13,7 +13,7 @@ export default class QueriesCaching {
 		this.platform = platform;
 		this.router = cs;
 
-		const enableCaching = !!cs.getEnv('CRAFT_FRONTEND_URL');
+		const enableCaching = cs.getEnv('CACHING') === 'true';
 		const endpointToken = cs.getEnv('ENDPOINT_TOKEN');
 		if (enableCaching) {
 			if (!endpointToken)
