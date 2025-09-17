@@ -3,15 +3,26 @@ import { newError } from './routes.js';
 import ServerRouter from '../ServerRouter.js';
 import { Platform } from '../platform.js';
 
+export type QueriesCachingOptions = {
+	debug?: boolean;
+};
+
+// internal only
 export default class QueriesCaching {
 	private platform: Platform;
 	private cacheDir: string | null;
 	private validBearerToken: string | null;
+	debug: boolean;
 	router: ServerRouter;
 
-	constructor(platform: Platform, cs: ServerRouter) {
+	constructor(
+		platform: Platform,
+		cs: ServerRouter,
+		opts?: QueriesCachingOptions,
+	) {
 		this.platform = platform;
 		this.router = cs;
+		this.debug = !!opts?.debug;
 
 		const enableCaching = cs.getEnv('CACHING') === 'true';
 		const endpointToken = cs.getEnv('ENDPOINT_TOKEN');
@@ -27,6 +38,8 @@ export default class QueriesCaching {
 		} else {
 			this.cacheDir = null;
 			this.validBearerToken = null;
+
+			if (this.debug) console.log('QueriesCaching: caching is disabled');
 		}
 
 		if (enableCaching)

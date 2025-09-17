@@ -34,6 +34,7 @@ export async function initQueryRoutes(
 		);
 	}
 
+	const debugCaching = !!mod?.debugCaching;
 	const modQueries: ModQueries = mod.queries;
 
 	const preRoutes: Map<string, PreRoute> = new Map();
@@ -77,7 +78,9 @@ export async function initQueryRoutes(
 		}
 	}
 
-	const caching = new QueriesCaching(platform, router);
+	const caching = new QueriesCaching(platform, router, {
+		debug: debugCaching,
+	});
 
 	for (const [name, pr] of preRoutes.entries()) {
 		if (!pr.query) throw new Error(`no .graphql file for query ${name}`);

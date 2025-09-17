@@ -108,6 +108,11 @@ export class QueryRoute {
 			return newError(e, 400);
 		}
 
+		let logInfo: string | null = null;
+		if (caching.debug) {
+			logInfo = `[queries: ${this.name}] vars: ${JSON.stringify(vars)}`;
+		}
+
 		let previewToken: string | null = null;
 		let siteToken: string | null = null;
 
@@ -124,6 +129,8 @@ export class QueryRoute {
 		if (useCache) {
 			cacheKey = await calcKey({ name: this.name, ...vars });
 			const cached = await caching.getCache(cacheKey);
+
+			if (logInfo) console.log(`${logInfo} ${cached ? 'hit' : 'miss'}`);
 
 			// we found something in the cache
 			if (cached) return Response.json(cached);
@@ -185,9 +192,12 @@ export class QueryRoute {
 		if (cacheKey && this.cacheIfFn?.(jsonResp.data, vars)) {
 			try {
 				await caching.setCache(cacheKey, jsonResp);
+				if (logInfo) console.log(logInfo + ' set cache');
 			} catch (e) {
 				console.error('could not cache gql response', e);
 			}
+		} else {
+			if (logInfo) console.warn('!! ' + logInfo + ' caching not allowed');
 		}
 
 		return Response.json(jsonResp, { headers: respHeaders });
