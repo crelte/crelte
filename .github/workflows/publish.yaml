@@ -3,7 +3,7 @@ name: Publish Package
 on:
   push:
     tags:
-      - '*@v*.*.*' # Trigger on tags like core@v1.0.1, std@v1.2.0, node@v1.3.0
+      - "*@v*.*.*" # Trigger on tags like crelte@v1.0.1, cli@v1.2.0
 
 jobs:
   publish:
@@ -22,7 +22,7 @@ jobs:
       - name: Parse Tag
         id: parse_tag
         run: |
-          # Extract the tag name (e.g., core@v1.2.0)
+          # Extract the tag name (e.g., crelte@v1.2.0)
           TAG_NAME="${GITHUB_REF##*/}"
           PACKAGE_SHORT_NAME="${TAG_NAME%@*}"
           VERSION="${TAG_NAME#*@}"
@@ -33,8 +33,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

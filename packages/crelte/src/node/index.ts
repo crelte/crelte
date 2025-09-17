@@ -16,12 +16,8 @@ import {
 	readFile,
 	requestToWebRequest,
 	webResponseToResponse,
+	writeFile,
 } from './utils.js';
-
-async function writeFile(path: string, data: string): Promise<void> {
-	// maybe not necessary
-	return await fs.writeFile(path, data, 'utf-8');
-}
 
 function localDir(...args: string[]) {
 	return join(path.dirname(fileURLToPath(import.meta.url)), ...args);

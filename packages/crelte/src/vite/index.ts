@@ -178,7 +178,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 					// embedd all our packages
 					// this ensure that if you wan't you could deploy the dist folder
 					// without the need for anything else
-					noExternal: ['crelte-std', 'crelte', 'crelte-node'],
+					noExternal: ['crelte-std', 'crelte'],
 				},
 			};
 
@@ -212,7 +212,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 			if (id.endsWith('/src/serverNode.js')) {
 				return (
 					`import * as server from './server.js';` +
-					`import createServer from 'crelte-node/node';` +
+					`import createServer from 'crelte/node';` +
 					`createServer(server, ${Date.now()});`
 				);
 			}
