@@ -4,6 +4,8 @@ export const vars = {
 	any: (): QueryVar<any> => new QueryVar(),
 	number: (): QueryVar<number> => new QueryVar().number(),
 	string: (): QueryVar<string> => new QueryVar().string(),
+	id: (): QueryVar<number> => new QueryVar().id(),
+	ids: (): QueryVar<number[]> => new QueryVar().ids(),
 	siteId: (): QueryVar<number> =>
 		new QueryVar()
 			.number()
@@ -18,7 +20,7 @@ export type ValidIf<T> = (v: T, cs: ServerRouter) => boolean;
 
 export class QueryVar<T = any> {
 	private name: string | null;
-	private type: 'any' | 'string' | 'number';
+	private type: 'any' | 'string' | 'number' | 'id' | 'ids';
 	private flagNullable: boolean;
 	private validIfFn: ValidIf<T>;
 
@@ -37,6 +39,42 @@ export class QueryVar<T = any> {
 	number(): QueryVar<number> {
 		this.type = 'number';
 		return this as unknown as QueryVar<number>;
+	}
+
+	/**
+	 * Id is almost the same as number but will also parse
+	 * strings, but only allow non negative integers
+	 *
+	 * ## Warning
+	 * Ids are not automatically safe to be cached
+	 * you need to validate the response to make sure filters
+	 * with this id returned something
+	 */
+	id(): QueryVar<number> {
+		this.type = 'id';
+		return this as unknown as QueryVar<number>;
+	}
+
+	/**
+	 * Ids is an array of ids
+	 * it will also convert a single id to an array with one element
+	 * the returned array will **never be empty**, but might be null if
+	 * allowed. Id's are always non negative integers
+	 *
+	 * ## Warning
+	 * Ids are not automatically safe to be cached, it is also not
+	 * enough to just check if the filter returned some results.
+	 * Since for example a `relatedTo` filter works like an `or` and
+	 * not an `and` meaning if you request ids `[1,2,3]` and
+	 * only 1 and 3 have related entries you will get results
+	 * even though id 2 did not return anything.
+	 *
+	 * To mitigate this you could do a second query with the filtered
+	 * ids in the field, and check if the return matches the length.
+	 */
+	ids(): QueryVar<number[]> {
+		this.type = 'ids';
+		return this as unknown as QueryVar<number[]>;
 	}
 
 	nullable(): QueryVar<T | null> {
@@ -80,6 +118,37 @@ export class QueryVar<T = any> {
 					throw new Error(`variable ${this.name} is not a number`);
 				break;
 
+			case 'id':
+				if (typeof v === 'string') v = parseInt(v);
+
+				if (!isValidId(v))
+					throw new Error(`variable ${this.name} is not a valid id`);
+				break;
+
+			case 'ids':
+				if (typeof v === 'string' || typeof v === 'number') v = [v];
+
+				if (!Array.isArray(v))
+					throw new Error(
+						`variable ${this.name} is not an id or a list of ids`,
+					);
+
+				if (v.length <= 0) {
+					if (this.flagNullable) return null;
+					throw new Error(
+						`variable ${this.name} is not allowed to be empty`,
+					);
+				}
+
+				// convert strings to numbers
+				v = v.map(v => (typeof v === 'string' ? parseInt(v) : v));
+
+				if (!v.every(isValidId))
+					throw new Error(
+						`variable ${this.name} is not a list of valid ids`,
+					);
+				break;
+
 			default:
 				throw new Error('uknown type ' + this.type);
 		}
@@ -104,4 +173,9 @@ export class QueryVar<T = any> {
 
 export function isQueryVar(v: any): v is QueryVar {
 	return v && typeof v === 'object' && typeof v.__QueryVar__ === 'function';
+}
+
+// does not do string to number conversion
+function isValidId(id: any): boolean {
+	return typeof id === 'number' && Number.isInteger(id) && id >= 0;
 }

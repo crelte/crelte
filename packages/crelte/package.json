@@ -40,10 +40,6 @@
 			"types": "./dist/server/index.d.ts",
 			"default": "./dist/server/index.js"
 		},
-		"./server/queries": {
-			"types": "./dist/server/queries/index.d.ts",
-			"default": "./dist/server/queries/index.js"
-		},
 		"./vite": {
 			"types": "./dist/vite/index.d.ts",
 			"default": "./dist/vite/index.js"
