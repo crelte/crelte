@@ -2,6 +2,7 @@ import { Cookies } from '../cookies/index.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Request, Site } from '../routing/index.js';
+import { urlWithPath } from '../utils.js';
 import ServerRequest from './Request.js';
 
 export type CrelteServerRequestOptions = {
@@ -84,9 +85,30 @@ export default class CrelteServerRequest {
 	 */
 	getEnv(name: 'ENDPOINT_URL'): string;
 	getEnv(name: 'CRAFT_WEB_URL'): string;
+	getEnv(name: 'FRONTEND_URL'): string;
 	getEnv(name: string): string | null;
 	getEnv(name: string): string | null {
 		return this._env.get(name) ?? null;
+	}
+
+	/**
+	 * returns the frontend url with an optional path
+	 *
+	 * ## Note
+	 * For the origin the `FRONTEND_URL` env variable is used
+	 */
+	frontendUrl(path?: string): URL {
+		return urlWithPath(this.getEnv('FRONTEND_URL'), path);
+	}
+
+	/**
+	 * returns the backend url with an optional path
+	 *
+	 * ## Note
+	 * For the origin the `ENDPOINT_URL` env variable is used
+	 */
+	backendUrl(path?: string): URL {
+		return urlWithPath(this.getEnv('ENDPOINT_URL'), path);
 	}
 
 	/**
