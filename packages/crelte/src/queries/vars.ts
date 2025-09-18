@@ -22,6 +22,8 @@ export const vars = {
 	 * the returned array will **never be empty**, but might be null if
 	 * allowed. Id's are always non negative integers
 	 *
+	 * The numbers are always unique and sorted in ascending order
+	 *
 	 * ## Warning
 	 * Ids are not automatically safe to be cached, it is also not
 	 * enough to just check if the filter returned some results.
