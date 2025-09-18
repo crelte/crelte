@@ -4,8 +4,37 @@ export const vars = {
 	any: (): QueryVar<any> => new QueryVar(),
 	number: (): QueryVar<number> => new QueryVar().number(),
 	string: (): QueryVar<string> => new QueryVar().string(),
+
+	/**
+	 * Id is almost the same as number but will also parse
+	 * strings, but only allow non negative integers
+	 *
+	 * ## Warning
+	 * Ids are not automatically safe to be cached
+	 * you need to validate the response to make sure filters
+	 * with this id returned something
+	 */
 	id: (): QueryVar<number> => new QueryVar().id(),
+
+	/**
+	 * Ids is an array of ids
+	 * it will also convert a single id to an array with one element
+	 * the returned array will **never be empty**, but might be null if
+	 * allowed. Id's are always non negative integers
+	 *
+	 * ## Warning
+	 * Ids are not automatically safe to be cached, it is also not
+	 * enough to just check if the filter returned some results.
+	 * Since for example a `relatedTo` filter works like an `or` and
+	 * not an `and` meaning if you request ids `[1,2,3]` and
+	 * only 1 and 3 have related entries you will get results
+	 * even though id 2 did not return anything.
+	 *
+	 * To mitigate this you could do a second query with the filtered
+	 * ids in the field, and check if the return matches the length.
+	 */
 	ids: (): QueryVar<number[]> => new QueryVar().ids(),
+
 	siteId: (): QueryVar<number> =>
 		new QueryVar()
 			.number()
@@ -41,37 +70,11 @@ export class QueryVar<T = any> {
 		return this as unknown as QueryVar<number>;
 	}
 
-	/**
-	 * Id is almost the same as number but will also parse
-	 * strings, but only allow non negative integers
-	 *
-	 * ## Warning
-	 * Ids are not automatically safe to be cached
-	 * you need to validate the response to make sure filters
-	 * with this id returned something
-	 */
 	id(): QueryVar<number> {
 		this.type = 'id';
 		return this as unknown as QueryVar<number>;
 	}
 
-	/**
-	 * Ids is an array of ids
-	 * it will also convert a single id to an array with one element
-	 * the returned array will **never be empty**, but might be null if
-	 * allowed. Id's are always non negative integers
-	 *
-	 * ## Warning
-	 * Ids are not automatically safe to be cached, it is also not
-	 * enough to just check if the filter returned some results.
-	 * Since for example a `relatedTo` filter works like an `or` and
-	 * not an `and` meaning if you request ids `[1,2,3]` and
-	 * only 1 and 3 have related entries you will get results
-	 * even though id 2 did not return anything.
-	 *
-	 * To mitigate this you could do a second query with the filtered
-	 * ids in the field, and check if the return matches the length.
-	 */
 	ids(): QueryVar<number[]> {
 		this.type = 'ids';
 		return this as unknown as QueryVar<number[]>;
