@@ -20,10 +20,16 @@ export default class Events {
 	 * ## loadEntry
 	 * This will execute all listeners in sequence and stop on the first one
 	 * which returns an entry.
+	 * Will be executed in preload as well.
 	 *
 	 * ## beforeQueryEntry
 	 * This allows to modify the entry query variables before the entry query
 	 * is executed.
+	 * Will be executed in preload as well.
+	 *
+	 *
+	 * ## afterLoadEntry
+	 * Will be executed in preload as well.
 	 *
 	 * @returns a function to remove the listener
 	 */

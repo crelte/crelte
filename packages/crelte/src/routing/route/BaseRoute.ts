@@ -16,6 +16,7 @@ export type BaseRouteOptions = {
  *
  * - `'init'`: is set on the first page load
  * - `'manual'`: is set when a route is triggered manually via `Router.open`
+ * - `'preload'`: is set when a route is preloaded via `Router.preload`
  * - `'click'`: is set when a route is triggered by a click event
  * - `'pop'`: is set when a route is triggered by a popstate event (back/forward)
  * - `'replace'`: is set when a route is replaced via `Router.replaceState`
@@ -27,6 +28,7 @@ export type BaseRouteOptions = {
 export type RouteOrigin =
 	| 'init'
 	| 'manual'
+	| 'preload'
 	| 'click'
 	| 'pop'
 	| 'replace'
@@ -46,9 +48,9 @@ export default class BaseRoute {
 	 * The site of the route
 	 *
 	 * ## Note
-	 * The site might not always match with the current route
-	 * but be the site default site or one that matches the
-	 * users language.
+	 * In the `beforeRequest` event the site might not match
+	 * the url and could be the default site or one that matches
+	 * the users language.
 	 *
 	 * If that is important call `route.siteMatches()` to verify
 	 */

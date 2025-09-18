@@ -232,13 +232,15 @@ export default class BaseRouter {
 	}
 
 	async preload(target: string | URL | Route | Request) {
-		const req = this.targetToRequest(target);
+		const req = this.targetToRequest(target, { origin: 'preload' });
 		const current = this.route.get();
 
 		// if the origin matches, the route will be able to be load
 		// so let's preload it
 		if (current && current.url.origin === req.url.origin) {
 			// todo i don't wan't to send a CrelteRequest?
+			// todo, it would be nice if this could not have any side effects
+			// but at the moment cr.router.open will cause a redirect
 			this.loadRunner.preload(this.onNewCrelteRequest(req));
 		}
 	}
@@ -246,7 +248,7 @@ export default class BaseRouter {
 	cancelRequest() {
 		// destroy the old request
 		if (this.request) {
-			this.request.z_cancel();
+			this.request.cancel();
 			this.request = null;
 		}
 	}

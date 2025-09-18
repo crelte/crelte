@@ -1,7 +1,7 @@
 /**
  * `parseAcceptLang('fr-CH, en;q=0.7, fr;q=0.8')` will return `[['fr-CH', 1], ['fr', 0.8], ['en', 0.7]]`
  */
-export function parseAcceptLang(acceptLang: string): [string, number][] {
+export function parseAcceptLanguage(acceptLang: string): [string, number][] {
 	return acceptLang
 		.split(',')
 		.map(d => {

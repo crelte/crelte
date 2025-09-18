@@ -136,6 +136,14 @@ export default class Request extends BaseRoute {
 	}
 
 	/**
+	 * Cancel this request
+	 */
+	cancel() {
+		this._cancelled = true;
+		this.z_renderBarrier.cancel();
+	}
+
+	/**
 	 * Create a copy of the request
 	 *
 	 * without including the entry, template, loadedData or cancelled state
@@ -220,12 +228,6 @@ export default class Request extends BaseRoute {
 			this.disableLoadData,
 		);
 		this.statusCode = orDef(opts.statusCode, this.statusCode);
-	}
-
-	/** @hidden */
-	z_cancel() {
-		this._cancelled = true;
-		this.z_renderBarrier.cancel();
 	}
 }
 

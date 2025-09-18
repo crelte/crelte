@@ -3,7 +3,7 @@ import { Request, RequestOptions } from '../index.js';
 import Route from '../route/Route.js';
 import Site, { SiteFromGraphQl } from '../Site.js';
 import { preferredSite } from '../utils.js';
-import { parseAcceptLang } from '../../std/intl/index.js';
+import { parseAcceptLanguage } from '../../std/intl/index.js';
 
 export default class ServerRouter extends BaseRouter {
 	private prefSite: Site | null;
@@ -14,7 +14,7 @@ export default class ServerRouter extends BaseRouter {
 		acceptLang: string,
 		opts: BaseRouterOptions,
 	) {
-		const langs = parseAcceptLang(acceptLang).map(([l]) => l);
+		const langs = parseAcceptLanguage(acceptLang).map(([l]) => l);
 		super(sites, langs, opts);
 
 		this.prefSite = preferredSite(this.sites, this.languages);

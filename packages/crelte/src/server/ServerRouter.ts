@@ -5,7 +5,7 @@ import { SiteFromGraphQl } from './shared.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Site } from '../routing/index.js';
 import { SsrCache } from '../ssr/index.js';
-import { parseAcceptLang } from '../std/intl/index.js';
+import { parseAcceptLanguage } from '../std/intl/index.js';
 import { siteFromUrl } from '../routing/Site.js';
 import { preferredSite } from '../routing/utils.js';
 
@@ -120,7 +120,7 @@ export default class ServerRouter {
 		);
 		if (!handlers.length) return null;
 
-		const languages = parseAcceptLang(
+		const languages = parseAcceptLanguage(
 			req.headers.get('accept-language') ?? '',
 		).map(([l]) => l);
 		const prefSite = preferredSite(this._sites, languages);

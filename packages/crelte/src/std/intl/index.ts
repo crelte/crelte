@@ -1,1 +1,1 @@
-export { parseAcceptLang, matchLanguages } from './acceptLang.js';
+export { parseAcceptLanguage, matchLanguages } from './acceptLang.js';
