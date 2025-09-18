@@ -187,7 +187,7 @@ export default class BaseRouter {
 		// strip stuff we dont need from url
 		const req = new Request(fullUrl, null!);
 
-		const site = siteFromUrl(req.url, this.sites);
+		const site = siteFromUrl(this.sites, req.url);
 
 		// todo should we throw if we can't find a site
 		// or use the site which matches the language

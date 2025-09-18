@@ -5,6 +5,9 @@ import { SiteFromGraphQl } from './shared.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Site } from '../routing/index.js';
 import { SsrCache } from '../ssr/index.js';
+import { parseAcceptLang } from '../std/intl/index.js';
+import { siteFromUrl } from '../routing/Site.js';
+import { preferredSite } from '../routing/utils.js';
 
 export type Handler = (
 	csr: CrelteServerRequest,
@@ -86,6 +89,13 @@ export default class ServerRouter {
 	}
 
 	/**
+	 * Returns the primary site
+	 */
+	primarySite(): Site {
+		return this._sites.find(s => s.primary) ?? this._sites[0];
+	}
+
+	/**
 	 * Run a Queries Query
 	 *
 	 * @param query the default export from a graphql file or the gql`query {}`
@@ -108,20 +118,40 @@ export default class ServerRouter {
 			req.method as Methods,
 			new URL(req.url).pathname,
 		);
-
-		const nReq = new ServerRequest(req, new Map(Object.entries(params)));
-
 		if (!handlers.length) return null;
 
-		const csr = new CrelteServerRequest(
-			this.env,
-			this.sites,
-			// we create a new Queries here, because each request should have its own SsrCache
-			Queries.new(this.endpointUrl, this.frontendUrl, new SsrCache(), {
-				bearerToken: this.endpointToken,
-			}),
-			nReq,
+		const languages = parseAcceptLang(
+			req.headers.get('accept-language') ?? '',
+		).map(([l]) => l);
+		const prefSite = preferredSite(this._sites, languages);
+		const site =
+			siteFromUrl(this._sites, new URL(req.url)) ??
+			prefSite ??
+			this.primarySite();
+
+		const nReq = new ServerRequest(
+			req,
+			new Map(Object.entries(params)),
+			site,
 		);
+
+		// we create a new Queries here, because each request should have its own SsrCache
+		const queries = Queries.new(
+			this.endpointUrl,
+			this.frontendUrl,
+			new SsrCache(),
+			{
+				bearerToken: this.endpointToken,
+			},
+		);
+
+		const csr = new CrelteServerRequest(nReq, {
+			env: this.env,
+			sites: this.sites,
+			languages,
+			preferredSite: prefSite,
+			queries,
+		});
 
 		for (const handler of handlers) {
 			const res = await handler(csr);

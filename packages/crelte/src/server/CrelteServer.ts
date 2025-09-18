@@ -2,10 +2,15 @@ import { Cookies } from '../cookies/index.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Request, Site } from '../routing/index.js';
-import { siteFromUrl } from '../routing/Site.js';
-import { preferredSite } from '../routing/utils.js';
-import { parseAcceptLang } from '../std/intl/index.js';
 import ServerRequest from './Request.js';
+
+export type CrelteServerRequestOptions = {
+	env: Map<string, string>;
+	sites: Site[];
+	languages: string[];
+	preferredSite: Site | null;
+	queries: Queries;
+};
 
 export default class CrelteServerRequest {
 	/**
@@ -16,28 +21,34 @@ export default class CrelteServerRequest {
 	private _env: Map<string, string>;
 	private prefSite: Site | null;
 	private _sites: Site[];
+	private _langs: string[];
 	private _queries: Queries;
 	protected _cookies: Cookies;
 
-	constructor(
-		env: Map<string, string>,
-		sites: Site[],
-		queries: Queries,
-		req: ServerRequest,
-	) {
-		this._env = env;
-		this._sites = sites;
-
-		const langs = parseAcceptLang(
-			req.headers.get('accept-language') ?? '',
-		).map(([l]) => l);
-		this.prefSite = preferredSite(this.sites, langs);
-
-		this._queries = queries.z_toRequest(
-			new Request(new URL(req.url), this.prefSite ?? this.primarySite()),
-		);
+	constructor(req: ServerRequest, opts: CrelteServerRequestOptions) {
 		this.req = req;
+
+		this._env = opts.env;
+		this._sites = opts.sites;
+		this._langs = opts.languages;
+		this.prefSite = opts.preferredSite;
+
+		this._queries = opts.queries.z_toRequest(
+			new Request(new URL(req.url), req.site),
+		);
 		this._cookies = new ServerCookies(req.headers);
+	}
+
+	/**
+	 * Easy access to this.req.site
+	 *
+	 * ## Note
+	 * The site might not always match with the current route
+	 * but be the site default site or one that matches the
+	 * users language.
+	 */
+	get site(): Site {
+		return this.req.site;
 	}
 
 	/**
@@ -59,6 +70,13 @@ export default class CrelteServerRequest {
 	 */
 	get sites(): Site[] {
 		return this._sites;
+	}
+
+	/**
+	 * The languages which are preferred by the user
+	 */
+	get preferredLanguages(): string[] {
+		return this._langs;
 	}
 
 	/**
@@ -85,15 +103,6 @@ export default class CrelteServerRequest {
 	 */
 	preferredSite(): Site | null {
 		return this.prefSite;
-	}
-
-	/**
-	 * Get the site from a url
-	 */
-	siteFromUrl(url: string | URL): Site | null {
-		url = typeof url === 'string' ? new URL(url) : url;
-
-		return siteFromUrl(url, this.sites);
 	}
 
 	/**

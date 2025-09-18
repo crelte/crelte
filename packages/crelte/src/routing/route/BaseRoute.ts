@@ -309,9 +309,6 @@ export default class BaseRoute {
 	siteMatches(): boolean {
 		if (this.url.origin !== this.site.url.origin) return false;
 
-		// now we need to validate the pathname we should make sure both end with a slash
-		// todo can we do this better?
-
 		// make sure that urls like pathname: /abcbc and site: /abc don't match
 		return (this.url.pathname + '/').startsWith(
 			// uri never returns a slash at the end

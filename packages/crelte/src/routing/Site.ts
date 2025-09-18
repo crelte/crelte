@@ -64,7 +64,7 @@ export default class Site {
 	}
 }
 
-export function siteFromUrl(url: URL, sites: Site[]): Site | null {
+export function siteFromUrl(sites: Site[], url: URL): Site | null {
 	let site: Site | null = null;
 	// get the site which matches the url the most
 	for (const s of sites) {
