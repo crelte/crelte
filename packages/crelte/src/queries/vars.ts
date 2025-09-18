@@ -150,6 +150,9 @@ export class QueryVar<T = any> {
 					throw new Error(
 						`variable ${this.name} is not a list of valid ids`,
 					);
+
+				// make unique and sort by number
+				v = Array.from(new Set(v as number[])).sort((a, b) => a - b);
 				break;
 
 			default:
@@ -179,6 +182,6 @@ export function isQueryVar(v: any): v is QueryVar {
 }
 
 // does not do string to number conversion
-function isValidId(id: any): boolean {
+function isValidId(id: any): id is number {
 	return typeof id === 'number' && Number.isInteger(id) && id >= 0;
 }
