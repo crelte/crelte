@@ -3,6 +3,7 @@ import BaseRouter, { BaseRouterOptions } from './BaseRouter.js';
 import { Request, RequestOptions } from '../index.js';
 import Route from '../route/Route.js';
 import { SiteFromGraphQl } from '../Site.js';
+import { shouldInterceptClick } from '../utils.js';
 
 export type ClientRouterOptions = {
 	preloadOnMouseOver: boolean;
@@ -145,15 +146,14 @@ export default class ClientRouter extends BaseRouter {
 		window.addEventListener('click', async e => {
 			// @ts-ignore
 			const link = e.target.closest('a');
-			const openInNewTab = e.metaKey || e.ctrlKey || e.shiftKey;
-			const saveLink = e.altKey;
-			if (!link || !link.href || openInNewTab || saveLink) return;
-			if (link.target.toLowerCase() === '_blank') return;
-			if (!link.href.startsWith('http')) return;
+			if (!shouldInterceptClick(e, link)) return;
 
 			e.preventDefault();
 
-			const req = this.targetToRequest(link.href, { origin: 'click' });
+			const req = this.targetToRequest(link.href, {
+				origin: 'click',
+				context: { ...link.dataset },
+			});
 			const currRoute = this.route.get();
 			const routeEq =
 				currRoute && currRoute.eqUrl(req) && currRoute.eqSearch(req);

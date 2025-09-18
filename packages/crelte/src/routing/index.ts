@@ -6,6 +6,7 @@ import Request, {
 } from './route/Request.js';
 import Site from './Site.js';
 import BaseRoute from './route/BaseRoute.js';
+import { shouldInterceptClick } from './utils.js';
 
 export {
 	Router,
@@ -17,4 +18,5 @@ export {
 	Request,
 	DelayRender,
 	RequestOptions,
+	shouldInterceptClick,
 };
