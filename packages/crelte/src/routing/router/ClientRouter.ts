@@ -13,7 +13,7 @@ export default class ClientRouter extends BaseRouter {
 	private scrollDebounceTimeout: any | null;
 	private preloadOnMouseOver: boolean;
 
-	onError: (e: any) => void;
+	onError: (e: any, req: Request) => void;
 
 	constructor(sites: SiteFromGraphQl[], opts: ClientRouterOptions) {
 		super(sites, navigator.languages.slice(), opts);
@@ -138,7 +138,7 @@ export default class ClientRouter extends BaseRouter {
 			return await this.handleRequest(req, updateHistory);
 		} catch (e) {
 			console.error('request failed', e);
-			this.onError(e);
+			this.onError(e, req);
 		}
 	}
 

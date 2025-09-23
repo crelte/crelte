@@ -124,11 +124,11 @@ export async function main(data: MainData) {
 		});
 	};
 
-	router.onError = e => {
+	router.onError = (e, req) => {
 		console.error('routing failed:', e, 'reloading trying to fix it');
 		// since onError is called only on subsequent requests we should never
 		// have an infinite loop here
-		window.location.reload();
+		window.location.href = req.url.href;
 	};
 
 	router.onRender = async (cr, readyForRoute, domUpdated) => {
