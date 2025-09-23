@@ -124,7 +124,7 @@ export class QueryVar<T = any> {
 				break;
 
 			case 'id':
-				if (typeof v === 'string') v = parseInt(v);
+				if (typeof v === 'string') v = Number(v);
 
 				if (!isValidId(v))
 					throw new Error(`variable ${this.name} is not a valid id`);
@@ -146,7 +146,7 @@ export class QueryVar<T = any> {
 				}
 
 				// convert strings to numbers
-				v = v.map(v => (typeof v === 'string' ? parseInt(v) : v));
+				v = v.map(Number);
 
 				if (!v.every(isValidId))
 					throw new Error(
@@ -186,4 +186,20 @@ export function isQueryVar(v: any): v is QueryVar {
 // does not do string to number conversion
 function isValidId(id: any): id is number {
 	return typeof id === 'number' && Number.isInteger(id) && id >= 0;
+}
+
+/**
+ * Checks if two id arrays are equal
+ *
+ * The first argument should come from a `vars.ids()` variable.
+ * The second argument should come from a query, where the output is trusted.
+ */
+export function idsEqual(a: number[], b: (string | number)[]): boolean {
+	let nb = b.map(Number);
+
+	if (a.length !== nb.length) return false;
+
+	nb = nb.sort((a, b) => a - b);
+
+	return a.every((v, i) => v === nb[i]);
 }
