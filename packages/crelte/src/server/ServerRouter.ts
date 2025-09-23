@@ -121,7 +121,7 @@ export default class ServerRouter {
 		if (!handlers.length) return null;
 
 		const languages = parseAcceptLanguage(
-			req.headers.get('accept-language') ?? '',
+			req.headers.get('Accept-Language') ?? '',
 		).map(([l]) => l);
 		const prefSite = preferredSite(this._sites, languages);
 		const site =

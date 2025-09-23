@@ -104,6 +104,10 @@ export class QueryRoute {
 		try {
 			const reqVars = await csr.req.json();
 			vars = this.validateVars(reqVars, caching.router);
+			if ('qName' in vars || 'xCraftSite' in vars)
+				throw new Error(
+					'qName and xCraftSite are reserved variable names',
+				);
 		} catch (e) {
 			return newError(e, 400);
 		}
@@ -124,10 +128,13 @@ export class QueryRoute {
 			siteToken = reqSearch.get('siteToken');
 		}
 
+		// check for x-craft-site header and pass it on
+		const xCraftSite = csr.req.headers.get('X-Craft-Site');
+
 		let cacheKey: string | null = null;
 		const useCache = !previewToken && caching.isEnabled();
 		if (useCache) {
-			cacheKey = await calcKey({ name: this.name, ...vars });
+			cacheKey = await calcKey({ ...vars, qName: this.name, xCraftSite });
 			const cached = await caching.getCache(cacheKey);
 
 			if (logInfo) console.log(`${logInfo} ${cached ? 'hit' : 'miss'}`);
@@ -150,6 +157,8 @@ export class QueryRoute {
 		const xDebug = csr.req.headers.get('X-Debug');
 		if (xDebug) headers['X-Debug'] = xDebug;
 
+		if (xCraftSite) headers['X-Craft-Site'] = xCraftSite;
+
 		// now execute the gql request
 		let resp: Response;
 		try {
@@ -170,7 +179,7 @@ export class QueryRoute {
 		}
 
 		const respHeaders: Record<string, string> = {};
-		const xDebugLink = resp.headers.get('x-debug-link');
+		const xDebugLink = resp.headers.get('X-Debug-Link');
 		if (xDebugLink) respHeaders['X-Debug'] = xDebugLink;
 
 		let jsonResp: Record<string, any>;

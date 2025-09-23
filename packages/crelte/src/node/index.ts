@@ -66,9 +66,9 @@ export default async function createServer(serverMod: any, buildTime: string) {
 
 		// todo this is not safe if we are not in a trusted environment
 		const baseUrl =
-			(nReq.headers['x-forwarded-proto'] ?? 'http') +
+			(nReq.headers['X-Forwarded-Proto'] ?? 'http') +
 			'://' +
-			nReq.headers['host'];
+			nReq.headers['Host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
@@ -161,7 +161,7 @@ async function servePublic(
 		if (!fileStat.isFile()) return false;
 
 		// If client’s ETag matches our global ETag, respond with 304
-		if (req.headers['if-none-match'] === globalEtag) {
+		if (req.headers['If-None-Match'] === globalEtag) {
 			res.statusCode = 304;
 			res.end();
 			return true;
@@ -213,7 +213,7 @@ async function basicAuthCheck(
 	// ignore if one information is missing
 	if (!user || !password) return false;
 
-	const authHeader = req.headers['authorization'];
+	const authHeader = req.headers['Authorization'];
 
 	if (!authHeader || !authHeader.startsWith('Basic ')) {
 		res.statusCode = 401;

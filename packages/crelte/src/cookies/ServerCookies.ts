@@ -10,7 +10,7 @@ export default class ServerCookies implements Cookies {
 	setCookies: Map<string, SetCookie>;
 
 	constructor(headers: Headers) {
-		this.requestCookies = parseCookies(headers.get('cookie') ?? '');
+		this.requestCookies = parseCookies(headers.get('Cookie') ?? '');
 		this.setCookies = new Map();
 	}
 
@@ -35,7 +35,7 @@ export default class ServerCookies implements Cookies {
 
 	_populateHeaders(headers: Headers) {
 		for (const setCookie of this.setCookies.values()) {
-			headers.append('set-cookie', setCookieToString(setCookie));
+			headers.append('Set-Cookie', setCookieToString(setCookie));
 		}
 	}
 }

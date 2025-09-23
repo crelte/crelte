@@ -219,7 +219,7 @@ export async function modRenderError(
 	req: Request,
 	opts: ModRenderOptions = {},
 ): Promise<Response> {
-	const acceptLang = req.headers.get('accept-language') ?? null;
+	const acceptLang = req.headers.get('Accept-Language') ?? null;
 
 	// in the case of an error let's try to render a nice Error Page
 	const error = {

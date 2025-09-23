@@ -304,8 +304,8 @@ class Inner {
 			);
 		}
 
-		if (resp.headers.get('x-debug-link'))
-			console.log('Debug link', resp.headers.get('x-debug-link'));
+		if (resp.headers.get('X-Debug-Link'))
+			console.log('Debug link', resp.headers.get('X-Debug-Link'));
 
 		if (timing) {
 			console.log(

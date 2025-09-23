@@ -73,7 +73,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 	ssrCache.set('crelteSites', data.serverData.sites);
 	const router = new ServerRouter(
 		data.serverData.sites,
-		data.serverData.headers.get('accept-language') ?? '',
+		data.serverData.headers.get('Accept-Language') ?? '',
 		{ debugTiming: config.debugTiming ?? false },
 	);
 

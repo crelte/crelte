@@ -323,7 +323,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 async function serveVite(env: EnvData, vite: ViteDevServer) {
 	vite.middlewares.use(async (nReq, res, next) => {
 		const protocol = vite.config.server.https ? 'https' : 'http';
-		const baseUrl = protocol + '://' + nReq.headers['host'];
+		const baseUrl = protocol + '://' + nReq.headers['Host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
