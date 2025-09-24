@@ -6,7 +6,7 @@ import Queries, {
 } from '../queries/Queries.js';
 import { gql } from './gql.js';
 import QueryError from './QueryError.js';
-import { QueryVar, ValidIf, vars } from './vars.js';
+import { QueryVar, ValidIf, vars, varsIdsEqual } from './vars.js';
 
 export {
 	Queries,
@@ -19,6 +19,7 @@ export {
 	vars,
 	type ValidIf,
 	QueryVar,
+	varsIdsEqual,
 };
 
 type InferQueryVarType<T> = T extends QueryVar<infer U> ? U : never;

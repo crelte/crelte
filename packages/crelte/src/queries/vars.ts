@@ -124,7 +124,7 @@ export class QueryVar<T = any> {
 				break;
 
 			case 'id':
-				if (typeof v === 'string') v = parseInt(v);
+				if (typeof v === 'string') v = Number(v);
 
 				if (!isValidId(v))
 					throw new Error(`variable ${this.name} is not a valid id`);
@@ -146,7 +146,7 @@ export class QueryVar<T = any> {
 				}
 
 				// convert strings to numbers
-				v = v.map(v => (typeof v === 'string' ? parseInt(v) : v));
+				v = v.map(Number);
 
 				if (!v.every(isValidId))
 					throw new Error(
@@ -186,4 +186,51 @@ export function isQueryVar(v: any): v is QueryVar {
 // does not do string to number conversion
 function isValidId(id: any): id is number {
 	return typeof id === 'number' && Number.isInteger(id) && id >= 0;
+}
+
+/**
+ * Checks if two id arrays are equal
+ *
+ * The first argument needs to come from a `vars.ids()` variable.
+ * The second argument should come from a query, where the output is trusted.
+ *
+ * ## Example
+ * ```
+ * export const variables = {
+ *     categories: vars.ids()
+ * };
+ *
+ * export const caching: Caching<typeof variables> = (res, vars) => {
+ *     // res is the graphql response
+ *     return varsIdsEqual(vars.categories, res.categories);
+ * };
+ * ```
+ *
+ * ## Note
+ * The following cases are considered equal:
+ * ```
+ * varsIdsEqual(null, null);
+ * varsIdsEqual([], null);
+ * varsIdsEqual([1,2], ['2',1]);
+ * ```
+ * These are not equal:
+ * ```
+ * varsIdsEqual([1], null);
+ * varsIdsEqual([2,1], [2,1]); // because the second arg gets ordered
+ * ```
+ */
+export function varsIdsEqual(
+	a: number[] | null | undefined,
+	b: (string | number)[] | null | undefined,
+): boolean {
+	const aEmpty = !a?.length;
+	const bEmpty = !b?.length;
+	if (aEmpty && bEmpty) return true;
+	if (aEmpty || bEmpty) return false;
+
+	if (a.length !== b.length) return false;
+
+	const nb = b.map(Number).sort((a, b) => a - b);
+
+	return a.every((v, i) => v === nb[i]);
 }
