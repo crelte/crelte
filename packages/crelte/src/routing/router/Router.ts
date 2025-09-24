@@ -16,8 +16,6 @@ import { Entry } from '../../loadData/index.js';
  */
 export type UpdateRequest = (req: Request) => boolean | null | undefined | void;
 
-// Todo this router should be stateful like globals
-// allow to reference the correct route or request
 export default class Router {
 	private inner: BaseRouter;
 	private _request: Request | null;
@@ -308,6 +306,7 @@ export default class Router {
 	 * On the server this will always return false
 	 */
 	canGoBack(): boolean {
+		// todo should this be dependent on the current request?
 		return this.inner.canGoBack();
 	}
 
@@ -317,6 +316,7 @@ export default class Router {
 	 * On the server this throw an error
 	 */
 	back() {
+		// todo should this be dependent on the current request?
 		this.inner.back();
 	}
 

@@ -198,37 +198,35 @@ export default class BaseRouter {
 
 	/** You are not allowed to pass in the same request twice */
 	async openRequest(_req: Request): Promise<Route | void> {
-		throw new Error('environment specific');
+		throw new Error('env specific');
 	}
 
 	pushRequest(
 		_req: Request,
 		_opts: RequestOptions = {},
 	): Promise<Route | void> {
-		throw new Error('environment specific');
+		throw new Error('env specific');
 	}
 
 	async replaceRequest(
 		_req: Request,
 		_opts: RequestOptions = {},
 	): Promise<Route | void> {
-		throw new Error('environment specific');
+		throw new Error('env specific');
 	}
 
 	/**
 	 * Checks if there are previous routes which would allow it to go back
 	 */
 	canGoBack(): boolean {
-		throw new Error('environment specific');
-		// return this.route.get()?.canGoBack() ?? false;
+		return this.route.get()?.canGoBack() ?? false;
 	}
 
 	/**
 	 * Go back in the history
 	 */
 	back() {
-		throw new Error('environment specific');
-		// this.inner.history.back();
+		throw new Error('env specific');
 	}
 
 	async preload(target: string | URL | Route | Request) {

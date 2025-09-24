@@ -126,6 +126,10 @@ export default class ClientRouter extends BaseRouter {
 		}
 	}
 
+	back(): void {
+		window.history.back();
+	}
+
 	/**
 	 * This returns a route if it was handled else if an error occured
 	 * or the request was cancelled returns void

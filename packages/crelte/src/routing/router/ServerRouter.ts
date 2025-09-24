@@ -58,6 +58,10 @@ export default class ServerRouter extends BaseRouter {
 		return await this.openRequest(req);
 	}
 
+	back(): void {
+		throw new Error('not supported on server');
+	}
+
 	/**
 	 * This function always returns the request or a redirect one
 	 *
