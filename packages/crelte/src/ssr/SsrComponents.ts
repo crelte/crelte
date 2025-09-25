@@ -24,9 +24,9 @@ export default class SsrComponents {
 		let head = '';
 		for (const req of requirements) {
 			if (req.endsWith('.js')) {
-				head += `\n\t\t<link rel="preload" href="${req}" as="script">`;
+				head += `\n\t\t<link rel="modulepreload" crossorigin href="${req}">`;
 			} else if (req.endsWith('.css')) {
-				head += `\n\t\t<link rel="stylesheet" href="${req}">`;
+				head += `\n\t\t<link rel="stylesheet" crossorigin href="${req}">`;
 			}
 		}
 
