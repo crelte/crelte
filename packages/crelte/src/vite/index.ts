@@ -50,12 +50,12 @@ function usedSsrComponents(
 	if (svelte5) {
 		// this will not catch all cases, but it should be enough
 		// since almost all components will have props
-		const initFnSign = '($$payload, $$props) {';
+		const initFnSign = '($$renderer, $$props) {';
 		idx = code.indexOf(initFnSign);
 		if (idx < 0) return;
 
-		const pushSign = '$.push(';
-		idx = code.indexOf(pushSign, idx);
+		const renderCompSign = '$$renderer.component(($$renderer) => {';
+		idx = code.indexOf(renderCompSign, idx);
 		if (idx < 0) return;
 
 		// Find the end of the line where the pattern was found
