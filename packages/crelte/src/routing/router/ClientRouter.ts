@@ -36,6 +36,13 @@ export default class ClientRouter extends BaseRouter {
 		});
 		req.z_fillFromState(window.history.state);
 
+		if (req.inLivePreview()) {
+			const scrollY = parseInt(
+				sessionStorage.getItem('live-preview-scroll') ?? '',
+			);
+			req.scrollY = Number.isInteger(scrollY) ? scrollY : null;
+		}
+
 		window.history.scrollRestoration = 'manual';
 		if (req.scrollY) {
 			// restore scroll position instantly (instead of waiting until svelte
@@ -253,18 +260,8 @@ export default class ClientRouter extends BaseRouter {
 			| { intoView: HTMLElement; behavior: ScrollBehavior }
 			| null = null;
 
-		// if the route is a live preview init and we have a scrollY stored
-		// scroll to that
-		if (req.inLivePreview()) {
-			const scrollY = sessionStorage.getItem('live-preview-scroll');
-			if (scrollY) {
-				scrollTo = {
-					top: parseInt(scrollY),
-					behavior: 'instant',
-				};
-			}
-			// if we have a hash and the route was not visited
-		} else if (
+		// if we have a hash and the route was not visited
+		if (
 			req.hash &&
 			((req.origin === 'init' && typeof req.scrollY !== 'number') ||
 				req.origin === 'click')
