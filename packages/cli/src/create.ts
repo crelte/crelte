@@ -120,6 +120,7 @@ export default async function create(
 	// we never wan't the endpoint url to be https in dev because
 	// that fails in node
 	endpointUrl.protocol = 'http';
+	endpointUrl.pathname = 'api';
 
 	// copy files from the template
 	await rmFile(j(craftDir, '.env'));
@@ -129,7 +130,7 @@ export default async function create(
 	// create .env file
 	await appendFile(
 		j(craftDir, '.env.example.dev'),
-		`ENDPOINT_URL=${endpointUrl.href}/api
+		`ENDPOINT_URL=${endpointUrl.href}
 CRAFT_WEB_URL=${prevPrimaryUrl.href}
 ${siteEnvName}=http://localhost:8080/
 `,
@@ -204,7 +205,7 @@ You're login credentials are:
 	outro("You're all set up! 🎉");
 }
 
-// this is just a simple test, the real chech will be when calling git clone
+// this is just a simple test, the real check will be when calling git clone
 const SSH_REGEX = /^\w+@[^:]+:.+$/;
 const VALID_TEMPLATES = ['default'];
 
@@ -246,13 +247,23 @@ async function craftInstallOptions(): Promise<CraftInstallOptions> {
 
 	return await group(
 		{
-			email: () => text({ message: 'Email' }),
-			username: () => text({ message: 'Username' }),
-			password: () => password({ message: 'Password' }),
-			siteName: () =>
+			email: () =>
 				text({
-					message: 'Site Name',
+					message: 'Email',
+					// only a minimal check for basic validity
+					validate: value =>
+						!value.includes('@') ? 'Invalid email' : undefined,
 				}),
+			username: () => text({ message: 'Username' }),
+			password: () =>
+				password({
+					message: 'Password',
+					validate: value =>
+						value.length < 6
+							? 'Password too short (min. 6 characters)'
+							: undefined,
+				}),
+			siteName: () => text({ message: 'Site Name' }),
 			language: () =>
 				text({
 					message: 'Language',
