@@ -6,7 +6,7 @@ in your component and it is scoped to does elements.
 
 ## :global
 
-This has the downside that nested elements or ones within `{@html text}` wont
+This has the downside that nested components or elements within `{@html text}` wont
 work.
 
 For this there is the `:global` selector.
@@ -38,9 +38,7 @@ Toggeling classes is really easy and short.
 
 ```svelte
 <script>
-	export let href;
-	export let title;
-	export let active;
+	let { href, title, active } = $props();
 </script>
 
 <a {href} class="nav" class:active>

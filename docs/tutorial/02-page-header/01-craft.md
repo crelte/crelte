@@ -103,5 +103,5 @@ Add both pages we created before to the navigation.
 To finish the craft part, we need to allow queries to be made for the newly
 created section and global.
 
-Go to `GraphQL > Schemas > Public Schema` and select all `Entries` and `Global Sets`.
+Go to `GraphQL > Schemas > Endpoint Schema` and select all `Entries` and `Global Sets`.
 ![GraphQL](./assets/01-graphql.png)

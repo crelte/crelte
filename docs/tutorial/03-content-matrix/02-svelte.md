@@ -54,7 +54,7 @@ To use a content matrix in crelte there exists the `Blocks` component.
 
 Create a new file `svelte/src/components/Content.svelte` with the following content:
 ```svelte
-<script context="module">
+<script module>
 	import Blocks, { blockModules, loadBlocksData } from 'crelte/blocks';
 
 	// this will import all svelte files from the content folder
@@ -66,7 +66,7 @@ Create a new file `svelte/src/components/Content.svelte` with the following cont
 </script>
 
 <script>
-	export let blocks;
+	let { blocks } = $props();
 </script>
 
 <Blocks {blocks} />
@@ -80,7 +80,7 @@ Now use the `Content` component in the `home` and `page` templates.
 
 This is the new `pages-home.svelte` file.
 ```svelte
-<script context="module">
+<script module>
 	import { loadData as loadContentData } from '@/components/Content.svelte';
 
 	/** @type {import('crelte').LoadData} */
@@ -92,9 +92,8 @@ This is the new `pages-home.svelte` file.
 <script>
 	import Content from '@/components/Content.svelte';
 
-	// contains all fields in the entry query for example {id, siteId, title, ...}
-	export let entry;
-	export let blocks;
+	// entry: contains all fields in the entry query for example {id, siteId, title, ...}
+	let { entry, blocks } = $props();
 </script>
 
 <h1>{entry.title}</h1>
@@ -110,7 +109,7 @@ Create a new file `svelte/src/components/content/text.svelte` with the following
 ```svelte
 <script>
 	// named after the field in the query
-	export let richtext;
+	let { richtext } = $props();
 </script>
 
 <!-- Render the richtext html -->
@@ -124,7 +123,7 @@ Now lets implement the images block.
 Create a new file `svelte/src/components/content/images.svelte` with the following content:
 ```svelte
 <script>
-	export let images;
+	let { images } = $props();
 </script>
 
 <div class="images">

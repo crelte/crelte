@@ -41,7 +41,7 @@ Create a new Entry type called `News`.
 
 We need to enable the GraphQL API for the news and categories section.
 
-Go to `Settings > GraphQL > Public Schema` and select all `Entries`.
+Go to `Settings > GraphQL > Endpoint Schema` and select all `Entries`.
 
 ## Content
 

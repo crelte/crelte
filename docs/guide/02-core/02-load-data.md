@@ -7,14 +7,18 @@ Before a template can be rendered, it needs data. Two data sources get loaded fo
 The first load that occurs is `loadGlobalData`. This will load the `global.graphql`, at the same time `entry.graphql` is loaded. If you don't need to wait for the entry to be available you can export a `loadGlobalData` function from the `App.svelte`.
 
 ```svelte
-<script context="module">
+<script module>
+	// Note that exporting loadGlobalData will override the default global.graphql
+	/** @type {import('crelte').LoadData} */
 	export const loadGlobalData = {
 		someApi: () => fetch('https://api.example.com').then(res => res.json())
 	};
 </script>
 
 <script>
-	export let someApi;
+	import { getGlobal } from 'crelte';
+
+	const someApi = getGlobal('someApi');
 </script>
 ```
 
@@ -27,25 +31,19 @@ Each template can have a `loadData` export which will get automatically called b
 ### templates/pages-home.svelte
 
 ```svelte
-<script context="module">
-	import { gql } from 'crelte/graphql';
+<script module>
+	import blogsQuery from '@/queries/blogs.graphql';
 
-	// the query can be defined right here or imported from '@/queries/blogs.graphql'
-	// if the query is longer it makes sense to move it into its own graphql file
+	/** @type {import('crelte').LoadData} */
 	export const loadData = (cr, entry) => cr.query(
-		gql`query ($categories: [QueryArgument]) {
-			entries(section: "blogs", blogCategories: $categories) {
-				title
-				url
-			}
-		}`,
+		blogsQuery,
 		{ categories: entry.categories }
 	);
 </script>
 
 <script>
 	// all properties from the query will be available here
-	export let entries;
+	let { entries } = $props();
 </script>
 ```
 
@@ -60,10 +58,11 @@ Each property should be a loadData type, each one is called in parallel.
 And will be available to your component with the same name.
 
 ```svelte
-<script context="module">
+<script module>
 	import entriesQuery from '@/queries/entries.graphql';
 	import { loadData as headerLoadData } from '@/layout/header.svelte';
 
+	/** @type {import('crelte').LoadData} */
 	export const loadData = {
 		entries: entriesQuery,
 		header: headerLoadData
@@ -73,8 +72,7 @@ And will be available to your component with the same name.
 <script>
 	// entries will contain an object of the queries you call in
 	// the graphql file
-	export let entries;
-	export let header;
+	let { entries, header } = $props();
 </script>
 ```
 
@@ -84,26 +82,17 @@ You can just export a graphql query as a loadData type.
 This will export all queries from the graphql file as properties.
 
 ```svelte
-<script context="module">
+<script module>
 	import blogsQuery from '@/queries/blogs.graphql';
 
+	/** @type {import('crelte').LoadData} */
 	export const loadData = blogsQuery;
-
-	// or another option
-	import { gql } from 'crelte/graphql';
-
-	export const loadData = gql`query {
-		blogs: entries(section: "blogs") {
-			title
-			url
-		}
-	}`;
 </script>
 
 <script>
 	// the name of this property comes from the graphQl file
 	// graphql example: `blogs: entries(section: "blogs")`
-	export const blogs;
+	let { blogs } = $props();
 </script>
 ```
 
@@ -113,9 +102,10 @@ Using a function gives you the most flexibility but also is the
 most cumbersome.
 
 ```svelte
-<script context="module">
+<script module>
 	import articlesQuery from '@/queries/articles.graphql';
 
+	/** @type {import('crelte').LoadDataFn} */
 	export async function loadData(cr, entry) {
 		return await cr.query(articlesQuery, {
 			category: entry.category
@@ -123,11 +113,13 @@ most cumbersome.
 	}
 
 	// or
+	/** @type {import('crelte').LoadData} */
 	export const loadData = (cr, entry) => cr.query(articlesQuery, {
 		category: entry.category
 	});
 
 	// or if you're in the context of an object
+	/** @type {import('crelte').LoadData} */
 	export const loadData = {
 		articles: (cr, entry) => cr.query(articlesQuery, {
 			category: entry.category
@@ -142,32 +134,25 @@ You can also return an array of loadData types. These will be executed
 in parallel and their results will be combined.
 
 ```svelte
-<script context="module">
-	import { gql } from 'crelte/graphql';
+<script module>
+	import blogsQuery from '@/queries/blogs.graphql';
 	import { loadData as headerLoadData } from '@/layout/header.svelte';
 
+	/** @type {import('crelte').LoadData} */
 	export const loadData = [
-		gql`query {
-			blogs: entries(section: "blogs") {
-				title
-				url
-			}
-		}`,
-		{
-			header: headerLoadData
-		}
+		blogsQuery,
+		{ header: headerLoadData }
 	];
 </script>
 
 <script>
-	export let blogs;
-	export let header;
+	let { blogs, header } = $props();
 </script>
 ```
 
 ## Input
 
-Each function has access to `CrelteRequest` as well as the `entry` object expect in `loadGlobalData` where `entry` is not yet loaded.
+Each function has access to `CrelteRequest` as well as the `entry` object except in `loadGlobalData` where `entry` is not yet loaded.
 
 ## Output
 

@@ -29,6 +29,7 @@ executing a graphql file. `siteId` here is a bit special because it is automatic
 GraphQl can either be written inline or in a separate file.
 
 ### Inline
+The caviat with inlining is that you need to enable the public GraphQL schema in craft.
 ```ts
 import { gql } from 'crelte/graphql';
 

@@ -25,16 +25,16 @@ At the moment if you open the news page. You should get the following error in t
 
 To fix that let's create a new file `svelte/src/templates/pages-news.svelte` with the following content:
 ```svelte
-<script context="module">
+<script module>
 	import articlesQuery from '@/queries/articles.graphql';
 
 	// this will execute the query
+	/** @type {import('crelte').LoadData} */
 	export const loadData = articlesQuery;
 </script>
 
 <script>
-	export let entry;
-	export let articles;
+	let { entry, articles } = $props();
 </script>
 
 <h1>{entry.title}</h1>
@@ -119,8 +119,8 @@ query ($categories: [QueryArgument], $siteId: [QueryArgument]) {
 We also add another query `categories`, so we can list them in the filter.
 
 The new `pages-news.svelte` looks like this:
-```svelte {4-10,21-26}
-<script context="module">
+```svelte {4-10,19-24}
+<script module>
 	import articlesQuery from '@/queries/articles.graphql';
 
 	// this will execute the query
@@ -133,9 +133,7 @@ The new `pages-news.svelte` looks like this:
 </script>
 
 <script>
-	export let entry;
-	export let articles;
-	export let categories;
+	let { entry, articles, categories } = $props();
 </script>
 
 <h1>{entry.title}</h1>
@@ -183,17 +181,19 @@ One issue we still have is that on each click it will reset the scroll to the to
 To fix this we will need to prevent scrolling.
 
 The easiest way is to add an event listener and set disableScroll which will not scroll to the top when the new page is loaded.
-```svelte{1-4,10-17,22-27}
+```svelte{1-5,9-19,24-29}
 <script>
 	import { getRouter } from 'crelte';
+	import { shouldInterceptClick } from 'crelte/routing';
 
 	const router = getRouter();
 
-	export let entry;
-	export let articles;
-	export let categories;
+	let { entry, articles, categories } = $props();
 
 	function onCategoryClick(e) {
+		// prevent ctrl + click or middle click from being intercepted
+		if (!shouldInterceptClick(e, e.currentTarget)) return;
+
 		e.preventDefault();
 		e.stopPropagation();
 
@@ -206,9 +206,9 @@ The easiest way is to add an event listener and set disableScroll which will not
 <h1>{entry.title}</h1>
 
 <div class="categories">
-	<a href={entry.url} on:click={onCategoryClick}>All categories</a>
+	<a href={entry.url} onclick={onCategoryClick}>All categories</a>
 	{#each categories as category}
-		<a href={category.url} on:click={onCategoryClick}>{category.title}</a>
+		<a href={category.url} onclick={onCategoryClick}>{category.title}</a>
 	{/each}
 </div>
 ```

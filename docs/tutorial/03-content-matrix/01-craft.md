@@ -61,7 +61,7 @@ Add another transform named `Medium` and set the Width to `1500` and the Height 
 
 We need to enable the GraphQL API for the asset volume.
 
-Go to `Settings > GraphQL > Public Schema` and select all `Assets`.
+Go to `Settings > GraphQL > Endpoint Schema` and select all `Assets`.
 ![GraphQL](./assets/01-graphql.png)
 
 ## Content Matrix

@@ -35,11 +35,11 @@ query ($siteId: [QueryArgument]) {
 
 ### src/components/Header.svelte
 ```svelte
-<script context="module">
-/** @type {import('crelte').LoadData} */
-export const loadData = {
-	hasItems: cr => cr.getGlobal('header').navigation.length > 0
-};
+<script module>
+	/** @type {import('crelte').LoadData} */
+	export const loadData = {
+		hasItems: cr => cr.getGlobal('header').navigation.length > 0
+	};
 </script>
 
 <script>
@@ -48,7 +48,7 @@ export const loadData = {
 	// here the global is a store because the site might change
 	const header = getGlobal('header');
 
-	export let hasItems;
+	let { hasItems } = $props();
 </script>
 
 {#if !hasItems}

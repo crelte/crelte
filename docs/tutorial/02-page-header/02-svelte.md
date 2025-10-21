@@ -47,7 +47,7 @@ Modify the `svelte/src/components/Header.svelte` file to the following:
 	// this returns a store which is reactive and changes once the route changes
 	const route = getRoute();
 
-	export let entry;
+	let { entry } = $props();
 
 	/** @param {import('crelte/routing').Route} route */
 	function isActive(route, url) {
@@ -116,7 +116,7 @@ Create that file with the following content:
 ```svelte
 <script>
 	// contains all fields in the entry query for example {id, siteId, title, ...}
-	export let entry;
+	let { entry } = $props();
 </script>
 
 <h1>{entry.title}</h1>

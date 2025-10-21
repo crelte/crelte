@@ -28,7 +28,7 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 	const router = getRouter();
 	const route = getRoute();
 
-	$: gridView = $route.getSearchParam('view') === 'grid';
+	let gridView = $derived($route.getSearchParam('view') === 'grid');
 </script>
 
 <button
@@ -55,7 +55,7 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 To share data between the server and the client you can use the `SsrCache`.
 
 ```svelte
-<script context="module">
+<script module>
 	const RANDOM_KEY = 'randomNumber';
 
 	/** @type {import('crelte').LoadData} */
@@ -75,7 +75,7 @@ To share data between the server and the client you can use the `SsrCache`.
 </script>
 
 <script>
-	export let randomNumber;
+	let { randomNumber } = $props();
 </script>
 
 <p>Random number: {randomNumber}</p>
@@ -90,7 +90,7 @@ Cookies are a good way to store authentication tokens or smaller information whi
 exist for the current session or the current device.
 
 ```svelte
-<script context="module">
+<script module>
 	/** @type {import('crelte').LoadData} */
 	export const loadData = {
 		persistentNumber: cr => {
@@ -100,9 +100,6 @@ exist for the current session or the current device.
 			number = Math.random();
 
 			cr.cookies.set('number', number.toString(), {
-				// makes sure the cookie is available for all
-				// pages
-				path: '/',
 				// maxAge: specify a maxAge if you want that the data
 				// lives longer than the session
 			});
@@ -113,7 +110,7 @@ exist for the current session or the current device.
 </script>
 
 <script>
-	export let persistentNumber;
+	let { persistentNumber } = $props();
 </script>
 
 <p>Persistent number: {persistentNumber}</p>

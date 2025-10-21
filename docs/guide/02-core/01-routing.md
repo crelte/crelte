@@ -9,18 +9,22 @@ Based on the `sectionHandle` and `typeHandle` a template get's selected which ge
 ## Basic App.svelte
 
 ```svelte
-<script context="module">
+<script module>
 	export const templates = import.meta.glob('@/templates/*.svelte');
 </script>
 
 <script>
-	export let entry;
-	export let template;
-	export let templateData;
+	let { route } = $props();
+
+	let entry = $derived($route.entry);
+	let Template = $derived($route.template.default);
+	let templateData = $derived($route.loadedData);
 </script>
 
-<!-- update entire template if the entry changes -->
+<!-- update entire component if page changes -->
 {#key entry}
-	<svelte:component this={template} {entry} {...templateData} />
+	<div class="app">
+		<Template {entry} {...templateData} />
+	</div>
 {/key}
 ```
