@@ -48,6 +48,7 @@ export default async function create(
 		const nWd = await text({
 			message: 'Where should we create your project?',
 			placeholder: '  (hit Enter to use the current directory)',
+			defaultValue: '.',
 		});
 
 		if (isCancel(nWd)) exitEarly();
