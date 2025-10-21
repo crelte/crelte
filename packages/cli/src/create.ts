@@ -11,6 +11,7 @@ import {
 	copyFile,
 	rmDir,
 	appendFile,
+	writeFile,
 } from './utils.js';
 import {
 	group,
@@ -131,7 +132,9 @@ export default async function create(
 	await appendFile(
 		j(craftDir, '.env.example.dev'),
 		`ENDPOINT_URL=${endpointUrl.href}
+ENDPOINT_TOKEN=
 CRAFT_WEB_URL=${prevPrimaryUrl.href}
+FRONTEND_URL=http://localhost:8080/
 ${siteEnvName}=http://localhost:8080/
 `,
 	);
@@ -142,7 +145,9 @@ ${siteEnvName}=http://localhost:8080/
 		await appendFile(
 			j(craftDir, file),
 			`ENDPOINT_URL=
+ENDPOINT_TOKEN=
 CRAFT_WEB_URL=
+FRONTEND_URL=
 ${siteEnvName}=
 `,
 		);
@@ -187,7 +192,16 @@ ${siteEnvName}=
 	);
 
 	// enable graphql
-	await enableGraphQl(craftDir);
+	const endpointToken = await enableGraphQl(craftDir);
+
+	// write the endpoint token to the env file
+	const envFile = await readFile(j(craftDir, '.env'));
+	await writeFile(
+		j(craftDir, '.env'),
+		envFile.replace('ENDPOINT_TOKEN=', `ENDPOINT_TOKEN=${endpointToken}`),
+	);
+
+	await copyFile(j(craftDir, '.env'), j(craftDir, '.env.example.dev'));
 
 	await spawn('npm', ['install'], { cwd: svelteDir });
 
@@ -281,23 +295,27 @@ async function craftInstallOptions(): Promise<CraftInstallOptions> {
 // so we start to modify the project config
 //
 // todo: maybe this could be done better
-async function enableGraphQl(craftDir: string) {
+async function enableGraphQl(craftDir: string): Promise<string> {
+	// eslint-disable-next-line no-useless-escape
+	const SITE_REGEX = /\s*([0-9a-z\-]+):/;
+	const siteUuid = (
+		await spawn('ddev', ['craft', 'pc/get', 'sites'], {
+			cwd: craftDir,
+		})
+	).stdout.match(SITE_REGEX);
+	if (!siteUuid || !siteUuid.length) throw exit('Could not find site', 1);
+
+	// let's create a schema
 	await spawn(
 		'ddev',
 		[
 			'craft',
-			'pc/set',
-			'graphql',
-			'publicToken:\n    enabled: true\n    expiryDate: null',
+			'exec',
+			'\\Craft::$app->gql->saveSchema(new \\craft\\models\\GqlSchema([' +
+				'"name"=>"Endpoint",' +
+				`"scope"=>['sites.${siteUuid[1]}:read','crelte.all:read']` +
+				']));',
 		],
-		{ cwd: craftDir },
-	);
-
-	// now let craft generate the schema
-	// without this craft will return no schemas in list-schemas
-	await spawn(
-		'ddev',
-		['craft', 'exec', 'return \\Craft::$app->gql->getPublicToken();'],
 		{ cwd: craftDir },
 	);
 
@@ -312,22 +330,23 @@ async function enableGraphQl(craftDir: string) {
 		throw exit('Could not find schema', 1);
 
 	// eslint-disable-next-line no-useless-escape
-	const SITE_REGEX = /\s*([0-9a-z\-]+):/;
-	const siteUuid = (
-		await spawn('ddev', ['craft', 'pc/get', 'sites'], {
-			cwd: craftDir,
-		})
-	).stdout.match(SITE_REGEX);
-	if (!siteUuid || !siteUuid.length) throw exit('Could not find site', 1);
+	const TOKEN_REGEX = /: ([0-9a-zA-Z\-\_]+)/;
+	const tokenMatch = (
+		await spawn(
+			'ddev',
+			[
+				'craft',
+				'graphql/create-token',
+				schemaMatch[1],
+				'--name',
+				'Endpoint',
+				'--interactive=0',
+			],
+			{ cwd: craftDir },
+		)
+	).stdout.match(TOKEN_REGEX);
+	if (!tokenMatch || !tokenMatch.length)
+		throw exit('Could not create token', 1);
 
-	await spawn(
-		'ddev',
-		[
-			'craft',
-			'pc/set',
-			`graphql.schemas.${schemaMatch[1]}`,
-			`{ isPublic: true, name: 'Public Schema', scope: ['sites.${siteUuid[1]}:read', 'crelte.all:read'] }`,
-		],
-		{ cwd: craftDir },
-	);
+	return tokenMatch[1] as string;
 }
