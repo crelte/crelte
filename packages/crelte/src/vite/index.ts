@@ -48,15 +48,21 @@ function usedSsrComponents(
 
 	let idx;
 	if (svelte5) {
-		// this will not catch all cases, but it should be enough
-		// since almost all components will have props
-		const initFnSign = '($$renderer, $$props) {';
-		idx = code.indexOf(initFnSign);
+		const defFnSign = 'export default function ';
+		idx = code.indexOf(defFnSign);
 		if (idx < 0) return;
 
+		const withPropsIdx = code.indexOf('($$renderer, $$props) {', idx);
+		const noPropsIdx = code.indexOf('($$renderer) {', idx);
+		idx = withPropsIdx >= 0 ? withPropsIdx : noPropsIdx;
+		if (idx < 0) {
+			console.error('could not find svelte5 init', id);
+			return;
+		}
+
 		const renderCompSign = '$$renderer.component(($$renderer) => {';
-		idx = code.indexOf(renderCompSign, idx);
-		if (idx < 0) return;
+		const renderCompIdx = code.indexOf(renderCompSign, idx);
+		if (renderCompIdx >= 0) idx = renderCompIdx;
 
 		// Find the end of the line where the pattern was found
 		idx = code.indexOf('\n', idx);
