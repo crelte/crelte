@@ -7,10 +7,20 @@ import { calcKey } from '../../ssr/index.js';
 
 export type CacheIfFn = (response: any, vars: Record<string, any>) => boolean;
 
+/// Anything other than returning undefined will replace the response
+//
+// Note that even if you return undefined since the response is by reference
+// you're modifications will be reflected
+export type TransformFn = (
+	response: any,
+	vars: Record<string, any>,
+) => void | any | Promise<void | any>;
+
 export type QueryRouteArgs = {
 	vars: Record<string, QueryVar> | null;
 	cacheIfFn: CacheIfFn | null;
 	preventCaching: boolean;
+	transformFn: TransformFn | null;
 };
 
 // only internal
@@ -19,6 +29,7 @@ export class QueryRoute {
 	query: string;
 	vars: Record<string, QueryVar> | null;
 	cacheIfFn: CacheIfFn | null;
+	transformFn: TransformFn | null;
 
 	constructor(name: string, query: string, args: QueryRouteArgs) {
 		if (args.cacheIfFn && !vars)
@@ -33,6 +44,7 @@ export class QueryRoute {
 		this.query = query;
 		this.vars = args.vars;
 		this.cacheIfFn = args.cacheIfFn;
+		this.transformFn = args.transformFn;
 
 		if (args.preventCaching) {
 			if (this.cacheIfFn) throw new Error('unreachable');
@@ -102,6 +114,16 @@ export class QueryRoute {
 		}
 
 		return nVars;
+	}
+
+	private async transform(
+		jsonResp: Record<string, any>,
+		vars: Record<string, any>,
+	): Promise<void> {
+		if (!this.transformFn || !jsonResp.data) return;
+
+		const transformed = await this.transformFn(jsonResp.data, vars);
+		if (typeof transformed !== 'undefined') jsonResp.data = transformed;
 	}
 
 	async handle(
@@ -195,6 +217,7 @@ export class QueryRoute {
 			jsonResp = await resp.json();
 			if (!jsonResp || typeof jsonResp !== 'object')
 				throw new Error('invalid json response');
+			await this.transform(jsonResp, vars);
 		} catch (e) {
 			return newError(e, 500);
 		}

@@ -1,6 +1,6 @@
 import ServerRouter from '../ServerRouter.js';
 import QueriesCaching from './QueriesCaching.js';
-import { CacheIfFn, QueryRoute } from './routes.js';
+import { CacheIfFn, QueryRoute, TransformFn } from './routes.js';
 import { isQueryVar, QueryVar } from '../../queries/vars.js';
 import { Platform } from '../platform.js';
 
@@ -12,6 +12,7 @@ type ModQuery = {
 type ModTs = {
 	variables?: any;
 	caching?: any;
+	transform?: any;
 };
 
 type ModQueries = Record<string, ModQuery | ModTs>;
@@ -22,6 +23,7 @@ type PreRoute = {
 	vars: Record<string, QueryVar> | null;
 	cacheIfFn: CacheIfFn | null;
 	preventCaching: boolean;
+	transformFn: TransformFn | null;
 };
 
 export async function initQueryRoutes(
@@ -53,6 +55,7 @@ export async function initQueryRoutes(
 				vars: null,
 				cacheIfFn: null,
 				preventCaching: false,
+				transformFn: null,
 			};
 			preRoutes.set(name, preRoute);
 		}
@@ -79,6 +82,10 @@ export async function initQueryRoutes(
 			preRoute.cacheIfFn = parseCaching(mts.caching);
 		} else if (typeof mts.caching === 'boolean') {
 			preRoute.preventCaching = true;
+		}
+
+		if (mts.transform) {
+			preRoute.transformFn = parseTransform(mts.transform);
 		}
 	}
 
@@ -122,4 +129,11 @@ function parseCaching(caching: any): CacheIfFn {
 		throw new Error('caching should be a function or a boolean');
 
 	return caching;
+}
+
+function parseTransform(transform: any): TransformFn {
+	if (typeof transform !== 'function')
+		throw new Error('transform should be a function');
+
+	return transform;
 }
