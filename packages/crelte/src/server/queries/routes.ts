@@ -7,6 +7,12 @@ import { calcKey } from '../../ssr/index.js';
 
 export type CacheIfFn = (response: any, vars: Record<string, any>) => boolean;
 
+export type QueryRouteArgs = {
+	vars: Record<string, QueryVar> | null;
+	cacheIfFn: CacheIfFn | null;
+	preventCaching: boolean;
+};
+
 // only internal
 export class QueryRoute {
 	name: string;
@@ -14,23 +20,25 @@ export class QueryRoute {
 	vars: Record<string, QueryVar> | null;
 	cacheIfFn: CacheIfFn | null;
 
-	constructor(
-		name: string,
-		query: string,
-		vars: Record<string, QueryVar> | null,
-		cacheIfFn: CacheIfFn | null,
-	) {
-		if (cacheIfFn && !vars)
+	constructor(name: string, query: string, args: QueryRouteArgs) {
+		if (args.cacheIfFn && !vars)
 			throw new Error(
 				'queryRoute: ' +
 					name +
-					' cannot have cacheIfFn if there are no vars defined',
+					' cannot have caching function if there are no ' +
+					'variables defined',
 			);
 
 		this.name = name;
 		this.query = query;
-		this.vars = vars;
-		this.cacheIfFn = cacheIfFn;
+		this.vars = args.vars;
+		this.cacheIfFn = args.cacheIfFn;
+
+		if (args.preventCaching) {
+			if (this.cacheIfFn) throw new Error('unreachable');
+			// prevent filling defaults
+			return;
+		}
 
 		// add default vars and cacheIfFn if we know the route
 		if (this.name === 'entry') this.fillEntryDefaults();

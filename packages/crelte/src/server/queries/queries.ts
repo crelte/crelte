@@ -10,7 +10,7 @@ type ModQuery = {
 };
 
 type ModTs = {
-	variables: any;
+	variables?: any;
 	caching?: any;
 };
 
@@ -21,6 +21,7 @@ type PreRoute = {
 	jsFile: string | null;
 	vars: Record<string, QueryVar> | null;
 	cacheIfFn: CacheIfFn | null;
+	preventCaching: boolean;
 };
 
 export async function initQueryRoutes(
@@ -51,6 +52,7 @@ export async function initQueryRoutes(
 				jsFile: null,
 				vars: null,
 				cacheIfFn: null,
+				preventCaching: false,
 			};
 			preRoutes.set(name, preRoute);
 		}
@@ -75,6 +77,8 @@ export async function initQueryRoutes(
 
 		if (mts.caching) {
 			preRoute.cacheIfFn = parseCaching(mts.caching);
+		} else if (typeof mts.caching === 'boolean') {
+			preRoute.preventCaching = true;
 		}
 	}
 
@@ -85,7 +89,7 @@ export async function initQueryRoutes(
 	for (const [name, pr] of preRoutes.entries()) {
 		if (!pr.query) throw new Error(`no .graphql file for query ${name}`);
 
-		const route = new QueryRoute(name, pr.query, pr.vars, pr.cacheIfFn);
+		const route = new QueryRoute(name, pr.query, pr);
 
 		router.post('/queries/' + route.name, async csr =>
 			route.handle(caching, csr),
