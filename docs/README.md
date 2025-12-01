@@ -15,8 +15,19 @@ how was this method called again.
 
 ## Reference
 
-It would be nice to use auto generated docs like https://jsr.io/@chuchi/utils/doc
 
 https://github.com/clenemt/docdash
 
-## Make a tutorial, for a mini blog
+
+## Flow
+
+### New user knowing craft
+
+1. Getting started
+2. Jump to tutorial
+3. (cross links from tutorial to the guide)
+
+### existing user
+
+1. Getting started
+2. go to create a project

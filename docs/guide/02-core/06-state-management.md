@@ -23,7 +23,7 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 
 ```svelte
 <script>
-	import { getRouter } from 'crelte';
+	import { getRouter, getRoute } from 'crelte';
 
 	const router = getRouter();
 	const route = getRoute();
@@ -33,13 +33,13 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 
 <button
 	class:active={!gridView}
-	on:click={() => router.push(r => r.setSearchParam('view', null))}
+	onclick={() => router.push(r => r.setSearchParam('view', null))}
 >
 	List
 </button>
 <button
 	class:active={gridView}
-	on:click={() => router.push(r => r.setSearchParam('view', 'grid'))}
+	onclick={() => router.push(r => r.setSearchParam('view', 'grid'))}
 >
 	Grid
 </button>
@@ -49,6 +49,7 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 {:else}
 	<ListView />
 {/if}
+```
 
 ### Use ssrcache
 

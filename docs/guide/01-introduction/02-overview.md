@@ -2,11 +2,11 @@
 
 The overview will give you a general look of how all things work together and where to look for them. This section helps you understand the system as a whole before diving into specific components and documentation.
 
-# How everything fits together
+## How everything fits together
 
 Your Crelte project consists of two applications: Craft CMS in the backend and Svelte in the frontend. This separation exists in both development and production environments.
 
-# Example request flow
+## Example request flow
 
 Let's trace an example request to illustrate the core concepts:
 

@@ -3,7 +3,7 @@ import typedocSidebar from '../types/typedoc-sidebar.json';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-	title: 'Crelte Documentation',
+	title: 'Crelte Docs',
 	description: 'The crelte documentation',
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
@@ -16,7 +16,7 @@ export default defineConfig({
 		sidebar: {
 			'/guide/': { base: '/guide/', items: sidebarGuide() },
 			'/tutorial/': { base: '/tutorial/', items: sidebarTutorial() },
-			'/types/': typedocSidebar,
+			'/types/': [{ text: 'crelte', link: '/types' }, ...typedocSidebar],
 		},
 
 		socialLinks: [
