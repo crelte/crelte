@@ -12,9 +12,9 @@
 		"lint": "npm run lint --workspaces",
 		"build": "npm run build --workspaces",
 		"predocs:dev": "typedoc --options docs/typedoc.json",
+		"predocs:build": "typedoc --options docs/typedoc.json",
 		"docs:dev": "vitepress dev docs",
-		"docs:build": "vitepress build docs",
-		"docs:preview": "vitepress preview docs"
+		"docs:build": "vitepress build docs"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.3",
