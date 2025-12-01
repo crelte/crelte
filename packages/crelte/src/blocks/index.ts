@@ -1,4 +1,4 @@
-import Blocks, { blockModules, loadBlocksData } from './Blocks.svelte';
+import Blocks from './Blocks.svelte';
 import type {
 	BlockModules,
 	BlockModulesOptions,
@@ -7,7 +7,7 @@ import type {
 	BlockOptions,
 } from './Blocks.js';
 import type BlocksInstance from './Blocks.js';
-import { newBlocks } from './Blocks.js';
+import { newBlocks, blockModules, loadBlocksData } from './Blocks.js';
 
 export type {
 	BlocksInstance,

@@ -103,6 +103,57 @@ export class BlockModules {
 }
 
 /**
+ * Create a BlockModules instance from modules
+ *
+ * ## Example
+ * ```ts
+ * const mods = blockModules(
+ *     import.meta.glob('./contentDetail/*.svelte', { eager: true })
+	);
+ * ```
+ *
+ * ## Example with alias
+ * ```ts
+ * const mods = blockModules(
+ *     import.meta.glob('./contentDetail/*.svelte'),
+ *     {
+ *         alias: {
+ * 		       fakename: 'filename',
+ *         }
+ *     }
+ * );
+ */
+export function blockModules(
+	modules: Record<string, AsyncModule>,
+	opts: BlockModulesOptions = {},
+): BlockModules {
+	return new BlockModules(modules, opts);
+}
+
+/**
+ * Load blocks data
+ *
+ * ## Example
+ * ```ts
+ * const mods = blockModules(import.meta.glob('./contentDetail/*.svelte'));
+ *
+ * export const loadData = {
+ *     blocks: (cr, entry) => loadBlocksData(cr, entry.blocks, mods)
+ * };
+ */
+export async function loadBlocksData(
+	cr: CrelteRequest,
+	blocks: any[],
+	modules: BlockModules,
+): Promise<Blocks> {
+	const nBlocks = await newBlocks(blocks, modules);
+
+	await nBlocks.loadData(cr);
+
+	return nBlocks;
+}
+
+/**
  * Creates a new Blocks instance
  *
  * Consider using the Blocks component instead
