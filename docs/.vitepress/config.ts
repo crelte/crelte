@@ -1,4 +1,5 @@
 import { DefaultTheme, defineConfig } from 'vitepress';
+import typedocSidebar from '../types/typedoc-sidebar.json';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -9,11 +10,13 @@ export default defineConfig({
 		nav: [
 			{ text: 'Guide', link: '/guide/01-introduction/01-introduction' },
 			{ text: 'Tutorial', link: '/tutorial/01-introduction/01-overview' },
+			{ text: 'Types', link: '/types' },
 		],
 
 		sidebar: {
 			'/guide/': { base: '/guide/', items: sidebarGuide() },
 			'/tutorial/': { base: '/tutorial/', items: sidebarTutorial() },
+			'/types/': typedocSidebar,
 		},
 
 		socialLinks: [

@@ -24,7 +24,7 @@ export default class ClientRouter extends BaseRouter {
 	}
 
 	/**
-	 * ## Throws
+	 * #### Throws
 	 */
 	async init() {
 		this.listen();

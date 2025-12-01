@@ -27,7 +27,7 @@ export default class Writable<T> {
 	 * The function get's called once with the current value and then when the
 	 * values changes
 	 *
-	 * ## Note
+	 * #### Note
 	 * This does not check for equality like svelte.
 	 *
 	 * @return a function which should be called to unsubscribe

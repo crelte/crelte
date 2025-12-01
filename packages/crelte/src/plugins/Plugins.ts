@@ -15,8 +15,8 @@ export interface Plugin {
  * a configurePluginname function which will be called by youre user and should
  * return a createPlugin function.
  *
- * ## Example App.svelte in module="context"
- * ```
+ * #### Example App.svelte in module="context"
+ * ```js
  * import { createPlugin, configurePlugin } from 'some-plugin';
  *
  * export plugins = [createPlugin, configurePlugin({ enableFeature: true })];

@@ -2,7 +2,7 @@ import { Cookies, RemoveOptions, SetOptions } from './index.js';
 import { parseCookies, type SetCookie, setCookieToString } from './utils.js';
 
 /**
- * ## Warning
+ * #### Warning
  * This is not stable and should only be used internally by crelte
  */
 export default class ServerCookies implements Cookies {

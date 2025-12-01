@@ -5,8 +5,8 @@ import { isQuery, Query } from './Queries.js';
  * @param strings
  * @param keys
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * const query = gql`query ($id: ID!) { page(id: $id) { id } }`;
  * ```
  */

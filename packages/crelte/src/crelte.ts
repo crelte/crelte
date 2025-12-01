@@ -67,7 +67,7 @@ export function configWithDefaults(config: Config = {}): Required<Config> {
  * In svelte contexts for each of these functions and classes there
  * should be a getter function like `getCrelte()` or `getRouter()`.
  *
- * ## Note
+ * #### Note
  * Plugins and other instances could modify this type, so when extending cloning
  * or similar use the spread operator instead of naming all "properties".
  */
@@ -130,7 +130,7 @@ export type Crelte = {
 	/**
 	 * returns the frontend url with an optional path
 	 *
-	 * ## Note
+	 * #### Note
 	 * On the client this will always be the current origin
 	 * and on the server it will be the from the env `FRONTEND_URL` env
 	 * variable
@@ -140,7 +140,7 @@ export type Crelte = {
 	/**
 	 * returns the backend url with an optional path
 	 *
-	 * ## Note
+	 * #### Note
 	 * For the origin the `ENDPOINT_URL` env variable is used
 	 */
 	backendUrl(path?: string): URL;
@@ -148,7 +148,7 @@ export type Crelte = {
 	/**
 	 * returns a store which contains a globalSet
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * always return null. In that context you should use
 	 * `CrelteRequest.getGlobalAsync`
@@ -159,7 +159,7 @@ export type Crelte = {
 	 * returns a new CrelteRequest instance either with the current
 	 * route or a provided one
 	 *
-	 * ## Note
+	 * #### Note
 	 * This is useful if you want to create a stateful crelte
 	 * to use in loadData context
 	 */
@@ -186,7 +186,7 @@ export type Crelte = {
  * In svelte contexts for each of these functions and classes there
  * should be a getter function like `getCrelte()` or `getRouter()`.
  *
- * ## Note
+ * #### Note
  * Plugins and other instances could modify this type, so when extending cloning
  * or similar use the spread operator instead of naming all "properties".
  */
@@ -199,7 +199,7 @@ export type CrelteWithRoute = Crelte & {
 	/**
 	 * returns a store which contains a globalSet
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * always return null. In that context you should use
 	 * `CrelteRequest.getGlobalAsync`
@@ -216,7 +216,7 @@ export type CrelteRequest = Crelte & {
 	/**
 	 * Easy access to this.req.site
 	 *
-	 * ## Note
+	 * #### Note
 	 * The site might not always match with the current route
 	 * but be the site default site or one that matches the
 	 * users language.
@@ -226,7 +226,7 @@ export type CrelteRequest = Crelte & {
 	/**
 	 * returns a globalSet
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * always return null. In that context you should use
 	 * `.getGlobalAsync`
@@ -236,7 +236,7 @@ export type CrelteRequest = Crelte & {
 	/**
 	 * Get a globalSet and wait until it is loaded
 	 *
-	 * ## Note
+	 * #### Note
 	 * This is only useful in loadGlobalData in all other cases
 	 * you can use `.getGlobal` which does not return a Promise
 	 */

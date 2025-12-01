@@ -9,7 +9,7 @@ export const vars = {
 	 * Id is almost the same as number but will also parse
 	 * strings, but only allow non negative integers
 	 *
-	 * ## Warning
+	 * #### Warning
 	 * Ids are not automatically safe to be cached
 	 * you need to validate the response to make sure filters
 	 * with this id returned something
@@ -24,7 +24,7 @@ export const vars = {
 	 *
 	 * The numbers are always unique and sorted in ascending order
 	 *
-	 * ## Warning
+	 * #### Warning
 	 * Ids are not automatically safe to be cached, it is also not
 	 * enough to just check if the filter returned some results.
 	 * Since for example a `relatedTo` filter works like an `or` and
@@ -194,8 +194,8 @@ function isValidId(id: any): id is number {
  * The first argument needs to come from a `vars.ids()` variable.
  * The second argument should come from a query, where the output is trusted.
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * export const variables = {
  *     categories: vars.ids()
  * };
@@ -206,15 +206,15 @@ function isValidId(id: any): id is number {
  * };
  * ```
  *
- * ## Note
+ * #### Note
  * The following cases are considered equal:
- * ```
+ * ```js
  * varsIdsEqual(null, null);
  * varsIdsEqual([], null);
  * varsIdsEqual([1,2], ['2',1]);
  * ```
  * These are not equal:
- * ```
+ * ```js
  * varsIdsEqual([1], null);
  * varsIdsEqual([2,1], [2,1]); // because the second arg gets ordered
  * ```

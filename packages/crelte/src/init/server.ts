@@ -36,8 +36,8 @@ export type MainData = {
 /**
  * The main function to start the server side rendering
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * import * as app from './App.svelte';
  * import entryQuery from './queries/entry.graphql';
  * import globalQuery from './queries/global.graphql';
@@ -185,8 +185,8 @@ export type MainErrorData = {
  * The main function to start the server side rendering
  * if there was an error
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * import * as errorPage from './Error.svelte';
  *
  * export function renderError(error, serverData) {

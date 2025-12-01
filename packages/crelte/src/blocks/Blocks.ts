@@ -105,14 +105,14 @@ export class BlockModules {
 /**
  * Create a BlockModules instance from modules
  *
- * ## Example
+ * #### Example
  * ```ts
  * const mods = blockModules(
  *     import.meta.glob('./contentDetail/*.svelte', { eager: true })
 	);
  * ```
  *
- * ## Example with alias
+ * #### Example with alias
  * ```ts
  * const mods = blockModules(
  *     import.meta.glob('./contentDetail/*.svelte'),
@@ -133,7 +133,7 @@ export function blockModules(
 /**
  * Load blocks data
  *
- * ## Example
+ * #### Example
  * ```ts
  * const mods = blockModules(import.meta.glob('./contentDetail/*.svelte'));
  *

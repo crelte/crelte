@@ -107,12 +107,12 @@ export default class Request extends BaseRoute {
 	 * With delayRender you can make sure that the render waits
 	 * until you are ready. This is useful for building page transitions.
 	 *
-	 * ## Important
+	 * #### Important
 	 * If you call delayRender you need to call `ready/remove` or the render
 	 * will never happen
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * import { onRequest } from 'crelte';
 	 * import { animate } from 'motion';
 	 *
@@ -175,7 +175,7 @@ export default class Request extends BaseRoute {
 	/**
 	 * Create a Route from the Request
 	 *
-	 * ## Throws
+	 * #### Throws
 	 * if the entry, template or loadedData is missing
 	 * or the request was cancelled
 	 */

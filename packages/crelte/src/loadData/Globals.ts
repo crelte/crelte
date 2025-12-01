@@ -44,7 +44,7 @@ export default class Globals {
 	/**
 	 * returns a globalValue
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * throw an error. In that context you should use `.getAsync`
 	 */
@@ -62,7 +62,7 @@ export default class Globals {
 	/**
 	 * returns a store which contains a globalSet
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only works in loadData, in loadGlobalData this will
 	 * always return null. In that context you should use
 	 * `.getAsync`
@@ -74,7 +74,7 @@ export default class Globals {
 	/**
 	 * Get a store which contains a globalSet and wait until it is loaded
 	 *
-	 * ## Note
+	 * #### Note
 	 * This is only useful in loadGlobalData in all other cases
 	 * you can use `.get` which does not return a Promise
 	 */

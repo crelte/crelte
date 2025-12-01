@@ -33,8 +33,8 @@ export type MainData = {
 /**
  * The main function to start the client side rendering
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * import * as app from './App.svelte';
  * import * as errorPage from './Error.svelte';
  * import entryQuery from './queries/entry.graphql';

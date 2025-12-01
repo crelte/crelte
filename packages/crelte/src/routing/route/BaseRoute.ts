@@ -22,7 +22,7 @@ export type BaseRouteOptions = {
  * - `'replace'`: is set when a route is replaced via `Router.replaceState`
  * - `'push'`: is set when a route is pushed via `Router.pushState`
  *
- * ## Note
+ * #### Note
  * `replace` and `push` will not call loadData
  */
 export type RouteOrigin =
@@ -47,7 +47,7 @@ export default class BaseRoute {
 	/**
 	 * The site of the route
 	 *
-	 * ## Note
+	 * #### Note
 	 * In the `beforeRequest` event the site might not match
 	 * the url and could be the default site or one that matches
 	 * the users language.
@@ -59,7 +59,7 @@ export default class BaseRoute {
 	/**
 	 * The scroll position of the current route
 	 *
-	 * ## Note
+	 * #### Note
 	 * This does not have to represent the current scroll position
 	 * should more be used internally.
 	 *
@@ -92,7 +92,7 @@ export default class BaseRoute {
 	 * This context is not persistant and should be considered "valid"
 	 * only for the current request / route
 	 *
-	 * ## Note
+	 * #### Note
 	 * Consider using state instead. This will not be cloned in the clone
 	 * call so will always be the same object
 	 */
@@ -117,8 +117,8 @@ export default class BaseRoute {
 	 *
 	 * Never ends with a slash
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const site = _; // site with url https://example.com/fo
 	 * const route = new Route('https://example.com/foo/bar/', site);
 	 * console.log(route.uri); // '/bar'
@@ -143,8 +143,8 @@ export default class BaseRoute {
 	 *
 	 * Never ends with a slash
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const site = _; // site with url https://example.com/foo
 	 * const route = new Route('https://example.com/foo/bar/', null);
 	 * console.log(route.baseUrl); // 'https://example.com/foo'
@@ -163,11 +163,11 @@ export default class BaseRoute {
 	/**
 	 * Returns the search params
 	 *
-	 * ## Note
+	 * #### Note
 	 * You might also have a look at `getSearchParam` and `setSearchParam`
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
 	 * console.log(route.search.get('a')); // '1'
 	 * ```
@@ -179,8 +179,8 @@ export default class BaseRoute {
 	/**
 	 * Returns the hash of the route
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const route = new Route('https://example.com/foo/bar/#hash', null);
 	 * console.log(route.hash); // '#hash'
 	 * ```
@@ -192,8 +192,8 @@ export default class BaseRoute {
 	/**
 	 * Set the hash of the route
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const route = new Route('https://example.com/foo/bar/', null);
 	 * route.hash = '#hash';
 	 * console.log(route.url.href); // 'https://example.com/foo/bar/#hash'
@@ -213,8 +213,8 @@ export default class BaseRoute {
 	/**
 	 * Gets the search param
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
 	 * console.log(route.getSearchParam('a')); // '1'
 	 * ```
@@ -227,8 +227,8 @@ export default class BaseRoute {
 	 * Sets the search param or removes it if the value is null, undefined or an
 	 * empty string
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * const route = new Route('https://example.com/foo/bar/?a=1&b=2', null);
 	 * route.setSearchParam('a', '3');
 	 * console.log(route.url.href); // 'https://example.com/foo/bar/?a=3&b=2'
@@ -261,7 +261,7 @@ export default class BaseRoute {
 	 * Sets a state value.
 	 * If the value is null or undefined, the key will be removed.
 	 *
-	 * ## When to use state
+	 * #### When to use state
 	 * State is used to store additional information that persists across route changes.
 	 * The State is only available in the client code since it is stored using window.history.
 	 *
@@ -286,7 +286,7 @@ export default class BaseRoute {
 	 * Sets a context value.
 	 * If the value is null or undefined, the key will be removed.
 	 *
-	 * ## When to use context
+	 * #### When to use context
 	 * Context is used to pass data to onRoute and onRequest handlers or exchange data between loadData calls.
 	 * This context is not persistent and should be considered valid only for the current request/route.
 	 * The context is not cloned in the clone call and will be the same object.
@@ -324,7 +324,7 @@ export default class BaseRoute {
 	 * This checks the url but search params do not have to be in the
 	 * same order
 	 *
-	 * ## Note
+	 * #### Note
 	 * This only check the url, not site or anything else.
 	 */
 	eq(route: BaseRoute | null) {
@@ -380,7 +380,7 @@ export default class BaseRoute {
 	/**
 	 * Create a copy of the Route
 	 *
-	 * ## Note
+	 * #### Note
 	 * This does not make a copy of the template or context
 	 */
 	clone() {

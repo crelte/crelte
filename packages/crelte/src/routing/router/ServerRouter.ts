@@ -67,7 +67,7 @@ export default class ServerRouter extends BaseRouter {
 	 *
 	 * And then if no redirect happen the final route
 	 *
-	 * ## Throws
+	 * #### Throws
 	 * If the request fails
 	 */
 	async init(url: string): Promise<[Request, Route | null]> {

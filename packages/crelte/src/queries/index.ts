@@ -29,7 +29,7 @@ type InferVariableTypes<T> = {
 };
 
 /**
- * ## Example
+ * #### Example
  * ```ts
  * import { vars, Caching } from 'crelte/queries';
  *

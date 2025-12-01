@@ -20,11 +20,11 @@ export interface LoadDataArray<A1 = any> extends Array<LoadData<A1>> {}
  *
  * There are three main ways `loadData` can be defined:
  *
- * ## Object
+ * #### Object
  * This is the most common way loadData will be used.
  * Each property should be a loadData type, each one is called in parallel.
  * And will be available to your component with the same name.
- * ```
+ * ```js
  * import entriesQuery from '@/queries/entries.graphql';
  * import { loadData as headerLoadData } from '@/layout/header.svelte';
  *
@@ -34,30 +34,20 @@ export interface LoadDataArray<A1 = any> extends Array<LoadData<A1>> {}
  * };
  * ```
  *
- * ## GraphQl
+ * #### GraphQl
  * You can just export a graphql query as a loadData type.
  * This will export all queries from the graphql file as properties.
- * ```
+ * ```js
  * import blogsQuery from '@/queries/blogs.graphql';
  *
  * export const loadData = blogsQuery;
- *
- * // or another option
- * import { gql } from '@craft-svelte/core/graphql';
- *
- * export const loadData = gql`query {
- *   blogs: entries(section: "blogs") {
- *     title
- *     url
- *  }
- * }`;
  * ```
  *
- * ## Function
+ * #### Function
  * Using a function gives you the most flexibility but also is the
  * most cumbersome.
  *
- * ```
+ * ```js
  * import articlesQuery from '@/queries/articles.graphql';
  *
  * export async function loadData(cr, entry) {
@@ -135,8 +125,8 @@ export async function callLoadData<A1 = any>(
  *
  * Prefer to use the array syntax.
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * export const loadData = mergeLoadData(
  *     {
  * 	        filter: (cr) => cr.route.search.get('filter'),

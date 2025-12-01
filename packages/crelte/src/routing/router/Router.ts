@@ -9,8 +9,8 @@ import { Entry } from '../../loadData/index.js';
  *
  * If you return `false` the request will be aborted
  *
- * ## Example
- * ```
+ * #### Example
+ * ```js
  * router.replace(req => (req.hash = ''));
  * ```
  */
@@ -28,7 +28,7 @@ export default class Router {
 	/**
 	 * returns a store with the current route
 	 *
-	 * ## Note
+	 * #### Note
 	 * Will always contain a route except in the first loadData call this
 	 * is intentional since you will get the wrong route in a loadData call.
 	 * In a loadData you should always use the `CrelteRequest` provided
@@ -41,7 +41,7 @@ export default class Router {
 	/**
 	 * returns a store with the current site
 	 *
-	 * ## Note
+	 * #### Note
 	 * Will always contain a site except in the first loadData call this
 	 * is intentional since you might get the wrong site if a site switch
 	 * is happening and you call this in loadData. If possible use the CrelteRequest
@@ -56,7 +56,7 @@ export default class Router {
 	/**
 	 * returns a store with the current entry
 	 *
-	 * ## Note
+	 * #### Note
 	 * Will always contain an entry except in the first loadData call this
 	 * is intentional since you might get the wrong entry if a request is happening
 	 * and you call this in loadData. If possible use the CrelteRequest
@@ -69,7 +69,7 @@ export default class Router {
 	/**
 	 * returns the latest request in progress otherwise returns null.
 	 *
-	 * ## Important !!
+	 * #### Important !!
 	 * If at all possible prefer using the `CrelteRequest` provided in each
 	 * loadData call. For example in a preload request this will return null.
 	 * Or a user has clicked multiple times on different links you might get
@@ -136,11 +136,11 @@ export default class Router {
 	 * the url needs to start with http or with a / which will be considered as
 	 * the site baseUrl
 	 *
-	 * ## Note
+	 * #### Note
 	 * The origin will always be set to 'manual'
 	 *
-	 * ## Example
-	 * ```
+	 * #### Example
+	 * ```js
 	 * import { getRouter } from 'crelte';
 	 *
 	 * const router = getRouter();
@@ -181,13 +181,13 @@ export default class Router {
 	 * You can use this when using pagination for example change the route object
 	 * (search argument) and then call push
 	 *
-	 * ## Note
+	 * #### Note
 	 * This will always set the origin to 'push'
 	 * And will clear the scrollY value if you dont provide a new one via the `opts`
 	 * This will disableLoadData by default if you dont provide an override via the `opts`
 	 *
-	 * ## Example using the update function
-	 * ```
+	 * #### Example using the update function
+	 * ```js
 	 * import { getRouter } from 'crelte';
 	 *
 	 * const router = getRouter();
@@ -196,8 +196,8 @@ export default class Router {
 	 * router.push(req => req.setSearchParam('page', page || null));
 	 * ```
 	 *
-	 * ## Example using the route object
-	 * ```
+	 * #### Example using the route object
+	 * ```js
 	 * import { getRouter } from 'crelte';
 	 *
 	 * const router = getRouter();
@@ -244,13 +244,13 @@ export default class Router {
 	 *
 	 * You can use this when using some filters for example a search filter
 	 *
-	 * ## Note
+	 * #### Note
 	 * This will always set the origin to 'replace'
 	 * And will clear the scrollY value if you don't provide a new one via the `opts`
 	 * This will disableLoadData by default if you don't provide an override via the `opts`
 	 *
-	 * ## Example using the update function
-	 * ```
+	 * #### Example using the update function
+	 * ```js
 	 * import { getRouter } from 'crelte';
 	 *
 	 * const router = getRouter();
@@ -259,8 +259,8 @@ export default class Router {
 	 * router.replace(req => req.setSearchParam('search', search));
 	 * ```
 	 *
-	 * ## Example using the route object
-	 * ```
+	 * #### Example using the route object
+	 * ```js
 	 * import { getRouter } from 'crelte';
 	 *
 	 * const router = getRouter();

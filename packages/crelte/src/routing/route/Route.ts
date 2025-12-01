@@ -48,7 +48,7 @@ export default class Route extends BaseRoute {
 	/**
 	 * Create a new Route
 	 *
-	 * ## Note
+	 * #### Note
 	 * This should only be created by crelte
 	 */
 	constructor(
@@ -70,7 +70,7 @@ export default class Route extends BaseRoute {
 	/**
 	 * Create a copy of the EntryRoute
 	 *
-	 * ## Note
+	 * #### Note
 	 * This does not make a copy of the entry, template or loadedData.
 	 */
 	clone() {

@@ -39,7 +39,7 @@ function innerGetCrelte(): Crelte {
 /**
  * Get Crelte from the current context
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getCrelte(): CrelteWithRoute {
@@ -60,7 +60,7 @@ export function getCrelte(): CrelteWithRoute {
 /**
  * Get the router from the current context
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getRouter(): Router {
@@ -70,7 +70,7 @@ export function getRouter(): Router {
 /**
  * Get the SSR cache from the current context
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getSsrCache(): SsrCache {
@@ -80,7 +80,7 @@ export function getSsrCache(): SsrCache {
 /**
  * Get the Queries from the current context
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getQueries(): Queries {
@@ -90,7 +90,7 @@ export function getQueries(): Queries {
 /**
  * Get a store with the current route
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getRoute(): Readable<Route> {
@@ -100,7 +100,7 @@ export function getRoute(): Readable<Route> {
 /**
  * Get a store with the current site
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getSite(): Readable<Site> {
@@ -110,7 +110,7 @@ export function getSite(): Readable<Site> {
 /**
  * Get a store with the current entry
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getEntry(): Readable<Entry> {
@@ -122,7 +122,7 @@ export function getEntry(): Readable<Entry> {
  * All env variables need to start with VITE_
  * except ENDPOINT_URL, CRAFT_WEB_URL and FRONTEND_URL
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getEnv(name: 'ENDPOINT_URL'): string;
@@ -136,7 +136,7 @@ export function getEnv(name: string): string | null {
 /**
  * returns a store which indicates if the a page is loading
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getLoading(): Readable<boolean> {
@@ -146,7 +146,7 @@ export function getLoading(): Readable<boolean> {
 /**
  * returns a store which indicates the loading progress between 0 and 1
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getLoadingProgress(): Readable<number> {
@@ -156,7 +156,7 @@ export function getLoadingProgress(): Readable<number> {
 /**
  * returns a store which contains a globalSet
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getGlobal<T = any>(name: string): Readable<T> | null {
@@ -166,7 +166,7 @@ export function getGlobal<T = any>(name: string): Readable<T> | null {
 /**
  * returns the cookies instance
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function getCookies(): Cookies {
@@ -176,7 +176,7 @@ export function getCookies(): Cookies {
 /**
  * Listen for route changes
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function onRoute(fn: (route: Route) => void) {
@@ -188,7 +188,7 @@ export function onRoute(fn: (route: Route) => void) {
 /**
  * Listen for requests
  *
- * ## Note
+ * #### Note
  * This only works during component initialisation.
  */
 export function onRequest(fn: (cr: CrelteRequest) => void) {

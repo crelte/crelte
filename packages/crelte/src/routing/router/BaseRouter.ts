@@ -25,7 +25,7 @@ export default class BaseRouter {
 	/**
 	 * The current route
 	 *
-	 * ## Note
+	 * #### Note
 	 * Will always contain a route except in the first loadData call
 	 */
 	route: Writable<Route | null>;
@@ -34,7 +34,7 @@ export default class BaseRouter {
 	/**
 	 * The current site
 	 *
-	 * ## Note
+	 * #### Note
 	 * Will always contain a site except in the first loadData call
 	 */
 	site: Writable<Site | null>;
@@ -79,7 +79,7 @@ export default class BaseRouter {
 	onRender: (
 		cr: CrelteRequest,
 		/**
-		 * ## Throws
+		 * #### Throws
 		 * if the route is missing entry, template or loadedData
 		 */
 		readyForRoute: () => Route,
@@ -252,7 +252,7 @@ export default class BaseRouter {
 	}
 
 	/**
-	 * ## Throws
+	 * #### Throws
 	 * If the request completed but had an error
 	 */
 	async handleRequest(

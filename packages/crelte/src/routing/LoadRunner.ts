@@ -52,7 +52,7 @@ export default class LoadRunner {
 	/**
 	 * @returns true if the load was completed
 	 *
-	 * ## Throws
+	 * #### Throws
 	 * if there was an error but not if the request
 	 * was cancelled before
 	 */

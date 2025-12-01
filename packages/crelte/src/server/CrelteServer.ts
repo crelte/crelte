@@ -43,7 +43,7 @@ export default class CrelteServerRequest {
 	/**
 	 * Easy access to this.req.site
 	 *
-	 * ## Note
+	 * #### Note
 	 * The site might not always match with the current route
 	 * but be the site default site or one that matches the
 	 * users language.
@@ -94,7 +94,7 @@ export default class CrelteServerRequest {
 	/**
 	 * returns the frontend url with an optional path
 	 *
-	 * ## Note
+	 * #### Note
 	 * For the origin the `FRONTEND_URL` env variable is used
 	 */
 	frontendUrl(path?: string): URL {
@@ -104,7 +104,7 @@ export default class CrelteServerRequest {
 	/**
 	 * returns the backend url with an optional path
 	 *
-	 * ## Note
+	 * #### Note
 	 * For the origin the `ENDPOINT_URL` env variable is used
 	 */
 	backendUrl(path?: string): URL {
