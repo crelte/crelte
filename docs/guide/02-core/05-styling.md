@@ -1,7 +1,7 @@
 # Styling
 
 Svelte has great support for styling. Because you can write css directly
-in your component and it is scoped to does elements.
+in your component and it is scoped to those elements.
 
 
 ## :global

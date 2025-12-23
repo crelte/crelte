@@ -1,17 +1,44 @@
 # Load data
 
-Before a template can be rendered, it needs data. Two data sources get loaded for you automatically, `global.graphql` and `entry.graphql` others need to be defined in `loadGlobalData` or `loadData` respectively.
+Before a template can be rendered, it needs data.  
+In Crelte, data is loaded in a structured way based on the current route and entry.
+
+Two GraphQL queries are loaded automatically for every request:
+
+- `global.graphql` — global, cross-page data
+- `entry.graphql` — data for the currently resolved entry
+
+Additional data can be loaded by exporting `loadGlobalData` or `loadData` from your components.
+
+## Data loading lifecycle
+
+Data loading happens in the following order:
+
+1. **Global data**  
+   `global.graphql` is loaded first, together with `entry.graphql`.  
+   This data is available to all templates.
+
+2. **Template data**  
+   After the entry has been resolved, the active template’s `loadData` is executed.
+
+All load functions run on both the server and the client, allowing pages to be server-rendered and hydrated on navigation.
+
+---
 
 ## loadGlobalData
 
-The first load that occurs is `loadGlobalData`. This will load the `global.graphql`, at the same time `entry.graphql` is loaded. If you don't need to wait for the entry to be available you can export a `loadGlobalData` function from the `App.svelte`.
+`loadGlobalData` is used to load data that does not depend on the current entry.  
+It is defined in `App.svelte` and runs before any template-specific data loading.
+
+Exporting `loadGlobalData` overrides the default `global.graphql` query.
 
 ```svelte
 <script module>
-	// Note that exporting loadGlobalData will override the default global.graphql
 	/** @type {import('crelte').LoadData} */
 	export const loadGlobalData = {
-		someApi: () => fetch('https://api.example.com').then(res => res.json())
+		someApi: () =>
+			fetch('https://api.example.com')
+				.then(res => res.json())
 	};
 </script>
 
@@ -20,47 +47,48 @@ The first load that occurs is `loadGlobalData`. This will load the `global.graph
 
 	const someApi = getGlobal('someApi');
 </script>
-```
+````
 
-After this `loadData` get's called.
+Use `loadGlobalData` for data such as navigation, site-wide configuration, or external APIs that are independent of the current entry.
+
+---
 
 ## loadData
 
-Each template can have a `loadData` export which will get automatically called by crelte.
-
-### templates/pages-home.svelte
+Each template can export a `loadData` definition.
+It is executed after the entry has been resolved and receives access to both the current entry and the Crelte request context.
 
 ```svelte
 <script module>
 	import blogsQuery from '@/queries/blogs.graphql';
 
 	/** @type {import('crelte').LoadData} */
-	export const loadData = (cr, entry) => cr.query(
-		blogsQuery,
-		{ categories: entry.categories }
-	);
+	export const loadData = (cr, entry) =>
+		cr.query(blogsQuery, {
+			categories: entry.categories
+		});
 </script>
 
 <script>
-	// all properties from the query will be available here
 	let { entries } = $props();
 </script>
 ```
 
-## Types
+---
 
-There are four ways `loadData` can be defined. Each of them will be executed on the server and on the client.
+## Defining loadData
+
+`loadData` can be defined in several different ways depending on your needs.
+All variants are executed in parallel and their results are merged into the component’s props.
 
 ### Object
 
-This is the most common way loadData will be used.
-Each property should be a loadData type, each one is called in parallel.
-And will be available to your component with the same name.
+This is the most common form. Each property defines a separate data source.
 
 ```svelte
 <script module>
 	import entriesQuery from '@/queries/entries.graphql';
-	import { loadData as headerLoadData } from '@/layout/header.svelte';
+	import { headerLoadData } from '@/layout/Header.svelte';
 
 	/** @type {import('crelte').LoadData} */
 	export const loadData = {
@@ -70,16 +98,16 @@ And will be available to your component with the same name.
 </script>
 
 <script>
-	// entries will contain an object of the queries you call in
-	// the graphql file
 	let { entries, header } = $props();
 </script>
 ```
 
-### GraphQl
+---
 
-You can just export a graphql query as a loadData type.
-This will export all queries from the graphql file as properties.
+### GraphQL query
+
+You can export a GraphQL query directly.
+All named queries inside the file become available as props.
 
 ```svelte
 <script module>
@@ -90,53 +118,41 @@ This will export all queries from the graphql file as properties.
 </script>
 
 <script>
-	// the name of this property comes from the graphQl file
-	// graphql example: `blogs: entries(section: "blogs")`
 	let { blogs } = $props();
 </script>
 ```
 
+---
+
 ### Function
 
-Using a function gives you the most flexibility but also is the
-most cumbersome.
+Using a function provides the most flexibility and full access to the request context.
 
 ```svelte
 <script module>
 	import articlesQuery from '@/queries/articles.graphql';
 
 	/** @type {import('crelte').LoadDataFn} */
-	export async function loadData(cr, entry) {
-		return await cr.query(articlesQuery, {
+	export const loadData = (cr, entry) =>
+		cr.query(articlesQuery, {
 			category: entry.category
 		});
-	}
-
-	// or
-	/** @type {import('crelte').LoadData} */
-	export const loadData = (cr, entry) => cr.query(articlesQuery, {
-		category: entry.category
-	});
-
-	// or if you're in the context of an object
-	/** @type {import('crelte').LoadData} */
-	export const loadData = {
-		articles: (cr, entry) => cr.query(articlesQuery, {
-			category: entry.category
-		})
-	}
 </script>
 ```
 
+Functions can also be used inside an object definition.
+
+---
+
 ### Array
 
-You can also return an array of loadData types. These will be executed
-in parallel and their results will be combined.
+Multiple load definitions can be combined using an array.
+All entries are executed in parallel and merged.
 
 ```svelte
 <script module>
 	import blogsQuery from '@/queries/blogs.graphql';
-	import { loadData as headerLoadData } from '@/layout/header.svelte';
+	import { headerLoadData } from '@/layout/Header.svelte';
 
 	/** @type {import('crelte').LoadData} */
 	export const loadData = [
@@ -150,14 +166,20 @@ in parallel and their results will be combined.
 </script>
 ```
 
+---
+
 ## Input
 
-Each function has access to `CrelteRequest` as well as the `entry` object except in `loadGlobalData` where `entry` is not yet loaded.
+* `loadData` functions receive a `CrelteRequest` instance and the resolved `entry`.
+* `loadGlobalData` receives only the `CrelteRequest`, as the entry is not yet available.
 
 ## Output
 
-A load data should either return an object or nothing since it will be spread into the component.
+A load function should return an object (or nothing).
+The returned data is merged into the component’s props.
 
-## When to use a loadData
+## When to use loadData
 
-If you need to load data which cannot be loaded in `global.graphql` or `entry.graphql`, it is always favorable to use already existing queries, to avoid multiple request.
+Use `loadData` when data cannot be loaded via `global.graphql` or `entry.graphql`.
+
+Prefer extending existing GraphQL queries where possible to avoid unnecessary additional requests.

@@ -1,12 +1,44 @@
+
 # Routing
 
-Routing in Crelte is split into two parts.
+Routing in Crelte is driven by Craft CMS. Instead of defining routes manually in the frontend, Crelte uses Craft’s site, section, and entry configuration to determine which content and template should be rendered for a given request.
 
-First crelte determines which [site](https://craftcms.com/docs/5.x/system/sites.html) the request belongs to. The uri is then submitted to craft via the `entry.graphql` where craft will determine the correct entry and language.
+## Routing flow
 
-Based on the `sectionHandle` and `typeHandle` a template get's selected which get's passed to the `App.svelte` which will then render it.
+Routing happens in three steps:
 
-## Basic App.svelte
+1. **Site and entry resolution**  
+   When a request comes in, Crelte determines which Craft site the URL belongs to. The remaining URI is then submitted to Craft via GraphQL, where Craft resolves the correct entry and language based on its routing and localization rules.
+
+2. **Template resolution**  
+   Once an entry is resolved, Crelte selects a Svelte template based on the entry’s section and entry type. This mapping follows a simple naming convention and allows templates to directly reflect Craft’s content structure.
+
+3. **Rendering**  
+   The resolved entry, template, and loaded data are passed to the application root and rendered using server-side rendering with client-side hydration.
+
+## Template resolution
+
+Templates live in the `svelte/src/templates` directory.  
+Crelte resolves templates using the following naming rules:
+
+- `<section-handle>-<entry-type>.svelte`
+- `<section-handle>.svelte` (if the section has only one entry type)
+
+Examples:
+
+- `blog-post.svelte` → section `blog`, entry type `post`
+- `blog.svelte` → section `blog` with a single entry type
+
+If no matching template is found, an error is thrown during rendering.
+
+### Error templates
+
+- `error-404.svelte` is rendered when no entry can be resolved for a request.
+- `Error.svelte` is rendered when an error occurs during routing or rendering, or when Craft is in maintenance mode.
+
+## App.svelte
+
+The `App.svelte` component is responsible for rendering the resolved template. It receives routing information and dynamically loads the appropriate Svelte component.
 
 ```svelte
 <script module>
@@ -21,10 +53,15 @@ Based on the `sectionHandle` and `typeHandle` a template get's selected which ge
 	let templateData = $derived($route.loadedData);
 </script>
 
-<!-- update entire component if page changes -->
 {#key entry}
 	<div class="app">
 		<Template {entry} {...templateData} />
 	</div>
 {/key}
 ```
+
+- `entry` contains the resolved Craft entry
+- `Template` is the selected Svelte template
+- `templateData` contains data loaded during routing and template execution
+
+Using a keyed block ensures the entire page is re-rendered when navigating between entries.

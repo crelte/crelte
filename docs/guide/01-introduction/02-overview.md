@@ -1,39 +1,47 @@
-# Overview
+# Architecture overview
 
-The overview will give you a general look of how all things work together and where to look for them. This section helps you understand the system as a whole before diving into specific components and documentation.
+This page provides a high-level view of how a Crelte project is structured and how requests flow through the system. It is intended to give you a mental model of how the different pieces fit together before diving into individual concepts.
 
 ## How everything fits together
 
-Your Crelte project consists of two applications: Craft CMS in the backend and Svelte in the frontend. This separation exists in both development and production environments.
+A Crelte project consists of two separate applications:
 
-## Example request flow
+- **Craft CMS** runs as the backend and is responsible for content modeling, localization, and data delivery.
+- **Svelte** runs as the frontend and is responsible for rendering pages and handling interactivity.
 
-Let's trace an example request to illustrate the core concepts:
+This separation exists in both development and production. Craft acts as the source of truth for content and routing decisions, while Svelte renders the resulting pages using data provided by Craft.
+
+## Request lifecycle
+
+The following diagram illustrates the lifecycle of a typical page request:
 
 ![example](/overview-example.svg)
 
-1. A user visits our website at:
-   `crelte.com/en/articles/hello-world`.
-   Crelte's router determines which templates to load and what data to fetch from the backend.
-   The routing is dynamically controlled by Craft CMS. In this example, the router first identifies `crelte.blog/en` as the [site](https://craftcms.com/docs/5.x/system/sites.html) from the URL,
-   and then looks for English entries, since this is localized by default in Craft CMS.
-   During this step, Crelte also loads specified GraphQL data for the given entry. This data will be passed down to the template component in the next step.
+At a high level, a request goes through these stages:
 
-2. Once the entry is retrieved from the backend, Crelte loads the appropriate template.
-   In our example, it loads the `articles.svelte` file from the `/svelte/src/templates/` directory. This happens automatically because the router uses the handle of the entry.
-   The template then executes its data loading logic. There are several approaches to loading data, which are detailed in the [Load data](#) documentation.
+1. **Routing and content resolution**  
+   When a user visits a URL, Crelte determines which Craft site, language, and entry the request refers to. Craft resolves the entry and returns structured content data via GraphQL.
 
-3. The template gets rendered. It receives the combined data from both the template's load data function and from the entries.graphql query.
-   This rendering can happen on either the client or server, as Crelte fully supports [Server-Side Rendering (SSR)](https://developer.mozilla.org/en-US/docs/Glossary/SSR).
+2. **Template resolution**  
+   Based on the resolved entry, Crelte selects a corresponding Svelte template. This mapping is driven by Craft’s content structure, allowing templates to follow content rather than URL patterns.
 
-That's the fundamental data flow, but here are some additional important concepts:
+3. **Rendering**  
+   The selected template is rendered using the data provided by Craft and any additional data loaded by the template itself. Rendering can occur on the server for fast initial loads and SEO, with client-side hydration enabling interactivity.
 
-### graphql
+This flow remains consistent regardless of whether rendering happens on the server or in the browser.
 
-GraphQL is how we specify what data to request from the backend. It's Craft's preferred method for headless content delivery, allowing us to explicitly define the shape of the data we need.
-Crelte provides helpers to work with GraphQL easily, both from the server and client, using dedicated GraphQL files or inline queries. [Learn more](/guide/02-core/03-graphql.html)
+## Key concepts
+
+Several core concepts build on this architecture and are documented in more detail elsewhere:
+
+### GraphQL
+
+GraphQL is the primary way Crelte retrieves content from Craft. It allows you to define exactly which data is needed for a page and ensures a predictable data shape for your templates.
+
+[Learn more about GraphQL in Crelte](/guide/02-core/03-graphql.html)
 
 ### Globals
 
-Globals are a Craft concept that Crelte extends. They represent data that's important across multiple pages, independent of the specific content being viewed. Examples include header navigation, footer content, logos, or theme colors.
-[Learn more](/guide/02-core/04-globals.html)
+Globals represent content that is shared across multiple pages, such as navigation, footers, or branding elements. Crelte extends Craft’s global sets and makes them available alongside entry-specific data.
+
+[Learn more about Globals](/guide/02-core/04-globals.html)

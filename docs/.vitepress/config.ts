@@ -35,9 +35,12 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
 					text: 'Introduction',
 					link: '01-introduction/01-introduction',
 				},
-				{ text: 'Overview', link: '01-introduction/02-overview' },
-				{ text: 'Create a project', link: '01-introduction/02-create' },
-				{ text: 'Structure', link: '01-introduction/03-structure' },
+				{
+					text: 'Architecture overview',
+					link: '01-introduction/02-overview',
+				},
+				{ text: 'Create a project', link: '01-introduction/03-create' },
+				{ text: 'Structure', link: '01-introduction/04-structure' },
 			],
 		},
 		{
