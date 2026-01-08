@@ -233,7 +233,7 @@ ${siteEnvName}=
 		`To start your project, run the following command:
   \`cd ${relativeSvelte} && npm run dev\`
 
-You're login credentials are:
+Your login credentials are:
   ${color.bold('Username')}: ${craftOptions.username}
   ${color.bold('Password')}: ${craftOptions.password}`,
 	);
