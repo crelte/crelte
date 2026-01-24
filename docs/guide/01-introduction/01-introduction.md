@@ -8,6 +8,8 @@ Crelte provides a clear way to build content-driven applications where Craft def
 If you’re new to Crelte, we recommend starting with the tutorial to get a hands-on overview of how Craft and Svelte work together.
 
 If you’re unfamiliar with either Craft CMS or Svelte, it may help to skim their introductions first.
+
+[Crelte Tutorial](/tutorial/01-introduction/01-overview.html)
 :::
 
 ## What is Svelte?
