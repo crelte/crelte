@@ -22,6 +22,10 @@ export default defineConfig({
 		socialLinks: [
 			{ icon: 'github', link: 'https://github.com/crelte/crelte' },
 		],
+
+		search: {
+			provider: 'local',
+		},
 	},
 });
 
