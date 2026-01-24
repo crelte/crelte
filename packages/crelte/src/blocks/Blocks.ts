@@ -122,6 +122,7 @@ export class BlockModules {
  *         }
  *     }
  * );
+ * ```
  */
 export function blockModules(
 	modules: Record<string, AsyncModule>,
@@ -140,6 +141,7 @@ export function blockModules(
  * export const loadData = {
  *     blocks: (cr, entry) => loadBlocksData(cr, entry.blocks, mods)
  * };
+ * ```
  */
 export async function loadBlocksData(
 	cr: CrelteRequest,

@@ -176,6 +176,8 @@ export function getCookies(): Cookies {
 /**
  * Listen for route changes
  *
+ * route: {@link Route}
+ *
  * #### Note
  * This only works during component initialisation.
  */
@@ -187,6 +189,8 @@ export function onRoute(fn: (route: Route) => void) {
 
 /**
  * Listen for requests
+ *
+ * cr: {@link CrelteRequest}
  *
  * #### Note
  * This only works during component initialisation.

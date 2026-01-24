@@ -31,6 +31,11 @@ async function writeSitesCache(data: any): Promise<void> {
 	return await writeFile(localDir('sites.json'), JSON.stringify(data));
 }
 
+/**
+ * Create and start the server
+ *
+ * Generally this call should automatically happen via the vite build step.
+ */
 export default async function createServer(serverMod: any, buildTime: string) {
 	const env = await initEnvData(PLATFORM, {
 		enabled: process.env.NODE_ENV === 'production',

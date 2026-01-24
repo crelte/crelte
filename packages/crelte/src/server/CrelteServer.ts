@@ -15,7 +15,7 @@ export type CrelteServerRequestOptions = {
 
 export default class CrelteServerRequest {
 	/**
-	 * The current request
+	 * The current request {@link ServerRequest}
 	 */
 	req: ServerRequest;
 
@@ -24,7 +24,7 @@ export default class CrelteServerRequest {
 	private _sites: Site[];
 	private _langs: string[];
 	private _queries: Queries;
-	protected _cookies: Cookies;
+	private _cookies: Cookies;
 
 	constructor(req: ServerRequest, opts: CrelteServerRequestOptions) {
 		this.req = req;

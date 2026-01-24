@@ -1,4 +1,17 @@
 /**
+ * @packageDocumentation
+ *
+ * Crelte Standard library
+ *
+ * Provides standard utility functions and types for Crelte applications.
+ *
+ * ### Modules:
+ * - {@link std/intl}
+ * - {@link std/stores}
+ * - {@link std/sync}
+ */
+
+/**
  * Delays for a specified amount of time.
  *
  * @param ms - The number of milliseconds to delay for.

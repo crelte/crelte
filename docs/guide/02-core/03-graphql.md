@@ -56,7 +56,7 @@ query ($siteId: [QueryArgument]) {
 
 ## Execution
 
-Queries can either be run via `Crelte.query`, `CrelteRequest.query` or by setting it
+Queries can either be run via [Crelte.query](/types/crelte/type-aliases/Crelte.html#query), `CrelteRequest.query` or by setting it
 directly as a loadData (see loadData).
 
 By default all GraphQL queries are cached.

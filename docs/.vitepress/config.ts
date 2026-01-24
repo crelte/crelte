@@ -56,6 +56,17 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
 					text: 'State management',
 					link: '02-core/06-state-management',
 				},
+				{ text: 'Blocks', link: '02-core/07-blocks' },
+				{ text: 'Server routes', link: '02-core/08-server-routes' },
+			],
+		},
+		{
+			text: 'Advanced',
+			items: [
+				{ text: 'Data flow', link: '03-advanced/01-data-flow' },
+				{ text: 'Plugins', link: '03-advanced/02-plugins' },
+				{ text: 'Caching', link: '03-advanced/03-caching' },
+				{ text: 'Static Router', link: '03-advanced/04-static-router' },
 			],
 		},
 	];

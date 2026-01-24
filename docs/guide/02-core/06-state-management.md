@@ -19,7 +19,8 @@ A good way to store state is in the searchParams. This lets the user copy the ur
 and get the same state again. The client and the server agree on what data to load
 and how to display it.
 
-For this you can either use normal a tags or use the router `open`, `push` or `replace` methods.
+For this you can either use normal a tags or use the router [open](/types/routing/classes/Router.html#open),
+[push](/types/routing/classes/Router.html#push) or [replace](/types/routing/classes/Router.html#replace) methods.
 
 ```svelte
 <script>
@@ -51,9 +52,9 @@ For this you can either use normal a tags or use the router `open`, `push` or `r
 {/if}
 ```
 
-### Use ssrcache
+### Use ssrCache
 
-To share data between the server and the client you can use the `SsrCache`.
+To share data between the server and the client you can use the [SsrCache](/types/ssr/classes/SsrCache.html).
 
 ```svelte
 <script module>
@@ -116,3 +117,20 @@ exist for the current session or the current device.
 
 <p>Persistent number: {persistentNumber}</p>
 ```
+
+### Route state or context
+
+If you don't want to store the data inside the SearchParams you can also use the state or context.
+
+#### State
+
+State is the a mechanism provided by the window History API this means the data stored there is only available
+on the client. See [`BaseRoute.setState`](/types/routing/classes/BaseRoute.html#setstate)
+
+#### Context
+
+Context is a way to attach any data to the current request or route. It will persist on that route until the object
+is destroyed. This means is it not shared between the server and the client and is no longer available after calling `router.back`.
+
+It can be useful to pass data between multiple loadData functions or from an `onRequest` handler or when doing a
+`router.open` or similar call. See [`BaseRoute.setContext`](/types/routing/classes/BaseRoute.html#setcontext)

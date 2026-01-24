@@ -1,5 +1,11 @@
 import { Site } from '../routing/index.js';
 
+/**
+ * Extended Request class for server requests
+ *
+ * This extends the WebApi [Request](https://developer.mozilla.org/docs/Web/API/Request)
+ * and adds three properties {@link site}, {@link getParam} and {@link siteMatches}.
+ */
 export default class ServerRequest extends Request {
 	private params: Map<string, string>;
 

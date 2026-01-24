@@ -45,7 +45,7 @@ export default class BaseRoute {
 	url: URL;
 
 	/**
-	 * The site of the route
+	 * The {@link Site} of the route
 	 *
 	 * #### Note
 	 * In the `beforeRequest` event the site might not match
@@ -75,7 +75,7 @@ export default class BaseRoute {
 	index: number;
 
 	/**
-	 * The origin of this route, See [[RouteOrigin]]
+	 * The origin of this route, See {@link RouteOrigin}
 	 */
 	origin: RouteOrigin;
 

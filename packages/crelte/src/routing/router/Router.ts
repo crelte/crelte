@@ -16,6 +16,9 @@ import { Entry } from '../../loadData/index.js';
  */
 export type UpdateRequest = (req: Request) => boolean | null | undefined | void;
 
+/**
+ * The Crelte Router
+ */
 export default class Router {
 	private inner: BaseRouter;
 	private _request: Request | null;
@@ -44,7 +47,7 @@ export default class Router {
 	 * #### Note
 	 * Will always contain a site except in the first loadData call this
 	 * is intentional since you might get the wrong site if a site switch
-	 * is happening and you call this in loadData. If possible use the CrelteRequest
+	 * is happening and you call this in loadData. If possible use the {@link CrelteRequest#site}
 	 * provided in each loadData call.
 	 *
 	 * Else use `router.site.get() ?? router.req.site`
@@ -70,7 +73,7 @@ export default class Router {
 	 * returns the latest request in progress otherwise returns null.
 	 *
 	 * #### Important !!
-	 * If at all possible prefer using the `CrelteRequest` provided in each
+	 * If at all possible prefer using the {@link CrelteRequest} provided in each
 	 * loadData call. For example in a preload request this will return null.
 	 * Or a user has clicked multiple times on different links you might get
 	 * the url of the newer request.
@@ -121,7 +124,7 @@ export default class Router {
 	}
 
 	/**
-	 * Returns a site which is preffered based on the users language
+	 * Returns a site which is preferred based on the users language
 	 *
 	 * Returns null if no site could be determined
 	 */
