@@ -55,6 +55,7 @@ export async function main(data: MainData) {
 
 	const config = configWithDefaults(data.app.config ?? {});
 	const ssrCache = new SsrCache();
+	ssrCache.z_importFromHead();
 
 	// since cors could cause an issue we wan't to override the FRONTEND_URL
 	// env variable, since the server will be reachable on any domain

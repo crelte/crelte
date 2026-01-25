@@ -1,4 +1,9 @@
-export async function calcKey(data: any) {
+/**
+ * Calculates a key based on the json representation of the data
+ *
+ * If available hashes the data using SHA-1
+ */
+export async function calcKey(data: any): Promise<string> {
 	const json = JSON.stringify(data);
 	// this should only happen in an unsecure context
 	// specifically in the craft preview locally
@@ -27,53 +32,110 @@ export async function calcKey(data: any) {
  * generally. Storing data and retrieving it will also work on the client.
  */
 export default class SsrCache {
-	private store: Record<string, any>;
+	private store: Map<string, any>;
 
 	constructor() {
-		this.store = {};
-
-		// @ts-ignore
-		if (typeof window !== 'undefined' && window.SSR_STORE) {
-			// @ts-ignore
-			this.store = window.SSR_STORE;
-		}
+		this.store = new Map();
 	}
 
 	/**
-	 * check if the value is in the cache else calls the fn
+	 * Check if a key exists in the cache
 	 */
-	async load<T>(key: string, fn: () => Promise<T>) {
-		if (key in this.store) return this.store[key];
-		const v = await fn();
-		this.set(key, v);
-		return v;
+	has(key: string): boolean {
+		return this.store.has(key);
 	}
 
 	/**
 	 * Get a value from the cache
 	 */
 	get<T>(key: string): T | null {
-		return this.store[key] ?? null;
+		return this.store.get(key) ?? null;
 	}
 
 	/**
 	 * Set a value in the cache
 	 */
 	set<T>(key: string, val: T): T {
-		return (this.store[key] = val);
+		this.store.set(key, val);
+		return val;
+	}
+
+	/**
+	 * check if the value is in the cache else calls the fn
+	 *
+	 * See also {@link getOrInsertLoaded}
+	 */
+	getOrInsertComputed<T>(key: string, fn: () => T): T {
+		if (this.store.has(key)) return this.store.get(key);
+		return this.set(key, fn());
+	}
+
+	/**
+	 * check if the value is in the cache else calls the fn
+	 *
+	 * See also {@link getOrInsertComputed}
+	 *
+	 * @deprecated use {@link getOrInsertLoaded} instead
+	 */
+	async load<T>(key: string, fn: () => Promise<T>): Promise<T> {
+		return this.getOrInsertLoaded<T>(key, fn);
+	}
+
+	/**
+	 * check if the value is in the cache else calls the fn
+	 *
+	 * See also {@link getOrInsertComputed}
+	 */
+	async getOrInsertLoaded<T>(key: string, fn: () => Promise<T>): Promise<T> {
+		if (this.store.has(key)) return this.store.get(key);
+		return this.set(key, await fn());
+	}
+
+	/**
+	 * Create a one-time value for SSR hydration.
+	 *
+	 * The value is generated and cached on the server, returned exactly once on the
+	 * client and not cached thereafter.
+	 *
+	 * See also {@link getOrInsertComputed}
+	 */
+	takeOnce<T>(key: string, fn: () => T): T {
+		if (import.meta.env.SSR) return this.getOrInsertComputed(key, fn);
+		if (this.store.has(key)) return this.remove<T>(key)!;
+		return fn();
+	}
+
+	/**
+	 * Remove a value from the cache and return it
+	 */
+	remove<T>(key: string): T | null {
+		const val = this.get<T>(key);
+		this.store.delete(key);
+		return val;
 	}
 
 	/** @hidden */
-	clear() {
-		this.store = {};
+	z_clear() {
+		this.store.clear();
+	}
+
+	/** @hidden */
+	z_importFromHead() {
+		// @ts-ignore
+		this.store = new Map(window._SSR_STORE ?? []);
+		// @ts-ignore
+		delete window._SSR_STORE;
 	}
 
 	private exportAsJson(): string {
-		return JSON.stringify(this.store).replace(/</g, '\\u003c');
+		return JSON.stringify(Array.from(this.store.entries())).replace(
+			/</g,
+			'\\u003c',
+		);
 	}
 
 	/** @hidden */
-	exportToHead(): string {
-		return `\n\t\t<script>window.SSR_STORE = ${this.exportAsJson()};</script>`;
+	z_exportToHead(): string {
+		return `\n\t\t<script>window._SSR_STORE = ${this.exportAsJson()};</script>`;
 	}
 }

@@ -142,7 +142,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += crelte.ssrCache.exportToHead();
+	head += crelte.ssrCache.z_exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace(
@@ -221,7 +221,7 @@ export async function mainError(
 	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += ssrCache.exportToHead();
+	head += ssrCache.z_exportToHead();
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', 'de');
