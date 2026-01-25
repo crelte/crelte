@@ -95,6 +95,10 @@
 		"./std/intl": {
 			"types": "./dist/std/intl/index.d.ts",
 			"default": "./dist/std/intl/index.js"
+		},
+		"./std/rand": {
+			"types": "./dist/std/rand/index.d.ts",
+			"default": "./dist/std/rand/index.js"
 		}
 	},
 	"dependencies": {
