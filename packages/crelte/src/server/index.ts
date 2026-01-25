@@ -1,9 +1,16 @@
 import ServerRequest from './Request.js';
-import ServerRouter, { type Handler } from './ServerRouter.js';
-import CrelteServerRequest from './CrelteServer.js';
+import ServerRouter, {
+	type RouterOptions,
+	type Handler,
+} from './ServerRouter.js';
+import CrelteServerRequest, {
+	type CrelteServerRequestOptions,
+} from './CrelteServer.js';
 
 export {
 	type ServerData,
+	type RenderRequest,
+	type RenderResponse,
 	type MainData,
 	main,
 	type Error,
@@ -11,4 +18,11 @@ export {
 	mainError,
 } from '../init/server.js';
 
-export { CrelteServerRequest, ServerRouter, Handler, ServerRequest };
+export {
+	CrelteServerRequest,
+	CrelteServerRequestOptions,
+	ServerRouter,
+	RouterOptions,
+	Handler,
+	ServerRequest,
+};

@@ -23,8 +23,8 @@ export default class Router {
 	private inner: BaseRouter;
 	private _request: Request | null;
 
-	constructor(inner: BaseRouter) {
-		this.inner = inner;
+	constructor(inner: any) {
+		this.inner = inner as BaseRouter;
 		this._request = null;
 	}
 
@@ -358,7 +358,7 @@ export default class Router {
 	 * Resolve a url or Route and convert it to a Request
 	 *
 	 * @param target
-	 * @param opts, any option present will override the value in target
+	 * @param opts any option present will override the value in target
 	 * @return Returns null if the url does not match our host (the protocol get's ignored)
 	 */
 	targetToRequest(

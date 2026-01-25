@@ -2,6 +2,7 @@ import Queries from '../queries/Queries.js';
 import { SsrCache } from '../ssr/index.js';
 import { gql } from '../queries/index.js';
 import { Platform } from './platform.js';
+import { SiteFromGraphQl } from '../routing/Site.js';
 
 export type ServerOptions = {
 	// typescript client.ts & server.ts
@@ -75,15 +76,6 @@ export async function initEnvData(
 		sites,
 	};
 }
-
-export type SiteFromGraphQl = {
-	id: number;
-	baseUrl: string;
-	language: string;
-	name: string | null;
-	handle: string;
-	primary: boolean;
-};
 
 export type SitesCache = {
 	enabled: boolean;

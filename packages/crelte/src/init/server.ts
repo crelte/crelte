@@ -20,6 +20,8 @@ import { Router } from '../routing/index.js';
 import { Writable } from '../std/stores/index.js';
 import { RenderRequest, RenderResponse } from '../server/shared.js';
 
+export { type RenderRequest, type RenderResponse } from '../server/shared.js';
+
 export type ServerData = RenderRequest;
 
 /**

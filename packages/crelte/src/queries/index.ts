@@ -23,9 +23,11 @@ export {
 	varsIdsEqual,
 };
 
-type InferQueryVarType<T> = T extends QueryVar<infer U> ? U : never;
+/** @hidden */
+export type InferQueryVarType<T> = T extends QueryVar<infer U> ? U : never;
 
-type InferVariableTypes<T> = {
+/** @hidden */
+export type InferVariableTypes<T> = {
 	[K in keyof T]: InferQueryVarType<T[K]>;
 };
 

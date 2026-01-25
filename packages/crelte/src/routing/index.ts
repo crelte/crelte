@@ -7,18 +7,23 @@ import Request, {
 	type RequestOptions,
 	type DelayRender,
 } from './route/Request.js';
-import Site from './Site.js';
-import BaseRoute, { type RouteOrigin } from './route/BaseRoute.js';
+import Site, { type SiteFromGraphQl } from './Site.js';
+import BaseRoute, {
+	type BaseRouteOptions,
+	type RouteOrigin,
+} from './route/BaseRoute.js';
 import { shouldInterceptClick } from './utils.js';
 
 export {
 	Router,
 	UpdateRequest,
 	BaseRoute,
+	BaseRouteOptions,
 	Route,
 	RouteOptions,
 	TemplateModule,
 	Site,
+	SiteFromGraphQl,
 	Request,
 	DelayRender,
 	RequestOptions,

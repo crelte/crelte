@@ -1,5 +1,4 @@
 import Events from './Events.js';
-import { Plugin, PluginCreator } from './Plugins.js';
+import Plugins, { type Plugin, type PluginCreator } from './Plugins.js';
 
-export type { Plugin, PluginCreator };
-export { Events };
+export { Plugins, Events, Plugin, PluginCreator };

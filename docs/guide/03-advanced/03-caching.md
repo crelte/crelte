@@ -55,17 +55,8 @@ export const variables = {
 };
 
 export const caching: Caching<typeof variables> = (res, vars) => {
-	if (!res?.categories) return false;
-
-	const cats = res.categories
-		.map(c => parseInt(c.id))
-		.sort((a, b) => a - b) as number[];
-
 	// if categories are equal its safe to cache
-	return (
-		vars.category.length === cats.length &&
-		vars.category.every((a, i) => a === cats[i])
-	);
+	return varsIdsEqual(vars.category, res?.categories);
 };
 ```
 

@@ -1,12 +1,11 @@
 import { Methods, Pattern, Trouter } from 'trouter';
 import CrelteServerRequest from './CrelteServer.js';
 import ServerRequest from './Request.js';
-import { SiteFromGraphQl } from './shared.js';
 import { Queries, Query, QueryOptions } from '../queries/index.js';
 import { Site } from '../routing/index.js';
 import { SsrCache } from '../ssr/index.js';
 import { parseAcceptLanguage } from '../std/intl/index.js';
-import { siteFromUrl } from '../routing/Site.js';
+import { SiteFromGraphQl, siteFromUrl } from '../routing/Site.js';
 import { preferredSite } from '../routing/utils.js';
 
 export type Handler = (
