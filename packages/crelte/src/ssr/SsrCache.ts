@@ -92,15 +92,35 @@ export default class SsrCache {
 	}
 
 	/**
-	 * Create a one-time value for SSR hydration.
+	 * One-shot SSR handoff value.
 	 *
-	 * The value is generated and cached on the server, returned exactly once on the
-	 * client and not cached thereafter.
+	 * Intended use: call this once per request (per key) during SSR to generate
+	 * a value that must match between server render and client hydration.
+	 *
+	 * On the server, the value is generated once per key and stored for hydration.
+	 * Subsequent calls with the same key during SSR currently return the same value,
+	 * but this behaviour is an implementation detail and may change in the future.
+	 * Consumers should rely on calling this at most once per key during SSR.
+	 *
+	 * On the client, the stored value is returned exactly once and removed.
+	 * Subsequent calls return a fresh value and are not cached.
+	 *
+	 * Warning: this function is designed to be called once per key during SSR.
+	 * Calling it multiple times may lead to unexpected behaviour if the server-side
+	 * implementation changes.
 	 *
 	 * See also {@link getOrInsertComputed}
 	 */
 	takeOnce<T>(key: string, fn: () => T): T {
-		if (import.meta.env.SSR) return this.getOrInsertComputed(key, fn);
+		if (import.meta.env.SSR) {
+			if (this.store.has(key)) {
+				console.warn(
+					`SsrCache.takeOnce called multiple times for key "${key}" during SSR.`,
+				);
+				return this.store.get(key);
+			}
+			return this.set(key, fn());
+		}
 		if (this.store.has(key)) return this.remove<T>(key)!;
 		return fn();
 	}
