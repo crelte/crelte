@@ -35,6 +35,6 @@ For these cases the staticRoute plugin exists.
 </script>
 ```
 
-The static router internally uses the [loadEntry](/guide/03-advanced/02-plugins.html#loadentry) event
+The static router internally uses the [loadEntry](/guide/04-advanced/02-plugins.html#loadentry) event
 and can therefore override / prevent `entry.graphql` being executed.
 And since you need to return a valid Entry object everything else will work as usual.

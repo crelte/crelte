@@ -74,12 +74,16 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
 			],
 		},
 		{
+			text: 'Build and Deploy',
+			items: [{ text: 'Overview', link: '03-build-deploy/01-overview' }],
+		},
+		{
 			text: 'Advanced',
 			items: [
-				{ text: 'Data flow', link: '03-advanced/01-data-flow' },
-				{ text: 'Plugins', link: '03-advanced/02-plugins' },
-				{ text: 'Caching', link: '03-advanced/03-caching' },
-				{ text: 'Static Router', link: '03-advanced/04-static-router' },
+				{ text: 'Data flow', link: '04-advanced/01-data-flow' },
+				{ text: 'Plugins', link: '04-advanced/02-plugins' },
+				{ text: 'Caching', link: '04-advanced/03-caching' },
+				{ text: 'Static Router', link: '04-advanced/04-static-router' },
 			],
 		},
 	];
