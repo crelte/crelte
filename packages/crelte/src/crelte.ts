@@ -10,6 +10,7 @@ import { Readable } from './std/stores/index.js';
 import { Entry } from './loadData/index.js';
 import { urlWithPath } from './utils.js';
 
+/** The type for the app.config object */
 export type Config = {
 	/**
 	 * Preload pages on mouse over
@@ -207,6 +208,16 @@ export type CrelteWithRoute = Crelte & {
 	getGlobal<T = any>(name: string): Readable<T> | null;
 };
 
+/**
+ * This is Crelte a container of useful features and functions.
+ *
+ * In svelte contexts for each of these functions and classes there
+ * should be a getter function like `getCrelte()` or `getRouter()`.
+ *
+ * #### Note
+ * Plugins and other instances could modify this type, so when extending cloning
+ * or similar use the spread operator instead of naming all "properties".
+ */
 export type CrelteRequest = Crelte & {
 	/**
 	 * The current request

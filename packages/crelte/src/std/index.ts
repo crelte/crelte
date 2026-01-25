@@ -9,6 +9,7 @@
  * - {@link std/intl}
  * - {@link std/stores}
  * - {@link std/sync}
+ * - {@link std/rand}
  */
 
 /**

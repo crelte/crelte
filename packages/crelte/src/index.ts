@@ -30,6 +30,7 @@ export {
 	type LoadDataArray,
 };
 
+/** The type for the app.init function */
 export type Init = (crelte: Crelte) => void;
 
 function innerGetCrelte(): Crelte {

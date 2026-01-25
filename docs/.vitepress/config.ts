@@ -1,6 +1,8 @@
 import { DefaultTheme, defineConfig } from 'vitepress';
 import typedocSidebar from '../types/typedoc-sidebar.json';
 
+const hideFromTypedoc = ['client', 'node', 'server', 'vite'];
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
 	title: 'Crelte Docs',
@@ -10,13 +12,20 @@ export default defineConfig({
 		nav: [
 			{ text: 'Guide', link: '/guide/01-introduction/01-introduction' },
 			{ text: 'Tutorial', link: '/tutorial/01-introduction/01-overview' },
+			{ text: 'Cookbook', link: '/cookbook/01-overview' },
 			{ text: 'Types', link: '/types' },
 		],
 
 		sidebar: {
 			'/guide/': { base: '/guide/', items: sidebarGuide() },
 			'/tutorial/': { base: '/tutorial/', items: sidebarTutorial() },
-			'/types/': [{ text: 'crelte', link: '/types' }, ...typedocSidebar],
+			'/cookbook/': { base: '/cookbook/', items: sidebarCookbook() },
+			'/types/': [
+				{ text: 'crelte', link: '/types' },
+				...typedocSidebar.filter(
+					item => !hideFromTypedoc.includes(item.text),
+				),
+			],
 		},
 
 		socialLinks: [
@@ -108,5 +117,13 @@ function sidebarTutorial(): DefaultTheme.SidebarItem[] {
 				{ text: 'End', link: '04-news/03-end' },
 			],
 		},
+	];
+}
+
+function sidebarCookbook(): DefaultTheme.SidebarItem[] {
+	return [
+		{ text: 'Overview', link: '01-overview' },
+		{ text: 'PageLoader', link: 'page-loader' },
+		{ text: 'preloadOnMouseOver', link: 'preload-on-mouse-over' },
 	];
 }

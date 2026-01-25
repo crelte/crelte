@@ -65,3 +65,22 @@ The `App.svelte` component is responsible for rendering the resolved template. I
 - `templateData` contains data loaded during routing and template execution
 
 Using a keyed block ensures the entire page is re-rendered when navigating between entries.
+
+## Preloading
+
+There is a config you can enable, which will preload links on hover to speed up navigation.
+
+`App.svelte`
+```svelte
+<script module>
+	/** @type {import('crelte').Config} */
+	export const config = {
+		preloadOnMouseOver: true,
+	};
+</script>
+```
+
+With this enabled all links will be preloaded on hover, to disable some links you can add the attribute `data-no-preload` to the anchor tag.
+
+Alternatively you can also use the [Router.preload](/types/routing/classes/Router.html#preload)
+method to preload links programmatically.
