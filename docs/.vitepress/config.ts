@@ -70,7 +70,8 @@ function sidebarGuide(): DefaultTheme.SidebarItem[] {
 					link: '02-core/06-state-management',
 				},
 				{ text: 'Blocks', link: '02-core/07-blocks' },
-				{ text: 'Server routes', link: '02-core/08-server-routes' },
+				{ text: 'Translations', link: '02-core/08-translations' },
+				{ text: 'Server routes', link: '02-core/09-server-routes' },
 			],
 		},
 		{
