@@ -80,6 +80,10 @@
 			"types": "./dist/static/index.d.ts",
 			"default": "./dist/static/index.js"
 		},
+		"./translations": {
+			"types": "./dist/translations/index.d.ts",
+			"default": "./dist/translations/index.js"
+		},
 		"./std": {
 			"types": "./dist/std/index.d.ts",
 			"default": "./dist/std/index.js"
