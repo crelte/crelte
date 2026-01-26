@@ -178,6 +178,9 @@ ${siteEnvName}=
 	// remove unused twig since rendering will happen in svelte
 	await rmFile(j(craftDir, 'templates/index.twig'));
 
+	// make sure to commit an empty templates folder
+	await writeFile(j(craftDir, 'templates/.gitkeep'), '');
+
 	// finally we are ready to install craft
 	await spawn(
 		'ddev',
