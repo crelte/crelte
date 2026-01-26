@@ -1,6 +1,6 @@
 {
 	"name": "crelte",
-	"version": "0.5.8",
+	"version": "0.5.9",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
