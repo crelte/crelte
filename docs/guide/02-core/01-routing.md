@@ -27,14 +27,17 @@ Crelte resolves templates using the following naming rules:
 Examples:
 
 - `blog-post.svelte` → section `blog`, entry type `post`
-- `blog.svelte` → section `blog` with a single entry type
+- `blog.svelte` → section `blog` with any entry type
 
 If no matching template is found, an error is thrown during rendering.
 
 ### Error templates
 
 - `error-404.svelte` is rendered when no entry can be resolved for a request.
-- `Error.svelte` is rendered when an error occurs during routing or rendering, or when Craft is in maintenance mode.
+
+:::tip Unknown error
+If an error occured like craft is not accessible or some svelte error, the [src/Error.svelte](#error-svelte) is rendered.
+:::
 
 ## App.svelte
 
@@ -80,7 +83,17 @@ There is a config you can enable, which will preload links on hover to speed up 
 </script>
 ```
 
-With this enabled all links will be preloaded on hover, to disable some links you can add the attribute `data-no-preload` to the anchor tag.
+With this enabled all links will be preloaded on hover, to disable some links you can add
+the attribute `data-no-preload` to the anchor tag.
 
 Alternatively you can also use the [Router.preload](/types/routing/classes/Router.html#preload)
 method to preload links programmatically.
+
+## Error.svelte
+
+The `Error.svelte` component handles error states and is decoupled from the normal
+rendering.
+
+To style the `Error.svelte` component you can add `export const debugError = true;` to
+`src/server.js`. If you wan't to have a specific status returned set it via
+`export const errorStatus = 503;`.

@@ -210,7 +210,7 @@ export async function modRenderError(
 	thrownError: Error,
 	template: string,
 	req: Request,
-	opts: ModRenderOptions = {},
+	opts: ModRenderOptions & { debugError?: boolean } = {},
 ): Promise<Response> {
 	const acceptLang = req.headers.get('Accept-Language') ?? null;
 
@@ -225,7 +225,11 @@ export async function modRenderError(
 	}
 
 	// todo is the process.env.NODE_ENV the correct check?
-	if (error.status !== 503 && process.env.NODE_ENV === 'development') {
+	if (
+		error.status !== 503 &&
+		!opts.debugError &&
+		process.env.NODE_ENV === 'development'
+	) {
 		throw thrownError;
 	}
 

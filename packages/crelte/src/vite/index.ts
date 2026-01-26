@@ -28,6 +28,7 @@ import {
 } from '../node/utils.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { ServerResponse } from 'node:http';
+import QueryError from '../queries/QueryError.js';
 
 const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
 const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
@@ -332,33 +333,29 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 
 async function serveVite(env: EnvData, vite: ViteDevServer) {
 	let sites: SiteFromGraphQl[] | null = null;
-	let router: ServerRouter | null = null;
 
 	const handle = async (
 		nReq: Connect.IncomingMessage,
 		res: ServerResponse,
-		next: Connect.NextFunction,
 	) => {
 		const protocol = vite.config.server.https ? 'https' : 'http';
 		const baseUrl = protocol + '://' + nReq.headers['host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
-		const serverMod = await vite.ssrLoadModule('./src/server.js', {
-			fixStacktrace: true,
-		});
+		const serverMod = await vite.ssrLoadModule('./src/server.js');
 
-		if (!router || !sites) {
+		if (!sites) {
 			sites = await initSites(env);
-
-			router = new ServerRouter(
-				env.endpointUrl,
-				env.frontendUrl,
-				env.env,
-				sites,
-				{ endpointToken: env.endpointToken },
-			);
 		}
+
+		const router = new ServerRouter(
+			env.endpointUrl,
+			env.frontendUrl,
+			env.env,
+			sites,
+			{ endpointToken: env.endpointToken },
+		);
 
 		await initQueryRoutes(PLATFORM, serverMod, router);
 
@@ -366,15 +363,9 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			await serverMod.routes(router);
 		}
 
-		try {
-			const response = await router.z_handle(req);
-			if (response) {
-				await webResponseToResponse(response, res);
-				return;
-			}
-		} catch (e: any) {
-			vite.ssrFixStacktrace(e);
-			next(e);
+		const routeResp = await router.z_handle(req);
+		if (routeResp) {
+			await webResponseToResponse(routeResp, res);
 			return;
 		}
 
@@ -384,41 +375,38 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			template,
 		);
 
-		let thrownError: any = null;
+		if (serverMod.debugError) {
+			let error: any;
 
-		try {
-			const response = await modRender(
+			if (typeof serverMod.debugError === 'number') {
+				error = new QueryError({ status: serverMod.debugError });
+			} else if (typeof serverMod.debugError === 'function') {
+				error = serverMod.debugError(req);
+			} else {
+				error = new Error('Simulated Error');
+			}
+
+			const errorResp = await modRenderError(
 				env,
-				sites,
 				serverMod,
+				error,
 				template,
 				req,
+				{ debugError: true },
 			);
-			await webResponseToResponse(response, res);
+			await webResponseToResponse(errorResp, res);
 			return;
-		} catch (e: any) {
-			vite.ssrFixStacktrace(e);
-
-			if (typeof serverMod.renderError !== 'function') return next(e);
-
-			thrownError = e;
 		}
 
-		console.log('modRenderError');
-		const response = await modRenderError(
-			env,
-			serverMod,
-			thrownError,
-			template,
-			req,
-		);
+		const response = await modRender(env, sites, serverMod, template, req);
 		await webResponseToResponse(response, res);
 	};
 
 	vite.middlewares.use(async (nReq, res, next) => {
 		try {
-			await handle(nReq, res, next);
-		} catch (e) {
+			await handle(nReq, res);
+		} catch (e: any) {
+			vite.ssrFixStacktrace(e);
 			next(e);
 		}
 	});
