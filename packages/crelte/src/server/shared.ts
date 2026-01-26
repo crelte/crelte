@@ -3,6 +3,7 @@ import { SsrCache } from '../ssr/index.js';
 import { gql } from '../queries/index.js';
 import { Platform } from './platform.js';
 import { SiteFromGraphQl } from '../routing/Site.js';
+import { isQueryError } from '../queries/QueryError.js';
 
 export type ServerOptions = {
 	// typescript client.ts & server.ts
@@ -29,13 +30,9 @@ export type EnvData = {
 	craftWebUrl: string;
 	frontendUrl: string;
 	viteEnv: Map<string, string>;
-	sites: SiteFromGraphQl[];
 };
 
-export async function initEnvData(
-	os: Platform,
-	cache?: SitesCache,
-): Promise<EnvData> {
+export async function initEnvData(os: Platform): Promise<EnvData> {
 	const envPath = '../craft/.env';
 
 	let env;
@@ -61,11 +58,6 @@ export async function initEnvData(
 		Array.from(env).filter(([key]) => key.startsWith('VITE_')),
 	);
 
-	const queries = Queries.new(endpointUrl, frontendUrl, new SsrCache(), {
-		bearerToken: endpointToken,
-	});
-	const sites = await loadSites(queries, cache);
-
 	return {
 		env,
 		endpointUrl,
@@ -73,7 +65,6 @@ export async function initEnvData(
 		craftWebUrl,
 		frontendUrl,
 		viteEnv,
-		sites,
 	};
 }
 
@@ -82,6 +73,19 @@ export type SitesCache = {
 	readSitesCache?: () => Promise<any>;
 	writeSitesCache?: (data: any) => Promise<void>;
 };
+
+export async function initSites(
+	env: EnvData,
+	cache?: SitesCache,
+): Promise<SiteFromGraphQl[]> {
+	const queries = Queries.new(
+		env.endpointUrl,
+		env.frontendUrl,
+		new SsrCache(),
+		{ bearerToken: env.endpointToken },
+	);
+	return await loadSites(queries, cache);
+}
 
 // requires, GraphQl, SsrCache
 async function loadSites(
@@ -150,14 +154,12 @@ export type RenderRequest = {
 
 export async function modRender(
 	env: EnvData,
+	sites: SiteFromGraphQl[],
 	mod: any,
 	template: string,
 	req: Request,
 	opts: ModRenderOptions = {},
 ): Promise<Response> {
-	// const acceptLang = req.headers.get('accept-language') ?? null;
-	// const cookies = req.headers.get('cookie') ?? '';
-
 	const {
 		status,
 		location,
@@ -171,7 +173,7 @@ export async function modRender(
 		craftWeb: env.craftWebUrl,
 		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
-		sites: env.sites,
+		sites,
 		headers: req.headers,
 		...opts,
 	});
@@ -200,7 +202,6 @@ export type RenderErrorRequest = {
 	craftWeb: string;
 	frontend: string;
 	viteEnv: Map<string, string>;
-	sites: SiteFromGraphQl[];
 };
 
 export async function modRenderError(
@@ -219,8 +220,9 @@ export async function modRenderError(
 		message: thrownError.message,
 	};
 
-	if (typeof (thrownError as any).__isGraphQlError__ === 'function')
-		error.status = (thrownError as any).status();
+	if (isQueryError(thrownError)) {
+		error.status = thrownError.status();
+	}
 
 	// todo is the process.env.NODE_ENV the correct check?
 	if (error.status !== 503 && process.env.NODE_ENV === 'development') {
@@ -236,15 +238,12 @@ export async function modRenderError(
 		craftWeb: env.craftWebUrl,
 		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
-		sites: env.sites,
 		...opts,
 	});
 
 	return new Response(html, {
 		status,
-		headers: {
-			'Content-Type': 'text/html',
-		},
+		headers: { 'Content-Type': 'text/html' },
 	});
 }
 

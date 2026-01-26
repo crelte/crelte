@@ -8,11 +8,13 @@ import {
 	UserConfig,
 	build as viteBuild,
 	ViteDevServer,
+	Connect,
 } from 'vite';
 import fs from 'node:fs/promises';
 import {
 	EnvData,
 	initEnvData,
+	initSites,
 	modRender,
 	modRenderError,
 } from '../server/shared.js';
@@ -24,6 +26,8 @@ import {
 	requestToWebRequest,
 	webResponseToResponse,
 } from '../node/utils.js';
+import { SiteFromGraphQl } from '../routing/Site.js';
+import { ServerResponse } from 'node:http';
 
 const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
 const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
@@ -327,34 +331,34 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 }
 
 async function serveVite(env: EnvData, vite: ViteDevServer) {
-	vite.middlewares.use(async (nReq, res, next) => {
+	let sites: SiteFromGraphQl[] | null = null;
+	let router: ServerRouter | null = null;
+
+	const handle = async (
+		nReq: Connect.IncomingMessage,
+		res: ServerResponse,
+		next: Connect.NextFunction,
+	) => {
 		const protocol = vite.config.server.https ? 'https' : 'http';
 		const baseUrl = protocol + '://' + nReq.headers['host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
 
-		let thrownError: any = null;
+		const serverMod = await vite.ssrLoadModule('./src/server.js', {
+			fixStacktrace: true,
+		});
 
-		let serverMod;
-		try {
-			serverMod = await vite.ssrLoadModule('./src/server.js', {
-				fixStacktrace: true,
-			});
-		} catch (e: any) {
-			next(e);
-			return;
+		if (!router || !sites) {
+			sites = await initSites(env);
+
+			router = new ServerRouter(
+				env.endpointUrl,
+				env.frontendUrl,
+				env.env,
+				sites,
+				{ endpointToken: env.endpointToken },
+			);
 		}
-
-		// check if a route matches (todo can i move this out of the middleware?)
-		const router = new ServerRouter(
-			env.endpointUrl,
-			env.frontendUrl,
-			env.env,
-			env.sites,
-			{
-				endpointToken: env.endpointToken,
-			},
-		);
 
 		await initQueryRoutes(PLATFORM, serverMod, router);
 
@@ -380,8 +384,16 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			template,
 		);
 
+		let thrownError: any = null;
+
 		try {
-			const response = await modRender(env, serverMod, template, req);
+			const response = await modRender(
+				env,
+				sites,
+				serverMod,
+				template,
+				req,
+			);
 			await webResponseToResponse(response, res);
 			return;
 		} catch (e: any) {
@@ -392,16 +404,20 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			thrownError = e;
 		}
 
+		console.log('modRenderError');
+		const response = await modRenderError(
+			env,
+			serverMod,
+			thrownError,
+			template,
+			req,
+		);
+		await webResponseToResponse(response, res);
+	};
+
+	vite.middlewares.use(async (nReq, res, next) => {
 		try {
-			const response = await modRenderError(
-				env,
-				serverMod,
-				thrownError,
-				template,
-				req,
-			);
-			await webResponseToResponse(response, res);
-			return;
+			await handle(nReq, res, next);
 		} catch (e) {
 			next(e);
 		}

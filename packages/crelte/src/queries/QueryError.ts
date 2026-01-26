@@ -1,6 +1,7 @@
 export type QueryErrorResponse = {
 	status?: number;
 	body?: string;
+	errors?: any[];
 };
 
 // todo improve this
@@ -32,6 +33,14 @@ export default class QueryError extends Error {
 	 * The error message in string form
 	 */
 	get message(): string {
-		return 'QueryError: ' + JSON.stringify(this.resp);
+		return 'QueryError: ' + JSON.stringify(this.resp, null, '  ');
 	}
+}
+
+export function isQueryError(err: any): err is QueryError {
+	return (
+		typeof err === 'object' &&
+		err !== null &&
+		typeof err.__QueryError__ === 'function'
+	);
 }

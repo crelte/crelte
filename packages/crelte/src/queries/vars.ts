@@ -180,7 +180,11 @@ export class QueryVar<T = any> {
 }
 
 export function isQueryVar(v: any): v is QueryVar {
-	return v && typeof v === 'object' && typeof v.__QueryVar__ === 'function';
+	return (
+		typeof v === 'object' &&
+		v !== null &&
+		typeof v.__QueryVar__ === 'function'
+	);
 }
 
 // does not do string to number conversion

@@ -5,6 +5,7 @@ import { createReadStream } from 'node:fs';
 import {
 	EnvData,
 	initEnvData,
+	initSites,
 	modRender,
 	modRenderError,
 } from '../server/shared.js';
@@ -18,6 +19,8 @@ import {
 	webResponseToResponse,
 	writeFile,
 } from './utils.js';
+import { timeout } from '../std/index.js';
+import { SiteFromGraphQl } from '../routing/Site.js';
 
 function localDir(...args: string[]) {
 	return join(path.dirname(fileURLToPath(import.meta.url)), ...args);
@@ -31,28 +34,21 @@ async function writeSitesCache(data: any): Promise<void> {
 	return await writeFile(localDir('sites.json'), JSON.stringify(data));
 }
 
-/**
- * Create and start the server
- *
- * Generally this call should automatically happen via the vite build step.
- */
-export default async function createServer(serverMod: any, buildTime: string) {
-	const env = await initEnvData(PLATFORM, {
+async function initRouter(
+	serverMod: any,
+	env: EnvData,
+): Promise<[SiteFromGraphQl[], ServerRouter]> {
+	const sites = await initSites(env, {
 		enabled: process.env.NODE_ENV === 'production',
 		writeSitesCache,
 		readSitesCache,
 	});
-	const template = await readFile(localDir('index.html'));
-	const globalEtag = '"' + buildTime + '"';
-	const ssrManifest = JSON.parse(
-		await readFile(localDir('ssr-manifest.json')),
-	);
 
 	const router = new ServerRouter(
 		env.endpointUrl,
 		env.frontendUrl,
 		env.env,
-		env.sites,
+		sites,
 		{
 			endpointToken: env.endpointToken,
 		},
@@ -64,60 +60,120 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		await serverMod.routes(router);
 	}
 
+	return [sites, router];
+}
+
+/**
+ * Create and start the server
+ *
+ * Generally this call should automatically happen via the vite build step.
+ */
+export default async function createServer(serverMod: any, buildTime: string) {
+	const env = await initEnvData(PLATFORM);
+	const template = await readFile(localDir('index.html'));
+	const globalEtag = '"' + buildTime + '"';
+	const ssrManifest = JSON.parse(
+		await readFile(localDir('ssr-manifest.json')),
+	);
+
+	let sites: SiteFromGraphQl[] | null = null;
+	let router: ServerRouter | null = null;
+	let routesError: any = null;
+
+	// let's try to init the router
+	// if it fails we start a retry loop
+	// this way the server can start even if the endpoint is not yet available
+	try {
+		[sites, router] = await initRouter(serverMod, env);
+	} catch (e) {
+		routesError = e;
+		console.error('Failed to setup router:', e);
+
+		// retry loop
+		(async () => {
+			while (!router) {
+				await timeout(1000);
+
+				try {
+					[sites, router] = await initRouter(serverMod, env);
+					routesError = null;
+				} catch (e) {
+					routesError = e;
+					console.error('Failed to setup router:', e);
+				}
+			}
+		})();
+	}
+
 	const publicDir = localDir('public');
 
-	http.createServer(async (nReq, res) => {
-		if (await servePublic(nReq, res, publicDir, globalEtag)) return;
+	const handle = async (req: Request, res: ServerResponse) => {
+		// if router is not set, just render the error page
+		if (routesError || !router || !sites) {
+			throw routesError ?? new Error('Router not initialized');
+		}
 
-		// todo this is not safe if we are not in a trusted environment
-		const baseUrl =
-			(nReq.headers['x-forwarded-proto'] ?? 'http') +
-			'://' +
-			nReq.headers['host'];
-
-		const req = requestToWebRequest(baseUrl, nReq);
-
-		let thrownError: any = null;
-
-		try {
-			const routeResp = await router.z_handle(req);
-			if (routeResp) {
-				await webResponseToResponse(routeResp, res);
-				return;
-			}
-
-			if (await basicAuthCheck(nReq, res, env)) return;
-
-			const response = await modRender(env, serverMod, template, req, {
-				ssrManifest,
-			});
-			await webResponseToResponse(response, res);
+		const routeResp = await router.z_handle(req);
+		if (routeResp) {
+			await webResponseToResponse(routeResp, res);
 			return;
-		} catch (e: any) {
-			if (typeof serverMod.renderError !== 'function') {
-				console.log('error', e);
-				throw e;
-			}
+		}
 
-			thrownError = e;
+		if (await basicAuthCheck(req, res, env)) return;
+
+		const response = await modRender(env, sites, serverMod, template, req, {
+			ssrManifest,
+		});
+		await webResponseToResponse(response, res);
+	};
+
+	http.createServer(async (nodeReq, res) => {
+		let req: Request | null = null;
+		let err: any;
+		try {
+			if (await servePublic(nodeReq, res, publicDir, globalEtag)) return;
+
+			// todo this is not safe if we are not in a trusted environment
+			const baseUrl =
+				(nodeReq.headers['x-forwarded-proto'] ?? 'http') +
+				'://' +
+				nodeReq.headers['host'];
+
+			req = requestToWebRequest(baseUrl, nodeReq);
+
+			await handle(req, res);
+
+			return;
+		} catch (e) {
+			err = e;
+		}
+
+		if (typeof serverMod.renderError !== 'function' || !req) {
+			basicError(res, err);
+			return;
 		}
 
 		try {
 			const response = await modRenderError(
 				env,
 				serverMod,
-				thrownError,
+				err,
 				template,
 				req,
 				{ ssrManifest },
 			);
 			await webResponseToResponse(response, res);
-			return;
 		} catch (e) {
-			console.log('error', e);
-			throw e;
+			basicError(res, e);
 		}
 	}).listen(8080);
+}
+
+function basicError(res: ServerResponse, err: any) {
+	console.error('Internal Server Error:', err);
+	res.statusCode = 500;
+	res.end('Internal Server Error: ' + err?.message);
+	return;
 }
 
 const MIME_TYPES: Record<string, string> = {
@@ -208,7 +264,7 @@ async function servePublic(
  * for staging or unlisted instances.
  */
 async function basicAuthCheck(
-	req: IncomingMessage,
+	req: Request,
 	res: ServerResponse,
 	{ env }: EnvData,
 ): Promise<boolean> {
@@ -218,7 +274,7 @@ async function basicAuthCheck(
 	// ignore if one information is missing
 	if (!user || !password) return false;
 
-	const authHeader = req.headers['authorization'];
+	const authHeader = req.headers.get('authorization');
 
 	if (!authHeader || !authHeader.startsWith('Basic ')) {
 		res.statusCode = 401;

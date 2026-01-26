@@ -18,7 +18,11 @@ import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
 import { Router } from '../routing/index.js';
 import { Writable } from '../std/stores/index.js';
-import { RenderRequest, RenderResponse } from '../server/shared.js';
+import {
+	RenderErrorRequest,
+	RenderRequest,
+	RenderResponse,
+} from '../server/shared.js';
 
 export { type RenderRequest, type RenderResponse } from '../server/shared.js';
 
@@ -180,7 +184,7 @@ export type MainErrorData = {
 	error: Error;
 	errorPage: any;
 
-	serverData: ServerData;
+	serverData: RenderErrorRequest;
 };
 
 /**

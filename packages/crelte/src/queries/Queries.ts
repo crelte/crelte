@@ -91,12 +91,21 @@ export default class Queries {
 		this.request = request;
 	}
 
+	/**
+	 * Create a new Queries instance
+	 *
+	 * @param endpoint the craft GraphQl endpoint
+	 * @param frontend the frontend url where the server queries are reachable
+	 * @param ssrCache the ssrCache to use for caching
+	 * @param opts options
+	 * @returns
+	 */
 	static new(
 		endpoint: string,
 		frontend: string,
 		ssrCache: SsrCache,
 		opts: QueriesOptions = {},
-	) {
+	): Queries {
 		return new Queries(
 			new Inner(endpoint, frontend, ssrCache, opts),
 			opts?.route ?? null,
@@ -130,6 +139,8 @@ export default class Queries {
 
 		// for convenience we set the siteId as variable if it is known
 		if (siteId !== null) vars = { siteId, ...vars };
+
+		// todo, maybe we should set the XCraftSiteId, with the siteId from vars?
 
 		return this.inner.query(query, vars, {
 			previewToken,
@@ -217,16 +228,15 @@ class Inner {
 
 		try {
 			const resp = await this.queryNotCached(query, vars, opts);
+
 			if (key) {
 				// todo maybe we should objClone here?
 				this.ssrCache.set(key, resp);
 
-				// ! because the listeners get's in the previous if statement and will
-				// always be set when the key is set
+				// ! (never null) because the listeners get's in the previous
+				// if statement and will always be set when the key is set
 				const listeners = this.listeners.get(key)!;
-				listeners.forEach(([resolve, _error]) => {
-					resolve(resp);
-				});
+				listeners.forEach(([resolve, _error]) => resolve(resp));
 
 				this.listeners.delete(key);
 			}
@@ -234,12 +244,10 @@ class Inner {
 			return resp;
 		} catch (e: unknown) {
 			if (key) {
-				// ! because the listeners get's in the previous if statement and will
-				// always be set when the key is set
+				// ! (never null) because the listeners get's in the previous
+				// if statement and will always be set when the key is set
 				const listeners = this.listeners.get(key)!;
-				listeners.forEach(([_resolve, error]) => {
-					error(e);
-				});
+				listeners.forEach(([_resolve, error]) => error(e));
 
 				this.listeners.delete(key);
 			}
@@ -291,11 +299,17 @@ class Inner {
 			body = { query: query.query, variables: vars };
 		}
 
-		const resp = await fetch(url, {
-			method: 'POST',
-			headers,
-			body: JSON.stringify(body),
-		});
+		let resp: Response;
+
+		try {
+			resp = await fetch(url, {
+				method: 'POST',
+				headers,
+				body: JSON.stringify(body),
+			});
+		} catch (e: any) {
+			throw new Error(`query to '${url}' failed with: ${e.message}`);
+		}
 
 		if (!resp.ok) {
 			throw new QueryError(
@@ -322,8 +336,11 @@ class Inner {
 		}
 
 		if ('errors' in jsonResp) {
-			console.log(logName + ' errors', jsonResp.errors);
-			throw new QueryError({ status: resp.status }, jsonResp.errors);
+			console.error(logName + ' errors', jsonResp.errors);
+			throw new QueryError(
+				{ status: resp.status, errors: jsonResp.errors },
+				'received errors',
+			);
 		}
 
 		return jsonResp.data ?? null;
