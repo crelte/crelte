@@ -5,10 +5,10 @@ export interface Module {
 	/** Svelte component */
 	default: any;
 
-	/** Handle of the block, this only works with { eager: true } */
+	/** Handle of the block, this only works with `{ eager: true }` */
 	handle?: string | string[];
 
-	/** If true the typeHandle will be avaiable for this component */
+	/** If true the typeHandle will be available for this component */
 	keepTypeHandle?: boolean;
 
 	loadData?: (
@@ -147,7 +147,7 @@ export async function loadBlocksData(
 	cr: CrelteRequest,
 	blocks: any[],
 	modules: BlockModules,
-): Promise<Blocks> {
+): Promise<BlocksInstance> {
 	const nBlocks = await newBlocks(blocks, modules);
 
 	await nBlocks.loadData(cr);
@@ -166,7 +166,7 @@ export async function loadBlocksData(
 export async function newBlocks(
 	blocks: any[],
 	modules: BlockModules,
-): Promise<Blocks> {
+): Promise<BlocksInstance> {
 	// define all required modules
 	const requiredModules: Set<string> = new Set();
 
@@ -178,10 +178,10 @@ export async function newBlocks(
 
 	const loadedModules = await modules.load(requiredModules);
 
-	return new Blocks(blocks, loadedModules);
+	return new BlocksInstance(blocks, loadedModules);
 }
 
-export default class Blocks {
+export default class BlocksInstance {
 	blocks: any[];
 	data: any[];
 	modules: Map<string, Module>;
@@ -192,7 +192,7 @@ export default class Blocks {
 		this.data = blocks.map(() => null);
 	}
 
-	async loadData(cr: CrelteRequest) {
+	async loadData(cr: CrelteRequest): Promise<void> {
 		this.data = await Promise.all(
 			this.blocks.map((block, i) => {
 				const mod = this.modules.get(block.typeHandle)!;
@@ -208,6 +208,10 @@ export default class Blocks {
 				return {};
 			}),
 		);
+	}
+
+	get length(): number {
+		return this.blocks.length;
 	}
 
 	each(): { mod: any; props: any }[] {
