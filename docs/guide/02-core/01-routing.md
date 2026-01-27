@@ -96,4 +96,4 @@ rendering.
 
 To style the `Error.svelte` component you can add `export const debugError = true;` to
 `src/server.js`. If you wan't to have a specific status returned set it via
-`export const errorStatus = 503;`.
+`export const debugError = 503;`.
