@@ -62,7 +62,8 @@ export class QueryRoute {
 		if (this.vars) return;
 
 		// the _setName step happens in parseVars which happens before setting
-		// the defaults
+		// the defaults, so since we're adding vars here we need to set the name
+		// manually
 		this.vars = {
 			siteId: vars.siteId().z_setName('siteId'),
 			uri: vars.string().z_setName('uri'),
@@ -94,6 +95,13 @@ export class QueryRoute {
 		} else if (SITE_ID_VAR_TEST.test(this.query)) {
 			this.vars = { siteId: vars.siteId().z_setName('siteId') };
 			this.cacheIfFn = () => true;
+		} else if (!this.query.includes('query')) {
+			// this warning might be shown to mutation queries or subscriptions
+			// in that case, the user should explicitly set caching to false
+			console.warn(
+				`cannot determine if query (${this.name}) is cacheable, see` +
+					' https://github.com/crelte/crelte/issues/114 for infos',
+			);
 		}
 	}
 
@@ -236,7 +244,7 @@ export class QueryRoute {
 			} catch (e) {
 				console.error('could not cache gql response', e);
 			}
-			// if caching is generally disabled we don't warn
+			// if caching is enabled but not used we warn
 		} else if (cacheKey && logInfo) {
 			console.warn('!! ' + logInfo + ' caching not allowed');
 		}
