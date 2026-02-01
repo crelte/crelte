@@ -202,11 +202,10 @@ export default class ClientRouter extends BaseRouter {
 		window.addEventListener('scroll', () => this.onScroll());
 
 		window.addEventListener('popstate', async e => {
-			if (!e.state?.route) return;
-
-			const req = this.targetToRequest(window.location.href);
+			const req = this.targetToRequest(window.location.href, {
+				origin: 'pop',
+			});
 			req.z_fillFromState(e.state);
-			req.origin = 'pop';
 
 			// todo handle errors
 			this.handleRequest(req, () => {});

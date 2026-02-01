@@ -5,7 +5,7 @@ export function trimSlashEnd(str: string) {
 	return str.endsWith('/') ? str.substring(0, str.length - 1) : str;
 }
 
-// same as ?? but only for undefined
+/** same as ?? but only for undefined */
 export function orDef<T>(a: T | undefined, def: T): T {
 	return a === undefined ? def : a;
 }

@@ -37,16 +37,9 @@ export type MainData = {
  * ```js
  * import * as app from './App.svelte';
  * import * as errorPage from './Error.svelte';
- * import entryQuery from './queries/entry.graphql';
- * import globalQuery from './queries/global.graphql';
  * import { main } from 'crelte/client';
  *
- * main({
- *     app,
- *     errorPage,
- *     entryQuery,
- *     globalQuery,
- * });
+ * main({ app, errorPage });
  * ```
  */
 export async function main(data: MainData) {
@@ -138,7 +131,7 @@ export async function main(data: MainData) {
 			// we just wan't to run domUpdated because we don't wan't to update anything
 
 			const route = readyForRoute();
-			cr.router._requestCompleted();
+			cr.router.z_requestCompleted();
 			// globals should not be run because they will be empty
 			// since nobody called loadGlobalData (todo maybe globals should also,
 			// know if it accepts updates)
@@ -155,7 +148,7 @@ export async function main(data: MainData) {
 
 		let render = async () => {
 			const route = readyForRoute();
-			cr.router._requestCompleted();
+			cr.router.z_requestCompleted();
 			if (route.entryChanged) cr.globals.z_syncToStores();
 			// we should trigger the route update here
 			pluginsBeforeRender(cr, route);

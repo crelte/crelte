@@ -108,7 +108,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 
 	router.onRender = (cr, readyForRoute, _domUpdated) => {
 		const route = readyForRoute();
-		cr.router._requestCompleted();
+		cr.router.z_requestCompleted();
 		cr.globals.z_syncToStores();
 		pluginsBeforeRender(cr, route);
 

@@ -409,7 +409,8 @@ export default class Router {
 		return nRouter;
 	}
 
-	_requestCompleted() {
+	/** @hidden */
+	z_requestCompleted() {
 		this._request = null;
 	}
 }

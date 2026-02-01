@@ -123,8 +123,10 @@ export default class BaseRouter {
 	}
 
 	/**
-	 * todo check that the router uses the correct sites for each function
+	 * Returns the default site tries to use a site which matches the preferred language
+	 * else returns the primary site
 	 */
+	// todo check that the router uses the correct sites for each function
 	defaultSite(): Site {
 		return this.preferredSite() ?? this.primarySite();
 	}
@@ -233,7 +235,7 @@ export default class BaseRouter {
 		const req = this.targetToRequest(target, { origin: 'preload' });
 		const current = this.route.get();
 
-		// if the origin matches, the route will be able to be load
+		// if the origin matches, the route will be able to be loaded
 		// so let's preload it
 		if (current && current.url.origin === req.url.origin) {
 			// todo i don't wan't to send a CrelteRequest?
