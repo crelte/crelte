@@ -14,12 +14,12 @@ export function routes(router) {
 	router.post('/api/:number/matches', csr => {
 		const data = await csr.req.json();
 		if (typeof data.number !== 'number') {
-			return Response.json({ message: 'expected number' }, { status: 400 });
+			throw new Response('expected number', { status: 400 });
 		}
 		
 		const number = parseInt(csr.req.getParam('number'));
 		if (isNaN(number)) {
-			return Response.json({ message: 'expected number param' }, { status: 400 });
+			throw new Response('expected number param', { status: 400 });
 		}
 		
 		return Response.json({ matches: data.number === number });
@@ -33,5 +33,5 @@ A [Handler](/types/server/type-aliases/Handler.html) is a function which takes a
 [CrelteServerRequest](/types/server/classes/CrelteServerRequest.html) and returns a
 WebApi [Response](https://developer.mozilla.org/docs/Web/API/Response).
 `csr.req` is a [ServerRequest](/types/server/classes/ServerRequest.html) which is
-basically a WebApi `Request` with some added properties. The idear beind `CreateServerRequest`
+basically a WebApi `Request` with some added properties. The idear behind `CreateServerRequest`
 is to be really similar to the main `Crelte` type allowing to use known methods like `query`.
