@@ -40,7 +40,7 @@ export default class Events {
 	): () => void;
 	on(
 		ev: 'loadGlobalData',
-		fn: (cr: CrelteRequest) => Promise<any>,
+		fn: (cr: CrelteRequest) => Promise<any> | any,
 	): () => void;
 	on(
 		ev: 'loadEntry',
@@ -52,11 +52,11 @@ export default class Events {
 	): () => void;
 	on(
 		ev: 'afterLoadEntry',
-		fn: (cr: CrelteRequest) => Promise<any>,
+		fn: (cr: CrelteRequest) => Promise<any> | any,
 	): () => void;
 	on(
 		ev: 'loadData',
-		fn: (cr: CrelteRequest, entry: Entry) => Promise<any>,
+		fn: (cr: CrelteRequest, entry: Entry) => Promise<any> | any,
 	): () => void;
 	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {
@@ -95,14 +95,18 @@ export default class Events {
 	 * Trigger an event
 	 */
 	trigger(ev: 'beforeRequest', cr: CrelteRequest): (Promise<void> | void)[];
-	trigger(ev: 'loadGlobalData', cr: CrelteRequest): Promise<any>[];
+	trigger(ev: 'loadGlobalData', cr: CrelteRequest): (Promise<any> | any)[];
 	trigger(
 		ev: 'beforeQueryEntry',
 		cr: CrelteRequest,
 		vars: EntryQueryVars,
 	): (Promise<void> | void)[];
-	trigger(ev: 'afterLoadEntry', cr: CrelteRequest): Promise<any>[];
-	trigger(ev: 'loadData', cr: CrelteRequest, entry: Entry): Promise<any>[];
+	trigger(ev: 'afterLoadEntry', cr: CrelteRequest): (Promise<any> | any)[];
+	trigger(
+		ev: 'loadData',
+		cr: CrelteRequest,
+		entry: Entry,
+	): (Promise<any> | any)[];
 	trigger(ev: 'beforeRender', cr: CrelteRequest, route: Route): void[];
 	trigger(ev: string, ...args: any[]): any[] {
 		const set = this.inner.get(ev);
