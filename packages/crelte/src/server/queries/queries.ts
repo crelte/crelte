@@ -17,7 +17,7 @@ type ModTs = {
 
 type ModQueries = Record<string, ModQuery | ModTs>;
 
-type PreRoute = {
+type RouteBuilder = {
 	query: string | null;
 	jsFile: string | null;
 	vars: Record<string, QueryVar> | null;
@@ -33,23 +33,24 @@ export async function initQueryRoutes(
 ): Promise<void> {
 	if (typeof mod.queries !== 'object') {
 		throw new Error(
-			"expected `export const queries = import.meta.glob('@/queries/*', { eager: true });` in server.js",
+			'expected `export const queries = import.meta.glob(' +
+				"'@/queries/*', { eager: true });` in server.js",
 		);
 	}
 
 	const debugCaching = !!mod?.debugCaching;
 	const modQueries: ModQueries = mod.queries;
 
-	const preRoutes: Map<string, PreRoute> = new Map();
+	const routeBuilders: Map<string, RouteBuilder> = new Map();
 
 	for (const [file, mq] of Object.entries(modQueries)) {
 		const filename = file.split('/').pop()!;
 		const dotPos = filename.lastIndexOf('.');
 		const name = filename.substring(0, dotPos);
 
-		let preRoute = preRoutes.get(name);
-		if (!preRoute) {
-			preRoute = {
+		let routeBuilder = routeBuilders.get(name);
+		if (!routeBuilder) {
+			routeBuilder = {
 				query: null,
 				jsFile: null,
 				vars: null,
@@ -57,35 +58,37 @@ export async function initQueryRoutes(
 				preventCaching: false,
 				transformFn: null,
 			};
-			preRoutes.set(name, preRoute);
+			routeBuilders.set(name, routeBuilder);
 		}
 
 		// set the gql query (this can only happen once)
 		if (filename.endsWith('.graphql')) {
-			preRoute.query = (mq as ModQuery).query.query;
+			routeBuilder.query = (mq as ModQuery).query.query;
 			continue;
 		}
 
 		// now check that only one file matches
-		if (preRoute.jsFile) {
+		if (routeBuilder.jsFile) {
 			throw new Error(
-				`cannot have two files for the same query ${preRoute.jsFile} and ${filename}`,
+				`cannot have two files for the same query ${
+					routeBuilder.jsFile
+				} and ${filename}`,
 			);
 		}
 
 		const mts = mq as ModTs;
 		if (mts.variables) {
-			preRoute.vars = parseVars(mts.variables);
+			routeBuilder.vars = parseVars(mts.variables);
 		}
 
 		if (mts.caching) {
-			preRoute.cacheIfFn = parseCaching(mts.caching);
+			routeBuilder.cacheIfFn = parseCaching(mts.caching);
 		} else if (typeof mts.caching === 'boolean') {
-			preRoute.preventCaching = true;
+			routeBuilder.preventCaching = true;
 		}
 
 		if (mts.transform) {
-			preRoute.transformFn = parseTransform(mts.transform);
+			routeBuilder.transformFn = parseTransform(mts.transform);
 		}
 	}
 
@@ -93,10 +96,10 @@ export async function initQueryRoutes(
 		debug: debugCaching,
 	});
 
-	for (const [name, pr] of preRoutes.entries()) {
-		if (!pr.query) throw new Error(`no .graphql file for query ${name}`);
+	for (const [name, rb] of routeBuilders.entries()) {
+		if (!rb.query) throw new Error(`no .graphql file for query ${name}`);
 
-		const route = new QueryRoute(name, pr.query, pr);
+		const route = new QueryRoute(name, rb.query, rb);
 
 		router.post('/queries/' + route.name, async csr =>
 			route.handle(caching, csr),
