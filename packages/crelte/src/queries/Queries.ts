@@ -120,8 +120,8 @@ export default class Queries {
 	 */
 	static new(
 		endpoint: string,
-		frontend: string,
-		ssrCache: SsrCache,
+		frontend: string | null,
+		ssrCache: SsrCache = new SsrCache(),
 		opts: QueriesOptions = {},
 	): Queries {
 		return new Queries(
@@ -188,7 +188,7 @@ type InnerQueryOptions = {
 
 class Inner {
 	endpoint: string;
-	frontend: string;
+	frontend: string | null;
 	ssrCache: SsrCache;
 	private listeners: Map<
 		string,
@@ -202,7 +202,7 @@ class Inner {
 
 	constructor(
 		endpoint: string,
-		frontend: string,
+		frontend: string | null,
 		ssrCache: SsrCache,
 		opts: QueriesOptions = {},
 	) {
@@ -282,6 +282,9 @@ class Inner {
 		let logName: string, url: URL;
 
 		if ('queryName' in query) {
+			if (!this.frontend)
+				throw new Error('only inline queries supported');
+
 			logName = `query (server: ${query.queryName})`;
 			url = new URL(this.frontend);
 			url.pathname = '/queries/' + query.queryName;
