@@ -17,17 +17,35 @@ export type QueriesOptions = {
 /**
  * A GraphQL query
  *
- * You should almost never create this object directly
- * but instead import a graphql file or use the gql template.
+ * **You should almost never**
+ *
+ * When importing a graphql file you will get a {@link NamedQuery}
+ * or use the {@link gql} template function to create
+ * an {@link InlineQuery}.
+ * Alternatively you can use the {@link namedQuery} function to create
+ * a {@link NamedQuery}.
  */
-export type Query =
-	| {
-			path?: string;
-			query: string;
-	  }
-	| {
-			queryName: string;
-	  };
+export type Query = InlineQuery | NamedQuery;
+
+/**
+ * You should never create this type directly. It is returned from
+ * the {@link gql} template function.
+ */
+export type InlineQuery = { path?: string; query: string };
+
+/**
+ * Always create this object via the {@link namedQuery} function
+ */
+export type NamedQuery = { queryName: string };
+
+/**
+ * Create a NamedQuery for the given server query name.
+ *
+ * Prefer importing a graphql file instead.
+ */
+export function namedQuery(name: string): NamedQuery {
+	return { queryName: name };
+}
 
 /** Returns true if the passed object is a GraphQlQuery */
 export function isQuery(obj: any): obj is Query {

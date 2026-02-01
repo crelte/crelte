@@ -1,5 +1,8 @@
 import Queries, {
+	InlineQuery,
 	isQuery,
+	namedQuery,
+	NamedQuery,
 	QueriesOptions,
 	Query,
 	QueryOptions,
@@ -13,6 +16,9 @@ export {
 	type QueriesOptions,
 	type QueryOptions,
 	type Query,
+	type InlineQuery as GqlQuery,
+	type NamedQuery,
+	namedQuery,
 	isQuery,
 	QueryError,
 	type QueryErrorResponse,
