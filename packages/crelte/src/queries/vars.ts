@@ -53,12 +53,14 @@ export class QueryVar<T = any> {
 	private name: string | null;
 	private type: 'any' | 'string' | 'number' | 'id' | 'ids';
 	private flagNullable: boolean;
+	private defaultValue: T | undefined;
 	private validIfFn: ValidIf<T>;
 
 	constructor() {
 		this.name = null;
 		this.type = 'any';
 		this.flagNullable = false;
+		this.defaultValue = undefined;
 		this.validIfFn = () => true;
 	}
 
@@ -87,6 +89,11 @@ export class QueryVar<T = any> {
 		return this as QueryVar<T | null>;
 	}
 
+	default(value: T): QueryVar<T> {
+		this.defaultValue = value;
+		return this;
+	}
+
 	/**
 	 * Set a validation function for this variable
 	 *
@@ -103,6 +110,8 @@ export class QueryVar<T = any> {
 		if (typeof v === 'undefined') v = null;
 
 		if (v === null) {
+			if (this.defaultValue !== undefined) return this.defaultValue;
+
 			if (!this.flagNullable)
 				throw new Error(`variable ${this.name} cannot be null`);
 
@@ -139,7 +148,11 @@ export class QueryVar<T = any> {
 					);
 
 				if (v.length <= 0) {
+					if (this.defaultValue !== undefined)
+						return this.defaultValue;
+
 					if (this.flagNullable) return null;
+
 					throw new Error(
 						`variable ${this.name} is not allowed to be empty`,
 					);
