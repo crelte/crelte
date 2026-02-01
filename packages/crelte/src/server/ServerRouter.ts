@@ -139,9 +139,7 @@ export default class ServerRouter {
 			this.endpointUrl,
 			this.frontendUrl,
 			new SsrCache(),
-			{
-				bearerToken: this.endpointToken,
-			},
+			{ bearerToken: this.endpointToken },
 		);
 
 		const csr = new CrelteServerRequest(nReq, {
@@ -152,12 +150,25 @@ export default class ServerRouter {
 			queries,
 		});
 
+		let resp: Response | null = null;
 		for (const handler of handlers) {
-			const res = await handler(csr);
-			if (res) {
-				csr.z_finishResponse(res);
-				return res;
+			try {
+				const res = await handler(csr);
+				if (!res) continue;
+
+				resp = res;
+			} catch (e) {
+				if (!(e instanceof Response)) throw e;
+
+				resp = e;
 			}
+
+			break;
+		}
+
+		if (resp) {
+			csr.z_finishResponse(resp);
+			return resp;
 		}
 
 		return null;
