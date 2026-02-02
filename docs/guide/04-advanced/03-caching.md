@@ -61,6 +61,7 @@ export const caching: Caching<typeof variables> = (res, vars) => {
 ```
 
 ### variables
+
 First we declare what variables our query uses and define their types [vars](/types/queries/variables/vars.html).
 
 [vars.ids](/types/queries/variables/vars.html#ids) the ids function will always return an array of at least one number,
@@ -70,11 +71,26 @@ each number will always be positive. They are sorted in ascending order and dupl
 to a valid site, so it is always safe to cache.
 
 ### caching
+
 With the caching function or boolean we can define if the result is safe to be cached.
 `res` contains the result of the query and `vars` the variables which were used to execute the query and
 where defined in the `variables` export.
 
 In this example we check that each category requested also exists in craft and only then cache it.
+
+### transform
+
+Transform is another function you can export. It allow to modify the result before it gets returned.
+It can be useful todo some data manipulation instead of doing them in the loadData function or inside
+a svelte component. This will only be executed on the server and will be cached.
+
+```ts
+export const transform: Transform<typeof variables> = (res, vars) => {
+	for (const entry of res.entries) {
+		entry.title = entry.title.toUpperCase();
+	}
+};
+```
 
 ## Debugging
 

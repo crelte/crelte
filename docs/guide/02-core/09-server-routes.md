@@ -35,3 +35,8 @@ WebApi [Response](https://developer.mozilla.org/docs/Web/API/Response).
 `csr.req` is a [ServerRequest](/types/server/classes/ServerRequest.html) which is
 basically a WebApi `Request` with some added properties. The idear behind `CreateServerRequest`
 is to be really similar to the main `Crelte` type allowing to use known methods like `query`.
+
+## Query
+
+If you only have a simple api, you might also be able to just use a handle function inside of a
+query. See [Handle](/types/queries/type-aliases/Handle.html).

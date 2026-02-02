@@ -39,6 +39,8 @@ export type InferVariableTypes<T> = {
 };
 
 /**
+ * Defines when a query can safely be cached.
+ *
  * #### Example
  * ```ts
  * import { vars, Caching } from 'crelte/queries';
@@ -56,12 +58,39 @@ export type Caching<
 	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
 > = boolean | ((response: any, vars: InferVariableTypes<T>) => boolean);
 
+/** use {@link Transfrom} */
+export type TransformFn<
+	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
+> = (
+	response: any,
+	vars: InferVariableTypes<T>,
+) => void | any | Promise<void | any>;
+
+/**
+ * Transforms the query response before it is returned or cached.
+ *
+ * #### Example
+ * ```ts
+ * export const transform: Transform<typeof variables> = (response, vars) => {
+ *     for (const entry of response.entries) {
+ *         entry.title = entry.title.toUpperCase();
+ *     }
+ * };
+ * ```
+ */
+export type Transform<
+	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
+	F extends TransformFn<T> = TransformFn<T>,
+> = (response: any, vars: InferVariableTypes<T>) => Awaited<ReturnType<F>>;
+
 /** use {@link Handle} */
 export type HandleFn<
 	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
 > = (csr: CrelteServerRequest, vars: InferVariableTypes<T>) => any;
 
 /**
+ * Handles a query request.
+ *
  * #### Example
  * ```ts
  * // queries/custom.ts
