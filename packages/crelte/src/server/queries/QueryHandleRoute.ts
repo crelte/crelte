@@ -32,6 +32,6 @@ export default class QueryHandleRoute {
 		}
 
 		const res = await this.handleFn(csr, vars);
-		return Response.json(res);
+		return Response.json({ data: res });
 	}
 }
