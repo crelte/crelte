@@ -2,6 +2,11 @@
 
 Todo
 
+## Sites
+
+In production (`NODE_ENV=production`) sites are cached forever, so to clear the cache
+you need to clear the craft cache and do a fresh build or delete `dist/sites.json`.
+
 ## Staging
 
 In staging or testing environments it can be useful to put the application behind
