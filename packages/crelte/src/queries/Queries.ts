@@ -132,6 +132,18 @@ export default class Queries {
 	}
 
 	/**
+	 * Create a new Queries instance that always intented to call an
+	 * external GraphQl endpoint.
+	 */
+	static newExternal(endpoint: string, bearerToken?: string): Queries {
+		return new Queries(
+			new Inner(endpoint, null, new SsrCache(), { bearerToken }),
+			null,
+			null,
+		);
+	}
+
+	/**
 	 * Run a GraphQl Query
 	 *
 	 * @param query the default export from a graphql file or the gql`query {}`
