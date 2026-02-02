@@ -87,10 +87,14 @@ export default async function create(
 	);
 
 	// do manually, what 'ddev composer create-project' seems to do
-	// we do it manually because the ddev cli is just stuck and waits forever on some systems
+	// we do it manually because the ddev cli is just stuck and waits
+	// forever on some systems
 	{
 		await spawn('ddev', ['start', projectName], { cwd: craftDir });
-		const craftCreateProjectDir = j(craftDir, 'cc-temp'); // we need to work in a temporary directory, because /craft isn't empty and we aren't allowed to create-project in a non-empty directory.
+		// we need to work in a temporary directory, because / craft
+		// isn't empty and we aren't allowed to create - project in a
+		// non - empty directory.
+		const craftCreateProjectDir = j(craftDir, 'cc-temp');
 		await spawn(
 			'ddev',
 			[
@@ -110,12 +114,8 @@ export default async function create(
 		await mergeCopy(craftCreateProjectDir, craftDir);
 		await rmDir(craftCreateProjectDir);
 
-		// build a custom env file. I'm speculating this is what ddev does
-		await copyFile(j(craftDir, '.env.example.dev'), j(craftDir, '.env'));
-		await appendFile(
-			j(craftDir, '.env'),
-			await readFile(j(craftDir, j('.ddev', '.env.web'))),
-		);
+		// run ddev start again to create the necessary .env variables
+		await spawn('ddev', ['start', projectName], { cwd: craftDir });
 	}
 
 	await spawn('ddev', ['composer', 'install'], { cwd: craftDir });
