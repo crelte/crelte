@@ -120,7 +120,7 @@ export default class Queries {
 	 */
 	static new(
 		endpoint: string,
-		frontend: string | null,
+		frontend: string | null = null,
 		ssrCache: SsrCache = new SsrCache(),
 		opts: QueriesOptions = {},
 	): Queries {

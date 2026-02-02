@@ -1,8 +1,10 @@
 import ServerRouter from '../ServerRouter.js';
 import QueriesCaching from './QueriesCaching.js';
-import { CacheIfFn, QueryRoute, TransformFn } from './routes.js';
+import { CacheIfFn, HandleFn, TransformFn } from './routes.js';
 import { isQueryVar, QueryVar } from '../../queries/vars.js';
 import { Platform } from '../platform.js';
+import QueryHandleRoute from './QueryHandleRoute.js';
+import QueryGqlRoute from './QueryGqlRoute.js';
 
 type ModQuery = {
 	default: { name: string };
@@ -13,6 +15,7 @@ type ModTs = {
 	variables?: any;
 	caching?: any;
 	transform?: any;
+	handle?: any;
 };
 
 type ModQueries = Record<string, ModQuery | ModTs>;
@@ -21,9 +24,11 @@ type RouteBuilder = {
 	query: string | null;
 	jsFile: string | null;
 	vars: Record<string, QueryVar> | null;
+	/** corresponds to the caching export */
 	cacheIfFn: CacheIfFn | null;
 	preventCaching: boolean;
 	transformFn: TransformFn | null;
+	handleFn: HandleFn | null;
 };
 
 export async function initQueryRoutes(
@@ -57,6 +62,7 @@ export async function initQueryRoutes(
 				cacheIfFn: null,
 				preventCaching: false,
 				transformFn: null,
+				handleFn: null,
 			};
 			routeBuilders.set(name, routeBuilder);
 		}
@@ -90,6 +96,10 @@ export async function initQueryRoutes(
 		if (mts.transform) {
 			routeBuilder.transformFn = parseTransform(mts.transform);
 		}
+
+		if (mts.handle) {
+			routeBuilder.handleFn = parseHandle(mts.handle);
+		}
 	}
 
 	const caching = new QueriesCaching(platform, router, {
@@ -97,13 +107,29 @@ export async function initQueryRoutes(
 	});
 
 	for (const [name, rb] of routeBuilders.entries()) {
-		if (!rb.query) throw new Error(`no .graphql file for query ${name}`);
+		if (rb.query) {
+			if (rb.handleFn) throw new Error('handle function not supported');
 
-		const route = new QueryRoute(name, rb.query, rb);
+			const route = new QueryGqlRoute(name, rb.query, rb);
 
-		router.post('/queries/' + route.name, async csr =>
-			route.handle(caching, csr),
-		);
+			router.post('/queries/' + route.name, csr =>
+				route.handle(caching, csr),
+			);
+		} else if (rb.handleFn) {
+			if (rb.cacheIfFn || rb.transformFn || rb.preventCaching)
+				throw new Error('caching or transform not supported');
+
+			const route = new QueryHandleRoute(name, rb.handleFn, rb.vars);
+
+			router.post('/queries/' + route.name, csr =>
+				route.handle(caching.router, csr),
+			);
+		} else {
+			throw new Error(
+				`query js/ts ${name} file needs to either have ` +
+					'a .graphql file or a handle function',
+			);
+		}
 	}
 }
 
@@ -139,4 +165,11 @@ function parseTransform(transform: any): TransformFn {
 		throw new Error('transform should be a function');
 
 	return transform;
+}
+
+function parseHandle(handle: any): HandleFn {
+	if (typeof handle !== 'function')
+		throw new Error('handle should be a function');
+
+	return handle;
 }

@@ -7,6 +7,7 @@ import Queries, {
 	Query,
 	QueryOptions,
 } from '../queries/Queries.js';
+import type CrelteServerRequest from '../server/CrelteServer.js';
 import { gql } from './gql.js';
 import QueryError, { QueryErrorResponse } from './QueryError.js';
 import { QueryVar, ValidIf, vars, varsIdsEqual } from './vars.js';
@@ -54,3 +55,38 @@ export type InferVariableTypes<T> = {
 export type Caching<
 	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
 > = boolean | ((response: any, vars: InferVariableTypes<T>) => boolean);
+
+/** use {@link Handle} */
+export type HandleFn<
+	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
+> = (csr: CrelteServerRequest, vars: InferVariableTypes<T>) => any;
+
+/**
+ * #### Example
+ * ```ts
+ * // queries/custom.ts
+ * import { vars, type Handle, gql, namedQuery } from 'crelte/queries';
+ *
+ * // It is good practice to have the query name inside the file
+ * export const customQuery = namedQuery('custom');
+ *
+ * export const variables = {
+ *     name: vars.string(),
+ * };
+ *
+ * export const handle: Handle<typeof variables> = async (csr, vars) => {
+ *     if (vars.name === 'demo') {
+ *         throw new Response('not allowed', { status: 400 });
+ *     }
+ *
+ *     return { name: vars.name };
+ * };
+ * ```
+ */
+export type Handle<
+	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
+	F extends HandleFn<T> = HandleFn<T>,
+> = (
+	csr: CrelteServerRequest,
+	vars: InferVariableTypes<T>,
+) => Awaited<ReturnType<F>>;
