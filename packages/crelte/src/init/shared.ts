@@ -167,7 +167,7 @@ export async function loadFn(
 	// we force resolve them to prevent deadlocks
 	if (
 		import.meta.env.DEV &&
-		!(await Promise.any([loadGlobalDataProm, timeout(2000)]))
+		!(await Promise.race([loadGlobalDataProm, timeout(2000)]))
 	) {
 		console.error(
 			'DEV: globals took longer than 2 seconds to load. ' +
