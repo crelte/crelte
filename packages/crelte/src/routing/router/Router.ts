@@ -226,19 +226,18 @@ export default class Router {
 		});
 		if (!req) return;
 
-		try {
-			return await this.inner.pushRequest(req, opts);
-		} catch (e) {
+		return this.inner.pushRequest(req, opts).catch(e => {
 			console.warn('pushing route failed', e);
 			throw e;
-		}
+		});
 	}
 
 	/**
 	 * @deprecated use push instead
 	 */
 	pushState(route: Route | Request) {
-		console.warn('pushState is deprecated, use push instead');
+		if (import.meta.env.DEV)
+			console.warn('pushState is deprecated, use push instead');
 		this.push(route);
 	}
 
@@ -287,19 +286,18 @@ export default class Router {
 		});
 		if (!req) return;
 
-		try {
-			return await this.inner.replaceRequest(req, opts);
-		} catch (e) {
+		return this.inner.replaceRequest(req, opts).catch(e => {
 			console.warn('replacing route failed', e);
 			throw e;
-		}
+		});
 	}
 
 	/**
 	 * @deprecated use replace instead
 	 */
 	replaceState(route: Route | Request) {
-		console.warn('replaceState is deprecated, use replace instead');
+		if (import.meta.env.DEV)
+			console.warn('replaceState is deprecated, use replace instead');
 		this.replace(route);
 	}
 

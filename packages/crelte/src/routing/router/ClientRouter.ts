@@ -107,7 +107,7 @@ export default class ClientRouter extends BaseRouter {
 	async pushRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
 
-		return await this.handleRequest(req, route => {
+		return this.handleRequest(req, route => {
 			window.history.pushState(
 				route.z_toState(),
 				'',
@@ -119,18 +119,13 @@ export default class ClientRouter extends BaseRouter {
 	async replaceRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
 
-		try {
-			return await this.handleRequest(req, () => {
-				window.history.replaceState(
-					req.z_toState(),
-					'',
-					url.pathname + url.search + url.hash,
-				);
-			});
-		} catch (e) {
-			console.warn('replacing route failed', e);
-			throw e;
-		}
+		return this.handleRequest(req, () => {
+			window.history.replaceState(
+				req.z_toState(),
+				'',
+				url.pathname + url.search + url.hash,
+			);
+		});
 	}
 
 	back(): void {

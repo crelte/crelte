@@ -101,22 +101,22 @@ export async function main(data: MainData) {
 
 	// render Space
 
-	let appInstance: any;
-	let routeProp: Writable<Route>;
+	let routeProp: Writable<Route> | null = null;
 	const renderApp = (route: Route) => {
-		if (appInstance) {
-			routeProp!.set(route);
+		if (routeProp) {
+			routeProp.set(route);
 			return;
 		}
 
 		routeProp = new Writable(route);
-		appInstance = svelteMount(data.app.default, {
+		svelteMount(data.app.default, {
 			target: document.body,
 			props: { route: routeProp },
 			context: new Map([['crelte', crelte]]),
 			intro: config.playIntro,
 		});
 	};
+	const appMounted = () => !!routeProp;
 
 	router.onError = (e, req) => {
 		console.error('routing failed:', e, 'reloading trying to fix it');
@@ -126,9 +126,9 @@ export async function main(data: MainData) {
 	};
 
 	router.onRender = async (cr, readyForRoute, domUpdated) => {
-		if (appInstance && cr.req.disableLoadData) {
+		if (appMounted() && cr.req.disableLoadData) {
 			// if the app is already rendered and entry did not change
-			// we just wan't to run domUpdated because we don't wan't to update anything
+			// we just wan't to run domUpdated because we don't want to update anything
 
 			const route = readyForRoute();
 			cr.router.z_requestCompleted();
@@ -170,7 +170,7 @@ export async function main(data: MainData) {
 		// render with view Transition if enabled and not in hydration
 		if (
 			config.viewTransition &&
-			appInstance &&
+			appMounted() &&
 			(document as any).startViewTransition
 		) {
 			const prevRender = render;

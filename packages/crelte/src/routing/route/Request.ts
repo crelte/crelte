@@ -1,5 +1,5 @@
 import Site from '../Site.js';
-import { objClone } from '../../utils.js';
+import { objClone, promiseThen } from '../../utils.js';
 import BaseRoute, { RouteOrigin } from './BaseRoute.js';
 import Route, { TemplateModule } from './Route.js';
 import { Entry } from '../../loadData/index.js';
@@ -254,8 +254,15 @@ class RenderBarrier {
 		const action = this.inner.add();
 
 		return {
-			ready: async () => {
-				if (!this.inner.isOpen()) await action.ready(null);
+			ready: () => {
+				if (!this.inner.isOpen())
+					return promiseThen(
+						// wait for action.ready
+						action.ready(null),
+						// then return if it was cancelled
+						() => this.cancelled,
+					);
+
 				return this.cancelled;
 			},
 			remove: () => {
@@ -292,7 +299,7 @@ export type DelayRender = {
 	 *
 	 * @returns if the render was cancelled
 	 */
-	ready: () => Promise<boolean>;
+	ready: () => Promise<boolean> | boolean;
 
 	/**
 	 * If youre not interested when the render happens anymore

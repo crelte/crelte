@@ -83,7 +83,7 @@ export default class Barrier<T> {
 
 	private _maybeTrigger(): boolean {
 		const ready = this.listeners.every(v => v === null || v.ready);
-		// if all are ready
+		// if not all are ready
 		if (!ready) return false;
 
 		// send the last value to all of them

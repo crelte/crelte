@@ -13,6 +13,21 @@ export function isPromise<T>(p: Promise<T> | T): p is Promise<T> {
 	return typeof (p as any)?.then === 'function';
 }
 
+/**
+ * A helper to chain promises without needing a microtask if its not a promise
+ * Equivalent to:
+ * ```
+ * const val = await p;
+ * then(val);
+ * ```
+ */
+export function promiseThen<T, R = void>(
+	p: Promise<T> | T,
+	then: (val: T) => R,
+): Promise<R> | R {
+	return isPromise(p) ? p.then(then) : then(p);
+}
+
 // the pathname is always replaced
 export function urlWithPath(url: string, path?: string): URL {
 	const u = new URL(url);
