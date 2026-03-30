@@ -166,7 +166,7 @@ export default async function createServer(serverMod: any, buildTime: string) {
 		} catch (e) {
 			basicError(res, e);
 		}
-	}).listen(8080);
+	}).listen(process.env.PORT ?? 8080);
 }
 
 function basicError(res: ServerResponse, err: any) {
