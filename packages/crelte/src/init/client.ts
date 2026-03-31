@@ -20,6 +20,8 @@ import Plugins from '../plugins/Plugins.js';
 import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
 import { Writable } from '../std/stores/index.js';
+import ClientBodyClass from '../bodyClass/ClientBodyClass.js';
+import { BodyClass } from '../bodyClass/index.js';
 
 /**
  * The main function to start the client side rendering
@@ -86,6 +88,7 @@ export async function main(data: MainData) {
 		router: new Router(router),
 		queries,
 		cookies,
+		bodyClass: new BodyClass(new ClientBodyClass()),
 	});
 
 	const app = new InternalApp(data.app);

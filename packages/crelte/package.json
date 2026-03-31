@@ -72,6 +72,10 @@
 			"types": "./dist/cookies/index.d.ts",
 			"default": "./dist/cookies/index.js"
 		},
+		"./bodyClass": {
+			"types": "./dist/bodyClass/index.d.ts",
+			"default": "./dist/bodyClass/index.js"
+		},
 		"./blocks": {
 			"types": "./dist/blocks/index.d.ts",
 			"default": "./dist/blocks/index.js"

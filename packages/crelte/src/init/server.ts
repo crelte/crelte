@@ -23,6 +23,8 @@ import {
 	RenderRequest,
 	RenderResponse,
 } from '../server/shared.js';
+import ServerBodyClass from '../bodyClass/ServerBodyClass.js';
+import BodyClass from '../bodyClass/BodyClass.js';
 
 export { type RenderRequest, type RenderResponse } from '../server/shared.js';
 
@@ -75,6 +77,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 	ssrCache.set('FRONTEND_URL', data.serverData.frontend);
 
 	const cookies = new ServerCookies(data.serverData.headers);
+	const bodyClass = new ServerBodyClass();
 
 	ssrCache.set('crelteSites', data.serverData.sites);
 	const router = new ServerRouter(
@@ -94,6 +97,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		router: new Router(router),
 		queries,
 		cookies,
+		bodyClass: new BodyClass(bodyClass),
 	});
 
 	const app = new InternalApp(data.app);
@@ -153,6 +157,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		'<!--page-lang-->',
 		route.site.language,
 	);
+	htmlTemplate = bodyClass.z_processHtmlTemplate(htmlTemplate);
 
 	const finalHtml = htmlTemplate
 		.replace('</head>', head + '\n\t</head>')
