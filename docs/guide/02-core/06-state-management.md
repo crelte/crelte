@@ -134,3 +134,6 @@ is destroyed. This means is it not shared between the server and the client and 
 
 It can be useful to pass data between multiple loadData functions or from an `onRequest` handler or when doing a
 `router.open` or similar call. See [`BaseRoute.setContext`](/types/routing/classes/BaseRoute.html#setcontext)
+
+The context is also automatically populated from the dataset of a clicked link.
+See [pagination example](/cookbook/pagination-with-scroll.html)

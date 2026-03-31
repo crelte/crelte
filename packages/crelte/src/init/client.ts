@@ -3,6 +3,7 @@ import {
 	loadFn,
 	newQueries,
 	onNewCrelteRequest,
+	pluginsAfterRender,
 	pluginsBeforeRender,
 	pluginsBeforeRequest,
 	setupPlugins,
@@ -140,6 +141,7 @@ export async function main(data: MainData) {
 			await tick();
 
 			domUpdated(cr, route);
+			pluginsAfterRender(cr, route);
 
 			return route;
 		}
@@ -163,6 +165,7 @@ export async function main(data: MainData) {
 			}
 
 			domUpdated(cr, route);
+			pluginsAfterRender(cr, route);
 
 			return route;
 		};

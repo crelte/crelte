@@ -71,6 +71,8 @@ is useful to know the data flow in Crelte.
 │ - onRoute                                    │
 │ - globalsUpdate                              │
 │ - beforeRender (event)                       │
+│ - update the dom                             │
+│ - afterRender (event)                        │
 └──────────────────────────────────────────────┘
 ```
 

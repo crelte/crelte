@@ -32,6 +32,9 @@ export default class Events {
 	 * Will be executed in preload as well.
 	 *
 	 * @returns a function to remove the listener
+	 *
+	 * #### afterRender
+	 * Note this will also be executed when disableLoadData is true
 	 */
 	// override this function to add your own function signatures
 	on(
@@ -58,7 +61,14 @@ export default class Events {
 		ev: 'loadData',
 		fn: (cr: CrelteRequest, entry: Entry) => Promise<any> | any,
 	): () => void;
-	on(ev: 'beforeRender', fn: (cr: CrelteRequest) => void): () => void;
+	on(
+		ev: 'beforeRender',
+		fn: (cr: CrelteRequest, route: Route) => void,
+	): () => void;
+	on(
+		ev: 'afterRender',
+		fn: (cr: CrelteRequest, route: Route) => void,
+	): () => void;
 	on(ev: string, fn: (...args: any[]) => any): () => void {
 		let set = this.inner.get(ev);
 		if (!set) {
@@ -108,6 +118,7 @@ export default class Events {
 		entry: Entry,
 	): (Promise<any> | any)[];
 	trigger(ev: 'beforeRender', cr: CrelteRequest, route: Route): void[];
+	trigger(ev: 'afterRender', cr: CrelteRequest, route: Route): void[];
 	trigger(ev: string, ...args: any[]): any[] {
 		const set = this.inner.get(ev);
 		if (!set) return [];

@@ -130,5 +130,6 @@ function sidebarCookbook(): DefaultTheme.SidebarItem[] {
 		{ text: 'Overview', link: '01-overview' },
 		{ text: 'PageLoader', link: 'page-loader' },
 		{ text: 'preloadOnMouseOver', link: 'preload-on-mouse-over' },
+		{ text: 'Pagination', link: 'pagination-with-scroll' },
 	];
 }

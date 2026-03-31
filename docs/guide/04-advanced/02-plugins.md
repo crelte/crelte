@@ -121,7 +121,15 @@ type Fn = (cr: CrelteRequest, entry: Entry) => Promise<any>;
 ### beforeRender
 
 ```ts
-type Fn = (cr: CrelteRequest) => void;
+type Fn = (cr: CrelteRequest, route: Route) => void;
+```
+
+### afterRender
+Gets executed after a render. This can be used to scroll to a specific
+location or similar.
+
+```ts
+type Fn = (cr: CrelteRequest, route: Route) => void;
 ```
 
 ## Inside App.svelte

@@ -34,6 +34,10 @@ export function pluginsBeforeRender(cr: CrelteRequest, route: Route): void {
 	cr.events.trigger('beforeRender', cr, route);
 }
 
+export function pluginsAfterRender(cr: CrelteRequest, route: Route): void {
+	cr.events.trigger('afterRender', cr, route);
+}
+
 export function newQueries(
 	ssrCache: SsrCache,
 	route: Readable<Route | null>,
