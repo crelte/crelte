@@ -159,6 +159,7 @@ export default class ClientRouter extends BaseRouter {
 			const req = this.targetToRequest(link.href, {
 				origin: 'click',
 				context: { ...link.dataset },
+				disableScroll: attributeToBool(link, 'data-disable-scroll'),
 			});
 			const currRoute = this.route.get();
 			const routeEq =
@@ -184,7 +185,9 @@ export default class ClientRouter extends BaseRouter {
 
 				if (
 					link &&
-					!link.hasAttribute('data-no-preload') &&
+					// todo remove data-no-preload
+					!attributeToBool(link, 'data-no-preload') &&
+					!attributeToBool(link, 'data-disable-preload') &&
 					link.href
 				) {
 					this.preload(link.href);
@@ -304,5 +307,16 @@ export default class ClientRouter extends BaseRouter {
 				block: 'start',
 			});
 		}
+	}
+}
+
+function attributeToBool(el: HTMLElement, attr: string): boolean {
+	switch (el.getAttribute(attr)) {
+		case '':
+		case 'true':
+			return true;
+		case 'false':
+		default:
+			return false;
 	}
 }
