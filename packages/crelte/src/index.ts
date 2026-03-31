@@ -17,7 +17,7 @@ import {
 	LoadDataObj,
 } from './loadData/index.js';
 import Queries from './queries/Queries.js';
-import { Readable } from './std/stores/index.js';
+import { Readable, Writable } from './std/stores/index.js';
 
 export {
 	type Crelte,
@@ -32,6 +32,9 @@ export {
 
 /** The type for the app.init function */
 export type Init = (crelte: Crelte) => void;
+
+/** The Props that are passed to the app */
+export type AppProps = { route: Writable<Route> };
 
 function innerGetCrelte(): Crelte {
 	return getContext('crelte');
