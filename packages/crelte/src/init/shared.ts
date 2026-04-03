@@ -32,6 +32,7 @@ export function pluginsBeforeRequest(cr: CrelteRequest): Promise<void> | void {
 
 export function pluginsBeforeRender(cr: CrelteRequest, route: Route): void {
 	cr.events.trigger('beforeRender', cr, route);
+	cr.plugins.z_render(cr, route);
 }
 
 export function pluginsAfterRender(cr: CrelteRequest, route: Route): void {
@@ -68,12 +69,13 @@ export function onNewCrelteRequest(
 		...crelte,
 		router: crelte.router.z_toRequest(req),
 		queries: crelte.queries.z_toRequest(req),
+		plugins: crelte.plugins.z_toRequest(req),
 		globals: crelte.globals.z_toRequest(),
 	};
 	return crelteToRequest(nCrelte, req);
 }
 
-async function pluginsLoadEntry(cr: CrelteRequest): Promise<Entry | null> {
+async function eventsLoadEntry(cr: CrelteRequest): Promise<Entry | null> {
 	const listeners = cr.events.getListeners('loadEntry');
 
 	for (const loadEntry of listeners) {
@@ -127,7 +129,7 @@ export async function loadFn(
 	// checked to be empty before doing it
 	const entryProm = (async () => {
 		// first let's try to call the plugin loadEntry
-		let entry = await pluginsLoadEntry(cr);
+		let entry = await eventsLoadEntry(cr);
 		if (isCanceled()) return [];
 
 		// if no plugin provides an entry we load it from the app
@@ -156,7 +158,8 @@ export async function loadFn(
 		return [entry, template] as [Entry, TemplateModule];
 	})();
 
-	const pluginsLoadGlobalData = cr.events.trigger('loadGlobalData', cr);
+	const eventsLoadGlobalData = cr.events.trigger('loadGlobalData', cr);
+	const pluginsLoadGlobalData = cr.plugins.z_loadGlobalData(cr);
 
 	// loading progress is at 20%
 	loadOpts?.setProgress(0.2);
@@ -164,6 +167,7 @@ export async function loadFn(
 	const loadGlobalDataProm = Promise.all([
 		globalProm,
 		entryProm,
+		...eventsLoadGlobalData,
 		...pluginsLoadGlobalData,
 	]);
 
@@ -188,8 +192,6 @@ export async function loadFn(
 	// loading progress is at 60%
 	loadOpts?.setProgress(0.6);
 
-	const pluginsLoadData = cr.events.trigger('loadData', cr, entry);
-
 	let loadDataProm = null;
 	if (template.loadData) {
 		loadDataProm = callLoadData(template.loadData, cr, entry);
@@ -200,9 +202,13 @@ export async function loadFn(
 		entryDataProm = callLoadData(app.loadEntryData, cr, entry);
 	}
 
+	const eventsLoadData = cr.events.trigger('loadData', cr, entry);
+	const pluginsLoadData = cr.plugins.z_loadData(cr);
+
 	const [templateData, entryData] = await Promise.all([
 		loadDataProm,
 		entryDataProm,
+		...eventsLoadData,
 		...pluginsLoadData,
 	]);
 

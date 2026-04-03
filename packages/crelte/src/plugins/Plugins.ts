@@ -1,10 +1,32 @@
-import { Crelte } from '../crelte.js';
+import { Crelte, CrelteRequest } from '../crelte.js';
+import { Request, Route } from '../routing/index.js';
 
 /**
  * A plugin
  */
 export interface Plugin {
 	name: string;
+	/**
+	 * The returned value will be used inside of CrelteRequest
+	 */
+	toRequest?: (req: Request) => Plugin;
+
+	/**
+	 * This will be called during the loadGlobalData phase.
+	 */
+	loadGlobalData?: (cr: CrelteRequest) => Promise<void> | void;
+
+	/**
+	 * This will be called during the loadData phase.
+	 */
+	loadData?: (cr: CrelteRequest) => Promise<void> | void;
+
+	/**
+	 * This will be called before the dom gets updated.
+	 *
+	 * At this point you can update variables or stores.
+	 */
+	render?: (cr: CrelteRequest, route: Route) => void;
 }
 
 /**
@@ -45,5 +67,48 @@ export default class Plugins {
 
 	get(name: string): Plugin | null {
 		return this.plugins.get(name) ?? null;
+	}
+
+	/**
+	 * @hidden
+	 */
+	z_toRequest(req: Request): Plugins {
+		const nPlugins = new Plugins();
+
+		for (let plugin of this.plugins.values()) {
+			if (typeof plugin.toRequest === 'function')
+				plugin = plugin.toRequest(req);
+
+			nPlugins.add(plugin);
+		}
+
+		return nPlugins;
+	}
+
+	/**
+	 * @hidden
+	 */
+	z_loadGlobalData(cr: CrelteRequest): (Promise<void> | void | undefined)[] {
+		return Array.from(this.plugins.values()).map(plugin =>
+			plugin.loadGlobalData?.(cr),
+		);
+	}
+
+	/**
+	 * @hidden
+	 */
+	z_loadData(cr: CrelteRequest): (Promise<void> | void | undefined)[] {
+		return Array.from(this.plugins.values()).map(plugin =>
+			plugin.loadData?.(cr),
+		);
+	}
+
+	/**
+	 * @hidden
+	 */
+	z_render(cr: CrelteRequest, route: Route): void {
+		for (const plugin of this.plugins.values()) {
+			plugin.render?.(cr, route);
+		}
 	}
 }
