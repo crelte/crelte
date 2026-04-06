@@ -35,9 +35,7 @@ export function getMyPlugin(crelte?: Crelte): MyPlugin {
 }
 
 export class MyPlugin implements Plugin {
-	constructor(crelte: Crelte) {
-		
-	}
+	constructor(_crelte: Crelte) {}
 	
 	get name(): string {
 		return 'myPlugin';	
@@ -88,7 +86,7 @@ Gets called in the loadData phase.
 ### render
 Gets called right before the dom gets updated. In this function you should
 transition back from the stateful plugin.
-[Checkout example](/cookbook/user-plugin.html)
+[Checkout example](/cookbook/plugin-page-theme.html)
 
 ## Events
 
