@@ -38,6 +38,10 @@ export default class ServerBodyClass implements PlatformBodyClass {
 		classes.forEach(cls => this.inner.delete(cls));
 	}
 
+	toRequest(): ServerBodyClass {
+		return this;
+	}
+
 	z_processHtmlTemplate(html: string): string {
 		const SEARCH_STR = '<!--body-class-->';
 		if (this.inner.size && !html.includes(SEARCH_STR)) {

@@ -154,6 +154,9 @@ export async function main(data: MainData) {
 		let render = async () => {
 			const route = readyForRoute();
 			cr.router.z_requestCompleted();
+			// todo I'm not sure this is correct since a plugin could
+			// change the values in loadData or is that not called?
+			// if it is not called we should also not call pluginsBeforeRender
 			if (route.entryChanged) cr.globals.z_syncToStores();
 			// we should trigger the route update here
 			pluginsBeforeRender(cr, route);

@@ -49,6 +49,11 @@ export default class BodyClass {
 		this.inner.remove(...classes);
 		this.store.set();
 	}
+
+	/** @hidden */
+	z_toRequest(): BodyClass {
+		return new BodyClass(this.inner.toRequest());
+	}
 }
 
 export interface PlatformBodyClass {
@@ -56,4 +61,5 @@ export interface PlatformBodyClass {
 	add(...classes: string[]): void;
 	toggle(cls: string, force?: boolean): void;
 	remove(...classes: string[]): void;
+	toRequest(): PlatformBodyClass;
 }
