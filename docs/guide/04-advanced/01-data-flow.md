@@ -37,7 +37,7 @@ is useful to know the data flow in Crelte.
              ▼                                ▼             
 ┌─────────────────────────┐      ┌─────────────────────────┐
 │ app.loadGlobalData [^1] │      │ loadEntry (event)       │
-│ loadGlobalData (event)  │      │ if empty: app.loadEntry │
+│ loadGlobalData (event)  │      │ app.loadEntry [^2]      │
 │ plugin.loadGlobalData   │      └────────────┬────────────┘
 └───────────┬─────────────┘                   │             
             │                                 ▼             
@@ -83,9 +83,7 @@ is useful to know the data flow in Crelte.
 [^1]: If `app.loadGlobalData` is **not defined**, Crelte automatically loads `global.graphql`.  
 The returned data is then set as globals.
 
-[^2]: `loadEntryData` runs **before** `cr.req.entry` and `cr.req.template` are added to
-the request object.
-
-[^3]: If `app.loadEntry` is **empty or not defined**, Crelte automatically loads
+[^2]: If `app.loadEntry` is **empty or not defined**, Crelte automatically loads
 `entry.graphql` using the `queryEntry` helper. Passing a GraphQL query to
 `app.loadEntry` also results in an automatic call to `queryEntry`.
+This will not happen if the loadEntry event returned an entry.
