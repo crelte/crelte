@@ -115,6 +115,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		cr.router.z_requestCompleted();
 		cr.globals.z_syncToStores();
 		pluginsBeforeRender(cr, route);
+		cr.bodyClass.z_render();
 
 		return route;
 	};

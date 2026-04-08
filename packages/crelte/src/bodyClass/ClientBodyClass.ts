@@ -38,6 +38,23 @@ export default class ClientBodyClass implements PlatformBodyClass {
 		const inner = new Set(cl());
 		return new ClientBodyClass(inner);
 	}
+
+	render(): void {
+		if (!this.inner) throw new Error('call toRequest first');
+		const current = new Set(cl());
+
+		for (const cls of this.inner) {
+			const existed = current.delete(cls);
+			if (!existed) cl().add(cls);
+		}
+
+		// now lets remove all classes that still exist in current
+		for (const cls of current) {
+			cl().remove(cls);
+		}
+
+		this.inner = null;
+	}
 }
 
 function cl(): DOMTokenList {

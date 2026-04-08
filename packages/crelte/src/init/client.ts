@@ -159,6 +159,7 @@ export async function main(data: MainData) {
 			if (route.entryChanged) {
 				cr.globals.z_syncToStores();
 				pluginsBeforeRender(cr, route);
+				cr.bodyClass.z_render();
 			}
 
 			renderApp(route);

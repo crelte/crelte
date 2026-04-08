@@ -1,12 +1,12 @@
-import Writable from '../std/stores/Writable.js';
+import StagedWritable from '../std/stores/StagedWritable.js';
 
 export default class BodyClass {
 	private inner: PlatformBodyClass;
-	private store: Writable<void>;
+	private store: StagedWritable<void>;
 
-	constructor(inner: PlatformBodyClass) {
+	constructor(inner: PlatformBodyClass, store?: StagedWritable<void>) {
 		this.inner = inner;
-		this.store = new Writable(void 0);
+		this.store = store ?? new StagedWritable(void 0);
 	}
 
 	subscribe(
@@ -52,7 +52,13 @@ export default class BodyClass {
 
 	/** @hidden */
 	z_toRequest(): BodyClass {
-		return new BodyClass(this.inner.toRequest());
+		return new BodyClass(this.inner.toRequest(), this.store.stage());
+	}
+
+	/** @hidden */
+	z_render(): void {
+		this.inner.render?.();
+		this.store.commit();
 	}
 }
 
@@ -62,4 +68,5 @@ export interface PlatformBodyClass {
 	toggle(cls: string, force?: boolean): void;
 	remove(...classes: string[]): void;
 	toRequest(): PlatformBodyClass;
+	render?: () => void;
 }
