@@ -20,6 +20,8 @@ import Plugins from '../plugins/Plugins.js';
 import Events from '../plugins/Events.js';
 import Globals from '../loadData/Globals.js';
 import { Writable } from '../std/stores/index.js';
+import ClientBodyClass from '../bodyClass/ClientBodyClass.js';
+import { BodyClass } from '../bodyClass/index.js';
 
 /**
  * The main function to start the client side rendering
@@ -86,6 +88,7 @@ export async function main(data: MainData) {
 		router: new Router(router),
 		queries,
 		cookies,
+		bodyClass: new BodyClass(new ClientBodyClass()),
 	});
 
 	const app = new InternalApp(data.app);
@@ -151,9 +154,14 @@ export async function main(data: MainData) {
 		let render = async () => {
 			const route = readyForRoute();
 			cr.router.z_requestCompleted();
-			if (route.entryChanged) cr.globals.z_syncToStores();
-			// we should trigger the route update here
-			pluginsBeforeRender(cr, route);
+			// this is only important on the first render
+			// else we will catch an earlier branch in onRender
+			if (route.entryChanged) {
+				cr.globals.z_syncToStores();
+				pluginsBeforeRender(cr, route);
+				cr.bodyClass.z_render();
+			}
+
 			renderApp(route);
 
 			await tick();

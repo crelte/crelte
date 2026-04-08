@@ -18,6 +18,7 @@ import {
 } from './loadData/index.js';
 import Queries from './queries/Queries.js';
 import { Readable, Writable } from './std/stores/index.js';
+import { BodyClass } from './bodyClass/index.js';
 
 export {
 	type Crelte,
@@ -175,6 +176,16 @@ export function getGlobal<T = any>(name: string): Readable<T> | null {
  */
 export function getCookies(): Cookies {
 	return innerGetCrelte().cookies;
+}
+
+/**
+ * returns the body class instance
+ *
+ * #### Note
+ * This only works during component initialisation.
+ */
+export function getBodyClass(): BodyClass {
+	return innerGetCrelte().bodyClass;
 }
 
 /**

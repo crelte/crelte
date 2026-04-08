@@ -9,6 +9,7 @@ import Queries, { Query, QueryOptions } from './queries/Queries.js';
 import { Readable } from './std/stores/index.js';
 import { Entry } from './loadData/index.js';
 import { urlWithPath } from './utils.js';
+import { BodyClass } from './bodyClass/index.js';
 
 /** The type for the app.config object */
 export type Config = {
@@ -112,6 +113,11 @@ export type Crelte = {
 	 * Get the Cookies instance
 	 */
 	cookies: Cookies;
+
+	/**
+	 * Get the BodyClass instance
+	 */
+	bodyClass: BodyClass;
 
 	/**
 	 * Get a Plugin by name
@@ -263,6 +269,7 @@ export function newCrelte({
 	router,
 	queries,
 	cookies,
+	bodyClass,
 }: {
 	config: Required<Config>;
 	ssrCache: SsrCache;
@@ -272,6 +279,7 @@ export function newCrelte({
 	router: Router;
 	queries: Queries;
 	cookies: Cookies;
+	bodyClass: BodyClass;
 }): Crelte {
 	return {
 		config,
@@ -282,6 +290,7 @@ export function newCrelte({
 		router,
 		queries,
 		cookies,
+		bodyClass,
 
 		getPlugin: name => plugins.get(name),
 		getEnv: key => ssrCache.get(key as any) as any,
