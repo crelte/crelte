@@ -131,5 +131,6 @@ function sidebarCookbook(): DefaultTheme.SidebarItem[] {
 		{ text: 'PageLoader', link: 'page-loader' },
 		{ text: 'preloadOnMouseOver', link: 'preload-on-mouse-over' },
 		{ text: 'Pagination', link: 'pagination-with-scroll' },
+		{ text: 'PageTheme', link: 'plugin-page-theme' },
 	];
 }

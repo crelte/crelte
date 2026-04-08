@@ -124,7 +124,7 @@ If you don't want to store the data inside the SearchParams you can also use the
 
 #### State
 
-State is the a mechanism provided by the window History API this means the data stored there is only available
+State is the mechanism provided by the window History API this means the data stored there is only available
 on the client. See [`BaseRoute.setState`](/types/routing/classes/BaseRoute.html#setstate)
 
 #### Context

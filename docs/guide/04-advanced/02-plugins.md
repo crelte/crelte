@@ -1,8 +1,8 @@
 # Plugins
 
 Plugins allow to extend and customize the functionality of Crelte. The
-main way plugins hook into crelte are via different events, provided by
-[crelte.events](/types/plugins/classes/Events.html).
+main way plugins hook into crelte are via different functions on the plugin and
+events, provided by [crelte.events](/types/plugins/classes/Events.html).
 
 ## Adding a plugin
 
@@ -35,12 +35,14 @@ export function getMyPlugin(crelte?: Crelte): MyPlugin {
 }
 
 export class MyPlugin implements Plugin {
-	constructor(crelte: Crelte) {
-		crelte.events.on('loadData', () => console.log('loadData'));
-	}
+	constructor(_crelte: Crelte) {}
 	
 	get name(): string {
 		return 'myPlugin';	
+	}
+	
+	loadData(cr: CrelteRequest) {
+		console.log('loadData');
 	}
 }
 ```
@@ -67,6 +69,24 @@ In a component or a template you then can use the plugin like this:
 	const myPlugin = getMyPlugin();
 </script>
 ```
+
+## Functions
+
+### toRequest
+If your plugin loads data it could make sense to make it stateful.
+With toRequest you can return a new instance of your plugin for each request allowing
+to store request specific data on the plugin instance.
+
+### loadGlobalData
+Gets called in the loadGlobalData phase.
+
+### loadData
+Gets called in the loadData phase.
+
+### render
+Gets called right before the dom gets updated. In this function you should
+transition back from a stateful plugin (toRequest).
+[Example](/cookbook/plugin-page-theme.html)
 
 ## Events
 

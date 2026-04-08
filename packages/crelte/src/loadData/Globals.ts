@@ -131,7 +131,7 @@ export default class Globals {
 	 * @hidden
 	 * call this before starting the loadGlobalData phase
 	 */
-	z_toRequest() {
+	z_toRequest(): Globals {
 		const nGlobals = new Globals(this.stores);
 		nGlobals.waiters = new Map();
 		nGlobals.newData = new Map();
