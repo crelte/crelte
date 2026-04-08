@@ -222,8 +222,8 @@ function handleLoadError(e: any) {
 
 	// Messages in different languages
 	const messages: Record<string, string> = {
-		en: 'An error has occurred. Please reload the page or try again later.',
 		de: 'Leider ist ein Fehler aufgetreten. Laden Sie die Seite neu, oder versuchen Sie es später noch mal.',
+		en: 'An error has occurred. Please reload the page or try again later.',
 		fr: 'Une erreur s’est produite. Veuillez recharger la page ou réessayer plus tard.',
 		it: 'Si è verificato un errore. Ricarica la pagina o riprova più tardi.',
 		nl: 'Er is een fout opgetreden. Herlaad de pagina of probeer het later opnieuw.',
