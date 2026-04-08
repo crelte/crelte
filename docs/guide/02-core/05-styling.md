@@ -1,11 +1,9 @@
 # Styling
-
 Svelte has great support for styling. Because you can write css directly
 in your component and it is scoped to those elements.
 
 
 ## :global
-
 This has the downside that nested components or elements within `{@html text}` wont
 work.
 
@@ -33,7 +31,6 @@ For this there is the `:global` selector.
 ```
 
 ## Classes
-
 Toggeling classes is really easy and short.
 
 ```svelte
@@ -61,3 +58,23 @@ the body or some css variables.
 
 **Note**: We recommend to write most styling into components
 this makes each component better reusable and easier to maintain.
+
+## Body class
+When you have some global style or theme which should should be applied as high
+as possible in the dom, you can use `bodyClass`. This will set classes on the
+body element during ssr and also later via a store.
+
+The simplest way to do this is globally inside a `loadEntryData` function.
+
+### Example `App.svelte`
+
+```svelte
+<script module>
+	/** @type {import('crelte').LoadData} */
+	export const loadEntryData = ({ bodyClass }, entry) => {
+		// this will apply the dark-theme class to the body when
+		// the current entry is a blog entry
+		bodyClass.toggle('dark-theme', entry.typeHandle === 'blog');
+	};
+</script>
+```
