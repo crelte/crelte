@@ -1,11 +1,11 @@
-import { Cookies, RemoveOptions, SetOptions } from './index.js';
+import { PlatformCookies, RemoveOptions, SetOptions } from './Cookies.js';
 import { parseCookies, type SetCookie, setCookieToString } from './utils.js';
 
 /**
  * #### Warning
  * This is not stable and should only be used internally by crelte
  */
-export default class ServerCookies implements Cookies {
+export default class ServerCookies implements PlatformCookies {
 	requestCookies: Map<string, string>;
 	setCookies: Map<string, SetCookie>;
 
@@ -14,12 +14,11 @@ export default class ServerCookies implements Cookies {
 		this.setCookies = new Map();
 	}
 
-	/// Rethrns the value of the cookie with the given name, or null if it doesn't exist.
+	/// Returns the value of the cookie with the given name, or null if it doesn't exist.
 	get(name: string): string | null {
 		const setCookie = this.setCookies.get(name);
-		// js allows undefined > 0
-		if (setCookie && setCookie.maxAge! > 0) {
-			return setCookie.value;
+		if (setCookie) {
+			return (setCookie.maxAge ?? 1) > 0 ? setCookie.value : null;
 		}
 
 		return this.requestCookies.get(name) ?? null;
@@ -31,6 +30,10 @@ export default class ServerCookies implements Cookies {
 
 	remove(name: string, opts?: RemoveOptions): void {
 		this.set(name, '', { ...opts, maxAge: 0 });
+	}
+
+	toRequest(): ServerCookies {
+		return this;
 	}
 
 	_populateHeaders(headers: Headers) {

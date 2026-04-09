@@ -71,6 +71,7 @@ export function onNewCrelteRequest(
 		queries: crelte.queries.z_toRequest(req),
 		plugins: crelte.plugins.z_toRequest(req),
 		globals: crelte.globals.z_toRequest(),
+		cookies: crelte.cookies.z_toRequest(),
 		bodyClass: crelte.bodyClass.z_toRequest(),
 	};
 	return crelteToRequest(nCrelte, req);

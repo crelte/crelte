@@ -22,6 +22,7 @@ import Globals from '../loadData/Globals.js';
 import { Writable } from '../std/stores/index.js';
 import ClientBodyClass from '../bodyClass/ClientBodyClass.js';
 import { BodyClass } from '../bodyClass/index.js';
+import { Cookies } from '../cookies/index.js';
 
 /**
  * The main function to start the client side rendering
@@ -77,7 +78,6 @@ export async function main(data: MainData) {
 	});
 
 	const queries = newQueries(ssrCache, router.route.readonly(), config);
-	const cookies = new ClientCookies();
 
 	const crelte = newCrelte({
 		config,
@@ -87,7 +87,7 @@ export async function main(data: MainData) {
 		globals: new Globals(),
 		router: new Router(router),
 		queries,
-		cookies,
+		cookies: new Cookies(new ClientCookies()),
 		bodyClass: new BodyClass(new ClientBodyClass()),
 	});
 
@@ -159,6 +159,7 @@ export async function main(data: MainData) {
 			if (route.entryChanged) {
 				cr.globals.z_syncToStores();
 				pluginsBeforeRender(cr, route);
+				cr.cookies.z_render();
 				cr.bodyClass.z_render();
 			}
 

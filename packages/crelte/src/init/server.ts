@@ -25,6 +25,7 @@ import {
 } from '../server/shared.js';
 import ServerBodyClass from '../bodyClass/ServerBodyClass.js';
 import BodyClass from '../bodyClass/BodyClass.js';
+import { Cookies } from '../cookies/index.js';
 
 export { type RenderRequest, type RenderResponse } from '../server/shared.js';
 
@@ -96,7 +97,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		globals: new Globals(),
 		router: new Router(router),
 		queries,
-		cookies,
+		cookies: new Cookies(cookies),
 		bodyClass: new BodyClass(bodyClass),
 	});
 
@@ -115,6 +116,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		cr.router.z_requestCompleted();
 		cr.globals.z_syncToStores();
 		pluginsBeforeRender(cr, route);
+		cr.cookies.z_render();
 		cr.bodyClass.z_render();
 
 		return route;
@@ -126,7 +128,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 	// if redirect
 	if (!route) {
 		const headers = new Headers();
-		(crelte.cookies as ServerCookies)._populateHeaders(headers);
+		cookies._populateHeaders(headers);
 
 		return {
 			status: req.statusCode ?? 302,
@@ -167,7 +169,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 	const entry = route.entry;
 
 	const headers = new Headers();
-	(crelte.cookies as ServerCookies)._populateHeaders(headers);
+	cookies._populateHeaders(headers);
 
 	return {
 		status:
