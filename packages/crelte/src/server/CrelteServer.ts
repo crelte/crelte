@@ -24,6 +24,7 @@ export default class CrelteServerRequest {
 	private _sites: Site[];
 	private _langs: string[];
 	private _queries: Queries;
+	private _scookies: ServerCookies;
 	private _cookies: Cookies;
 
 	constructor(req: ServerRequest, opts: CrelteServerRequestOptions) {
@@ -37,7 +38,8 @@ export default class CrelteServerRequest {
 		this._queries = opts.queries.z_toRequest(
 			new Request(new URL(req.url), req.site),
 		);
-		this._cookies = new ServerCookies(req.headers);
+		this._scookies = new ServerCookies(req.headers);
+		this._cookies = new Cookies(this._scookies);
 	}
 
 	/**
@@ -145,6 +147,6 @@ export default class CrelteServerRequest {
 
 	/** @hidden */
 	z_finishResponse(resp: Response) {
-		(this.cookies as ServerCookies)._populateHeaders(resp.headers);
+		this._scookies._populateHeaders(resp.headers);
 	}
 }
