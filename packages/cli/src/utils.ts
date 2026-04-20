@@ -14,6 +14,13 @@ export function exitEarly() {
 	exit('Exiting.', 1);
 }
 
+export async function isFile(file: string): Promise<boolean> {
+	return fs
+		.stat(file)
+		.then(stat => stat.isFile())
+		.catch(() => false);
+}
+
 export async function copyFile(from: string, to: string) {
 	try {
 		await fs.copyFile(from, to);

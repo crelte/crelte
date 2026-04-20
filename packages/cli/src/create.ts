@@ -12,6 +12,7 @@ import {
 	rmDir,
 	appendFile,
 	writeFile,
+	isFile,
 } from './utils.js';
 import {
 	group,
@@ -114,7 +115,7 @@ export default async function create(
 		await mergeCopy(craftCreateProjectDir, craftDir);
 		await rmDir(craftCreateProjectDir);
 
-		// run ddev start again to create the necessary .env variables
+		// run ddev start again to maybe create the necessary .env variables
 		await spawn('ddev', ['start', projectName], { cwd: craftDir });
 	}
 
@@ -132,7 +133,12 @@ export default async function create(
 	const siteEnvName =
 		craftOptions.language.toUpperCase().replace('-', '_') + '_SITE_URL';
 
-	const prevEnv = await readFile(j(craftDir, '.env'));
+	// try to read .env.web file first (only ddev ~1.24+)
+	let primaryEnvPath = j(craftDir, '.ddev/.env.web');
+	if (!(await isFile(primaryEnvPath))) {
+		primaryEnvPath = j(craftDir, '.env');
+	}
+	const prevEnv = await readFile(primaryEnvPath);
 	const prevPrimaryUrlMatch = prevEnv.match(PRIMARY_SITE_URL_REGEX);
 	if (!prevPrimaryUrlMatch) {
 		exit('Could not find PRIMARY_SITE_URL in .env', 1);
@@ -140,7 +146,7 @@ export default async function create(
 
 	const prevPrimaryUrl = new URL(prevPrimaryUrlMatch![1]);
 	const endpointUrl = new URL(prevPrimaryUrl.href);
-	// we never wan't the endpoint url to be https in dev because
+	// we never want the endpoint url to be https in dev because
 	// that fails in node
 	endpointUrl.protocol = 'http';
 	endpointUrl.pathname = 'api';
