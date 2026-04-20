@@ -1,5 +1,6 @@
 import childProcess, { SpawnOptionsWithoutStdio } from 'node:child_process';
 import fs from 'node:fs/promises';
+import { RmOptions } from 'node:fs';
 import path from 'node:path';
 import { cancel, log, outro, spinner } from '@clack/prompts';
 
@@ -39,9 +40,9 @@ export async function readFile(file: string): Promise<string> {
 	}
 }
 
-export async function rmFile(file: string) {
+export async function rmFile(file: string, opts?: RmOptions) {
 	try {
-		await fs.rm(file);
+		await fs.rm(file, opts);
 	} catch (e: any) {
 		log.error(e.message);
 		exit('rm failed', 1);

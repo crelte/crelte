@@ -152,7 +152,7 @@ export default async function create(
 	endpointUrl.pathname = 'api';
 
 	// copy files from the template
-	await rmFile(j(craftDir, '.env'));
+	await rmFile(j(craftDir, '.env'), { force: true });
 	await mergeCopy(craftTempDir, craftDir);
 	await rmDir(craftTempDir);
 
