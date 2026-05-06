@@ -1,5 +1,5 @@
 import { CrelteRequest } from '../index.js';
-import { Query } from '../queries/Queries.js';
+import { Query, QueryOptions } from '../queries/Queries.js';
 
 export type Entry = {
 	sectionHandle: string;
@@ -31,12 +31,22 @@ export function entryQueryVars(cr: CrelteRequest): EntryQueryVars {
 	};
 }
 
+/**
+ * ## Example
+ * `App.svelte`
+ * ```ts
+ * import entryQuery from '@/queries/entry.graphql';
+ *
+ * export const loadEntry => cr => queryEntry(cr, entryQuery, entryQueryVars(cr));
+ * ```
+ */
 export async function queryEntry(
 	cr: CrelteRequest,
 	entryQuery: Query,
 	vars: EntryQueryVars,
+	opts?: QueryOptions,
 ): Promise<Entry> {
-	const page = await cr.query(entryQuery, vars);
+	const page = await cr.query(entryQuery, vars, opts);
 	return extractEntry(page) ?? ENTRY_ERROR_404;
 }
 
