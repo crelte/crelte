@@ -152,6 +152,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 		context,
 	});
 
+	bodyClass.z_populateSsrCache(ssrCache);
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
 	head += crelte.ssrCache.z_exportToHead();
 

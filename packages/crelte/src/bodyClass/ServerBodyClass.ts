@@ -1,10 +1,12 @@
+import SsrCache from '../ssr/SsrCache.js';
 import { PlatformBodyClass } from './BodyClass.js';
+import { ClassSet, variantsToSsrCache } from './utils.js';
 
 export default class ServerBodyClass implements PlatformBodyClass {
-	private inner: Set<string>;
+	private inner: ClassSet;
 
 	constructor() {
-		this.inner = new Set();
+		this.inner = new ClassSet();
 	}
 
 	contains(cls: string): boolean {
@@ -16,7 +18,7 @@ export default class ServerBodyClass implements PlatformBodyClass {
 		classes.forEach(cls => this.inner.add(cls));
 	}
 
-	toggle(cls: string, force?: boolean): void {
+	toggle(cls: string, force?: boolean): boolean {
 		validate([cls]);
 
 		if (import.meta.env.DEV && typeof force !== 'boolean') {
@@ -27,10 +29,14 @@ export default class ServerBodyClass implements PlatformBodyClass {
 			);
 		}
 
-		const add = typeof force === 'boolean' ? force : !this.inner.has(cls);
+		const exists = this.inner.has(cls);
+		const shouldExist = typeof force === 'boolean' ? force : !exists;
+		const changed = shouldExist !== exists;
 
-		if (add) this.inner.add(cls);
+		if (shouldExist) this.inner.add(cls);
 		else this.inner.delete(cls);
+
+		return changed;
 	}
 
 	remove(...classes: string[]): void {
@@ -38,19 +44,34 @@ export default class ServerBodyClass implements PlatformBodyClass {
 		classes.forEach(cls => this.inner.delete(cls));
 	}
 
+	/**
+	 * @returns Returns true if the value was changed
+	 */
+	setVariant(variant: string, cls: string | null): boolean {
+		return this.inner.setVariant(variant, cls);
+	}
+
 	toRequest(): ServerBodyClass {
+		// no second request should ever start on the server
 		return this;
+	}
+
+	z_populateSsrCache(ssrCache: SsrCache): void {
+		variantsToSsrCache(this.inner.z_variants, ssrCache);
 	}
 
 	z_processHtmlTemplate(html: string): string {
 		const SEARCH_STR = '<!--body-class-->';
-		if (this.inner.size && !html.includes(SEARCH_STR)) {
+		if (this.inner.length && !html.includes(SEARCH_STR)) {
 			throw new Error(
 				'index.html needs to contain `class="<!--body-class-->"`',
 			);
 		}
 
-		return html.replace(SEARCH_STR, Array.from(this.inner).join(' '));
+		return html.replace(
+			SEARCH_STR,
+			Array.from(this.inner.classes()).join(' '),
+		);
 	}
 }
 

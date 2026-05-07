@@ -1,10 +1,20 @@
+import SsrCache from '../ssr/SsrCache.js';
 import { PlatformBodyClass } from './BodyClass.js';
+import { ClassSet, ssrCacheToVariants, Variants } from './utils.js';
 
 export default class ClientBodyClass implements PlatformBodyClass {
-	private inner: Set<string> | null;
+	private variants: Variants;
+	// during the request store the classes here
+	private inner: ClassSet | null;
 
-	constructor(inner?: Set<string>) {
+	constructor(variants: Variants, inner?: ClassSet) {
+		this.variants = variants;
 		this.inner = inner ?? null;
+	}
+
+	static fromSsrCache(ssrCache: SsrCache): ClientBodyClass {
+		const variants = ssrCacheToVariants(ssrCache);
+		return new ClientBodyClass(variants);
 	}
 
 	contains(cls: string): boolean {
@@ -17,16 +27,20 @@ export default class ClientBodyClass implements PlatformBodyClass {
 		else cl().add(...classes);
 	}
 
-	toggle(cls: string, force?: boolean): void {
-		if (this.inner) {
-			const add =
-				typeof force === 'boolean' ? force : !this.inner.has(cls);
+	// returns true if the value was changed
+	toggle(cls: string, force?: boolean): boolean {
+		const exists = this.contains(cls);
+		const shouldExist = typeof force === 'boolean' ? force : !exists;
+		const changed = shouldExist !== exists;
 
-			if (add) this.inner.add(cls);
+		if (this.inner) {
+			if (shouldExist) this.inner.add(cls);
 			else this.inner.delete(cls);
 		} else {
 			cl().toggle(cls, force);
 		}
+
+		return changed;
 	}
 
 	remove(...classes: string[]): void {
@@ -34,26 +48,29 @@ export default class ClientBodyClass implements PlatformBodyClass {
 		else cl().remove(...classes);
 	}
 
+	setVariant(variant: string, cls: string | null): boolean {
+		if (this.inner) return this.inner.setVariant(variant, cls);
+
+		const { remove, add } = this.variants.set(variant, cls);
+
+		if (remove) cl().remove(remove);
+		if (add) cl().add(add);
+
+		return !!remove || !!add;
+	}
+
 	toRequest(): ClientBodyClass {
-		const inner = new Set(cl());
-		return new ClientBodyClass(inner);
+		const inner = new ClassSet(cl(), this.variants.entries(), true);
+		return new ClientBodyClass(this.variants, inner);
 	}
 
 	render(): void {
 		if (!this.inner) throw new Error('call toRequest first');
-		const current = new Set(cl());
 
-		for (const cls of this.inner) {
-			const existed = current.delete(cls);
-			if (!existed) cl().add(cls);
-		}
-
-		// now lets remove all classes that still exist in current
-		for (const cls of current) {
-			cl().remove(cls);
-		}
-
+		const inner = this.inner;
 		this.inner = null;
+
+		inner.applyHistory(this);
 	}
 }
 

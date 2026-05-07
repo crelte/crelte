@@ -88,7 +88,7 @@ export async function main(data: MainData) {
 		router: new Router(router),
 		queries,
 		cookies: new Cookies(new ClientCookies()),
-		bodyClass: new BodyClass(new ClientBodyClass()),
+		bodyClass: new BodyClass(ClientBodyClass.fromSsrCache(ssrCache)),
 	});
 
 	const app = new InternalApp(data.app);

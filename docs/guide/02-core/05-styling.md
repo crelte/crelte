@@ -60,8 +60,8 @@ the body or some css variables.
 this makes each component better reusable and easier to maintain.
 
 ## Body class
-When you have some global style or theme which should should be applied as high
-as possible in the dom, you can use `bodyClass`. This will set classes on the
+When you have some global style or theme which should be applied as high
+as possible in the DOM, you can use `bodyClass`. This will set classes on the
 body element during ssr and also later via a store.
 
 The simplest way to do this is globally inside a `loadEntryData` function.
@@ -75,6 +75,8 @@ The simplest way to do this is globally inside a `loadEntryData` function.
 		// this will apply the dark-theme class to the body when
 		// the current entry is a blog entry
 		bodyClass.toggle('dark-theme', entry.typeHandle === 'blog');
+		// or if you want to style something based on the section
+		bodyClass.setVariant('section', 'section-' + entry.sectionHandle);
 	};
 </script>
 ```

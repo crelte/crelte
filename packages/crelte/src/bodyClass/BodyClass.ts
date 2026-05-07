@@ -41,13 +41,31 @@ export default class BodyClass {
 	 * it.
 	 */
 	toggle(cls: string, force?: boolean): void {
-		this.inner.toggle(cls, force);
-		this.store.set();
+		if (this.inner.toggle(cls, force)) this.store.set();
 	}
 
+	/**
+	 * Removes the given classes from the body
+	 */
 	remove(...classes: string[]): void {
 		this.inner.remove(...classes);
 		this.store.set();
+	}
+
+	/**
+	 * Sets the class for the given variant removing the old class for that
+	 * variant, if cls is null it will remove the variant class
+	 *
+	 * If you just have like a dark or light mode and only for the dark mode a
+	 * class, **prefer** `toggle('dark', isDarkMode)` over
+	 * `setVariant('mode', isDarkMode ? 'dark' : null)`
+	 *
+	 * ## Note
+	 * The variant name is only used for the internal state management
+	 * and has no inpact on the actual class name
+	 */
+	setVariant(variant: string, cls: string | null): void {
+		if (this.inner.setVariant(variant, cls)) this.store.set();
 	}
 
 	/** @hidden */
@@ -65,8 +83,12 @@ export default class BodyClass {
 export interface PlatformBodyClass {
 	contains(cls: string): boolean;
 	add(...classes: string[]): void;
-	toggle(cls: string, force?: boolean): void;
+	// returns true if the value was changed (this is different to the
+	// DOMTokenList.toggle which returns true if the class is now present)
+	toggle(cls: string, force?: boolean): boolean;
 	remove(...classes: string[]): void;
+	// returns true if the value was changed
+	setVariant(variant: string, cls: string | null): boolean;
 	toRequest(): PlatformBodyClass;
 	render?: () => void;
 }
