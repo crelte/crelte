@@ -125,7 +125,7 @@ export class BlockModules {
  * ```
  */
 export function blockModules(
-	modules: Record<string, AsyncModule>,
+	modules: Record<string, (() => Promise<any>) | Module>,
 	opts: BlockModulesOptions = {},
 ): BlockModules {
 	return new BlockModules(modules, opts);
