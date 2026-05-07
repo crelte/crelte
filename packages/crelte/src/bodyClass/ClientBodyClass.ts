@@ -34,6 +34,8 @@ export default class ClientBodyClass implements PlatformBodyClass {
 		else cl().remove(...classes);
 	}
 
+	setVariant(variant: string, cls: string | null): void {}
+
 	toRequest(): ClientBodyClass {
 		const inner = new Set(cl());
 		return new ClientBodyClass(inner);

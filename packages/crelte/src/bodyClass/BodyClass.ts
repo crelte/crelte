@@ -50,6 +50,19 @@ export default class BodyClass {
 		this.store.set();
 	}
 
+	/**
+	 * Sets the class for the given variant removing the old class for that
+	 * variant, if cls is null it will remove the variant class
+	 *
+	 * ## Note
+	 * The variant name is only used for the internal state management
+	 * and has no inpact on the actual class name
+	 */
+	setVariant(variant: string, cls: string | null): void {
+		this.inner.setVariant(variant, cls);
+		this.store.set();
+	}
+
 	/** @hidden */
 	z_toRequest(): BodyClass {
 		return new BodyClass(this.inner.toRequest(), this.store.stage());
@@ -67,6 +80,7 @@ export interface PlatformBodyClass {
 	add(...classes: string[]): void;
 	toggle(cls: string, force?: boolean): void;
 	remove(...classes: string[]): void;
+	setVariant(variant: string, cls: string | null): void;
 	toRequest(): PlatformBodyClass;
 	render?: () => void;
 }

@@ -38,6 +38,8 @@ export default class ServerBodyClass implements PlatformBodyClass {
 		classes.forEach(cls => this.inner.delete(cls));
 	}
 
+	setVariant(variant: string, cls: string | null): void {}
+
 	toRequest(): ServerBodyClass {
 		return this;
 	}
