@@ -3,7 +3,7 @@
 Globals allow you to easely access global data without needing to import
 or load them in every component.
 
-The globals are automatically loaded from the `globals.graphql` file.
+The globals are automatically loaded from the `global.graphql` file.
 
 ## Access
 
