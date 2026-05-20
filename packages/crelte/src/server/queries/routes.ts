@@ -11,6 +11,7 @@ export type CacheIfFn = (response: any, vars: Record<string, any>) => boolean;
 export type TransformFn = (
 	response: any,
 	vars: Record<string, any>,
+	csr: CrelteServerRequest,
 ) => void | any | Promise<void | any>;
 
 export type HandleFn = (

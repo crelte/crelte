@@ -97,10 +97,11 @@ export default class QueryGqlRoute {
 	private async transform(
 		jsonResp: Record<string, any>,
 		vars: Record<string, any>,
+		csr: CrelteServerRequest,
 	): Promise<void> {
 		if (!this.transformFn || !jsonResp.data) return;
 
-		const transformed = await this.transformFn(jsonResp.data, vars);
+		const transformed = await this.transformFn(jsonResp.data, vars, csr);
 		if (typeof transformed !== 'undefined') jsonResp.data = transformed;
 	}
 
@@ -195,7 +196,7 @@ export default class QueryGqlRoute {
 			jsonResp = await resp.json();
 			if (!jsonResp || typeof jsonResp !== 'object')
 				throw new Error('invalid json response');
-			await this.transform(jsonResp, vars);
+			await this.transform(jsonResp, vars, csr);
 		} catch (e) {
 			return newError(e, 500);
 		}

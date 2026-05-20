@@ -81,7 +81,11 @@ export type TransformFn<
 export type Transform<
 	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
 	F extends TransformFn<T> = TransformFn<T>,
-> = (response: any, vars: InferVariableTypes<T>) => Awaited<ReturnType<F>>;
+> = (
+	response: any,
+	vars: InferVariableTypes<T>,
+	csr: CrelteServerRequest,
+) => Awaited<ReturnType<F>>;
 
 /** use {@link Handle} */
 export type HandleFn<
