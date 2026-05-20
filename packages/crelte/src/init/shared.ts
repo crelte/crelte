@@ -74,6 +74,9 @@ export function onNewCrelteRequest(
 		cookies: crelte.cookies.z_toRequest(),
 		bodyClass: crelte.bodyClass.z_toRequest(),
 	};
+	// make sure helper funcitons link to the correct instances
+	nCrelte.getPlugin = name => nCrelte.plugins.get(name);
+	nCrelte.getGlobalStore = name => nCrelte.globals.getStore(name);
 	return crelteToRequest(nCrelte, req);
 }
 

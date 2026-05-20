@@ -292,6 +292,9 @@ export function newCrelte({
 		cookies,
 		bodyClass,
 
+		// when adding a new helper function make sure to add it to
+		// onNewCrelteRequest if needed
+
 		getPlugin: name => plugins.get(name),
 		getEnv: key => ssrCache.get(key as any) as any,
 		frontendUrl: path => urlWithPath(ssrCache.get('FRONTEND_URL')!, path),
