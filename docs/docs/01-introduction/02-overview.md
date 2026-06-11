@@ -2,11 +2,11 @@
 
 This page provides a high-level view of how a Crelte project is structured and how requests flow through the system. It is intended to give you a mental model of how the different pieces fit together before diving into individual concepts.
 
-## How everything fits together
+## Project architecture
 
 A Crelte project consists of two separate applications:
 
-- **Craft CMS** runs as the backend and is responsible for content modeling, localization, and data delivery.
+- **Craft CMS** runs as the backend and is responsible for content modeling, localization and data delivery.
 - **Svelte** runs as the frontend and is responsible for rendering pages and handling interactivity.
 
 This separation exists in both development and production. Craft acts as the source of truth for content and routing decisions, while Svelte renders the resulting pages using data provided by Craft.
@@ -20,7 +20,7 @@ The following diagram illustrates the lifecycle of a typical page request:
 At a high level, a request goes through these stages:
 
 1. **Routing and content resolution**  
-   When a user visits a URL, Crelte determines which Craft site, language, and entry the request refers to. Craft resolves the entry and returns structured content data via GraphQL.
+   When a user visits a URL, Crelte determines which Craft site, language and entry the request refers to. Craft resolves the entry and returns structured content data via GraphQL.
 
 2. **Template resolution**  
    Based on the resolved entry, Crelte selects a corresponding Svelte template. This mapping is driven by Craft’s content structure, allowing templates to follow content rather than URL patterns.
@@ -38,10 +38,10 @@ Several core concepts build on this architecture and are documented in more deta
 
 GraphQL is the primary way Crelte retrieves content from Craft. It allows you to define exactly which data is needed for a page and ensures a predictable data shape for your templates.
 
-[Learn more about GraphQL in Crelte](/guide/02-core/03-graphql.html)
+[Learn more about GraphQL in Crelte](/docs/02-core/03-graphql.html)
 
 ### Globals
 
 Globals represent content that is shared across multiple pages, such as navigation, footers, or branding elements. Crelte extends Craft’s global sets and makes them available alongside entry-specific data.
 
-[Learn more about Globals](/guide/02-core/04-globals.html)
+[Learn more about globals in Crelte](/docs/02-core/04-globals.html)

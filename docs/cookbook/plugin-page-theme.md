@@ -1,12 +1,13 @@
 # Page Theme Plugin
 
-This is a plugin which stores the theme of the page based on the typeHandle.
+This is a plugin which stores the theme of the page based on an entry's `typeHandle`.
 
-To archieve this we use the StagedWritable store which allows us to have a
-"staging" area for the new theme value which then gets commited in the 
+To archieve this we use the `StagedWritable` store which allows us to have a
+"staging" area for the new theme value which then gets commited in the
 render phase.
 
 `lib/pageTheme.ts`
+
 ```ts
 import { getCrelte, type Crelte, type CrelteRequest } from 'crelte';
 import type { Plugin, PluginCreator } from 'crelte/plugins';
@@ -40,10 +41,7 @@ export class PageThemePlugin implements Plugin {
 	/**
 	 * Subscribe to changes of the theme, for example in a component
 	 */
-	subscribe(
-		fn: (val: PageTheme) => void,
-		invalidate?: () => void,
-	): () => void {
+	subscribe(fn: (val: PageTheme) => void, invalidate?: () => void): () => void {
 		return this.store.subscribe(fn, invalidate);
 	}
 
@@ -51,10 +49,6 @@ export class PageThemePlugin implements Plugin {
 	 * Get the current theme, if you don't need it to be reactive
 	 */
 	get(): PageTheme {
-		// todo, maybe StagedWritable shoud have a getAsync like Globals has
-		// so the plugin could expose a similar api, because at the loadData
-		// call from a block or a template its not a give that this is
-		// available
 		return this.store.get();
 	}
 

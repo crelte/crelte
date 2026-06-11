@@ -1,7 +1,6 @@
 # PageLoader
 
-Create a new component `PageLoader.svelte` and add it to your `App.svelte` which
-will show a progress bar at the top of the page when navigating between pages.
+Create a new component `PageLoader.svelte` and add it to your `App.svelte`. This will show a page load progress bar at the top of the page when navigating between pages.
 
 ```svelte
 <script lang="ts">

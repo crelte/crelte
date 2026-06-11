@@ -1,41 +1,43 @@
 # Svelte Part
 
-To starts lets query the new content we added.
+To start, let's query the new content we added.
 
 ## Header
 
-Modify the `svelte/src/queries/global.graphql` file to the following:
+Modify the `/svelte/src/queries/global.graphql` file to the following:
+
 ```graphql
 query ($siteId: [QueryArgument]) {
-  header: globalSet(handle: "header", siteId: $siteId) {
-    # specify what fields we want from the header_GlobalSet type
-    ... on header_GlobalSet {
-      navigation {
-        # in the matrix block we want the following fields
-        # for the navigationItem_Entry
-        ... on navigationItem_Entry {
-          # alias the field navLink to link
-          link: navLink {
-            url
-            # this will be the value of the label field if
-            # one is defined
-            label
-            # this will either be the url or the title of the
-            # entry
-            defaultLabel
-            # this will either be null or _blank
-            target
-          }
-        }
-      }
-    }
-  }
+	header: globalSet(handle: "header", siteId: $siteId) {
+		# specify what fields we want from the header_GlobalSet type
+		... on header_GlobalSet {
+			navigation {
+				# in the matrix block we want the following fields
+				# for the navigationItem_Entry
+				... on navigationItem_Entry {
+					# alias the field navLink to link
+					link: navLink {
+						url
+						# this will be the value of the label field if
+						# one is defined
+						label
+						# this will either be the url or the title of the
+						# entry
+						defaultLabel
+						# this will either be null or _blank
+						target
+					}
+				}
+			}
+		}
+	}
 }
 ```
 
 This will add all fields we need to display a header.
 
-Modify the `svelte/src/components/Header.svelte` file to the following:
+Modify the `/svelte/src/components/Header.svelte` file to the following:
+
 ```svelte
 <script>
 	import { getGlobal, getRoute } from 'crelte';
@@ -87,35 +89,37 @@ Modify the `svelte/src/components/Header.svelte` file to the following:
 
 ## Page
 
-Modify the `svelte/src/queries/entry.graphql` file to the following:
+Modify the `/svelte/src/queries/entry.graphql` file to the following:
+
 ```graphql
 query ($uri: [String], $siteId: [QueryArgument]) {
-  entry(uri: $uri, siteId: $siteId) {
-    id
-    siteId
-    sectionHandle
-    typeHandle
-    # those field should be available for home
-    ... on home_Entry {
-      title
-    }
-    # those field should be available for a generic page
-    ... on page_Entry {
-      title
-    }
-  }
+	entry(uri: $uri, siteId: $siteId) {
+		id
+		siteId
+		sectionHandle
+		typeHandle
+		# those field should be available for home
+		... on home_Entry {
+			title
+		}
+		# those field should be available for a generic page
+		... on page_Entry {
+			title
+		}
+	}
 }
 ```
 
-Now to remove unused files delete `svelte/src/templates/crelte-starter.svelte`.
+To remove unused files we can now delete the placeholder file `/svelte/src/templates/crelte-starter.svelte`.
 
-Let's create a template for the home page, each template file consists of `sectionHandle-typeHandle`
+Let's create a template for the home page, each template file name follows the format `<sectionHandle>-<entryType>`
 so in the case of the home page this would `pages-home.svelte`.
 
 Create that file with the following content:
+
 ```svelte
 <script>
-	// contains all fields in the entry query for example {id, siteId, title, ...}
+	// contains all fields in the entry query, e.g. id, siteId, title, etc.
 	let { entry } = $props();
 </script>
 
@@ -124,6 +128,7 @@ Create that file with the following content:
 
 For the moment add the same content to `pages-page.svelte`.
 
-Now if you visit `http://localhost:8080` you should see the title of the home page, and
+Now if you visit `http://localhost:8080` you should see the title of the home page and
 should be able to navigate to the news page.
+
 ![Home Page](./assets/02-home-page.png)

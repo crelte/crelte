@@ -2,10 +2,11 @@
 
 ## entry.graphql
 
-The content matrix is now ready. Lets add queries for its data into `entry.graphql`.
+The content matrix is now ready in Craft CMS. Let's add queries for its data into `entry.graphql`.
 
 To share code we will use fragments so for each entry type that includes the content matrix
 we dont have to repeat the same code.
+
 ```graphql{1-15,26-29,34-37}
 fragment Text on text_Entry {
   typeHandle
@@ -50,9 +51,11 @@ query ($uri: [String], $siteId: [QueryArgument]) {
 ```
 
 ## Blocks
-To use a content matrix in crelte there exists the `Blocks` component.
 
-Create a new file `svelte/src/components/Content.svelte` with the following content:
+To use a content matrix in crelte there exists the [Blocks](/docs/02-core/07-blocks.md) component.
+
+Create a new file `/svelte/src/components/Content.svelte` with the following content:
+
 ```svelte
 <script module>
 	import Blocks, { blockModules, loadBlocksData } from 'crelte/blocks';
@@ -76,9 +79,11 @@ This file automatically loads all blocks from the `content` folder
 and matches them based on the entry type.
 
 ## Home and page template
-Now use the `Content` component in the `home` and `page` templates.
 
-This is the new `pages-home.svelte` file.
+Now use the `Content` component in the `pages-home` and `pages-page` templates.
+
+This is the new `pages-home.svelte` file:
+
 ```svelte
 <script module>
 	import { loadData as loadContentData } from '@/components/Content.svelte';
@@ -103,9 +108,10 @@ This is the new `pages-home.svelte` file.
 
 ## Text
 
-Now lets implement the text block.
+Now let's implement the text block.
 
-Create a new file `svelte/src/components/content/text.svelte` with the following content:
+Create a new file `/svelte/src/components/content/text.svelte` with the following content:
+
 ```svelte
 <script>
 	// named after the field in the query
@@ -118,9 +124,10 @@ Create a new file `svelte/src/components/content/text.svelte` with the following
 
 ## Images
 
-Now lets implement the images block.
+Now let's implement the images block.
 
-Create a new file `svelte/src/components/content/images.svelte` with the following content:
+Create a new file `/svelte/src/components/content/images.svelte` with the following content:
+
 ```svelte
 <script>
 	let { images } = $props();

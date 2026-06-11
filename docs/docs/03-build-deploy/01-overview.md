@@ -9,8 +9,8 @@ you need to clear the craft cache and do a fresh build or delete `dist/sites.jso
 
 ## Staging
 
-In staging or testing environments it can be useful to put the application behind
-a password. For this you can the some environment variables:
+In staging or testing environments, it can be useful to protect the frontend application with a password.
+You can configure this using the following environment variables within `/craft/.env`:
 
 ```env
 BASIC_AUTH_USER=your-username

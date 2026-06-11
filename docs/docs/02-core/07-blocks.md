@@ -1,11 +1,12 @@
 # Blocks
 
 Blocks is a convenient component to iterate over and render different types of content.
-It is especially useful in combination with Craft's Matrix fields.
+It is especially useful in combination with Craft's matrix fields.
 
 ## Example
 
 `Content.svelte`
+
 ```svelte
 <script module>
 	import Blocks, { blockModules, loadBlocksData } from 'crelte/blocks';
@@ -27,10 +28,11 @@ It is especially useful in combination with Craft's Matrix fields.
 
 To now call this component in a template you can do the following:  
 `pages-home.svelte`
+
 ```svelte
 <script module>
 	import Content, { loadData as loadContentData } from '@/components/Content.svelte';
-	
+
 	/** @type {import('crelte').LoadData} */
 	export const loadData = {
 		blocks: (cr, entry) => loadContentData(cr, entry.content),
@@ -45,22 +47,23 @@ To now call this component in a template you can do the following:
 <Content {blocks} />
 ```
 
-### blockModules [docs](/types/blocks/functions/blockModules.html)
+### blockModules ([docs](/types/blocks/functions/blockModules.html))
 
 This function prepares the modules to be used in the `loadBlocksData` function.
 You can additionaly specify if the there should be an alias for a specific block type.
 
-### loadBlocksData [docs](/types/blocks/functions/loadBlocksData.html)
+### loadBlocksData ([docs](/types/blocks/functions/loadBlocksData.html))
 
-This function will call all `loadData` for each block which inside the `blocks` variable.
+This function will call all `loadData` for each block in the `blocks` variable.
 
 ### Block
 
-Each block component will receive the block data and the loadedData as its properties.
+Each block component will receive the block data and the loaded data as its properties.
 Instead of receiving the entry as the second argument inside a `loadData` function the blocks
 data is passed.
 
 `articles.svelte`
+
 ```svelte
 <script module>
 	import articlesQuery from '@/queries/articles.graphql';
@@ -76,6 +79,7 @@ data is passed.
 ```
 
 So if the blocks variables contains:
+
 ```json
 [
 	{
@@ -88,8 +92,8 @@ So if the blocks variables contains:
 The `articles` block will receive the `title` property and the loaded `articles` data
 from the query.
 
-
 #### Sibling data
+
 If you need to access data from a sibling blocks you can use the `getSibling` function.
 Note this will not work with data that the sibling will load itself via `loadData` since
 all blocks are loaded in parallel.

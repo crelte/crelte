@@ -1,18 +1,18 @@
 # Pagination with scroll to
 
-This is is an example where after the pagination is changed
-we want to scroll to the top of the list.
+This example shows a paginated list that scrolls back to the top whenever the page changes, improving the user experience.
 
-To archieve this we leverage creltes data attributes and an event.
+To archieve this we leverage Crelte's data attributes and an event.
 
 `App.svelte`:
+
 ```svelte
 <script module>
 	// this should be in a plugin or in the app.init function
 	export function init(crelte) {
 		// todo onRequest we could also already disable the scroll
 		// so the attribute data-disable-scroll does not need to be added
-		
+
 		// after render gets excuted once the new dom was rendered
 		crelte.events.on('afterRender', (cr, route) => {
 			// all data-* are stored inside the context
@@ -27,24 +27,25 @@ To archieve this we leverage creltes data attributes and an event.
 ```
 
 `PaginatedList.svelte`:
+
 ```svelte
 <script module>
 	/** @type {import('crelte').LoadData} */
 	export const loadData = ({ req }) => {
 		const page = parseInt(req.getSearchParam('page')) || 0;
-		
+
 		// this could of course also be a query
 		const content = Array(10).fill(0).map((_, i) => `Item ${page * 10 + i}`);
-		
+
 		return { page, content };
 	};
 </script>
 
 <script>
 	import { getRoute } from 'crelte';
-	
+
 	let { page, content } = $props();
-	
+
 	function paginatedUrl(route, page) {
 		route.setSearchParam('page', page > 0 ? page : null);
 		return route.url;

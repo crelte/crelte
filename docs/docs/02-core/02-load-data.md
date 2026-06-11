@@ -5,21 +5,21 @@ In Crelte, data is loaded in a structured way based on the current route and ent
 
 Two GraphQL queries are generally loaded automatically for every request:
 
-- `global.graphql` — global, cross-page data
-- `entry.graphql` — data for the currently resolved entry
+- `global.graphql`: global, cross-page data
+- `entry.graphql`: data for the currently resolved entry
 
-Additional data can be loaded by exporting `loadGlobalData` or `loadEntryData` from App.svelte or
-`loadData` from you components.
+Additional data can be loaded by exporting `loadGlobalData` or `loadEntryData` from `App.svelte` or
+`loadData` from any of your components.
 
 ## Data loading lifecycle
 
 Data loading happens in the following order:
 
 1. **Global data**  
-   `global.graphql` is loaded first, together with `entry.graphql`.  
+   `global.graphql` is loaded first, together with `entry.graphql`.
 
 2. **Entry data**  
-   After the entry has been resolved, the active template’s `loadData` and its children is executed.
+   After the entry has been resolved, Crelte runs the active template’s `loadData` function and then continues with its child components.
 
 All load functions run on both the server and the client, allowing pages to be server-rendered and
 then transition to a single-page application.
@@ -27,7 +27,7 @@ then transition to a single-page application.
 ## loadGlobalData
 
 `loadGlobalData` is used to load data that does not depend on the current entry.  
-It is defined in `App.svelte` and runs before any template-specific data loading.
+It is defined in `App.svelte` and runs before any template-specific data is loading.
 
 Exporting `loadGlobalData` overrides the default `global.graphql` query.
 
@@ -46,7 +46,7 @@ Exporting `loadGlobalData` overrides the default `global.graphql` query.
 
 	const someApi = getGlobal('someApi');
 </script>
-````
+```
 
 Use `loadGlobalData` for data such as navigation, site-wide configuration, or external APIs
 that are independent of the current entry and cannot be integrated inside `global.graphql`.
@@ -54,7 +54,7 @@ that are independent of the current entry and cannot be integrated inside `globa
 ## loadData
 
 Each template can export a `loadData` definition.
-It is executed after the entry has been resolved and receives access to both the 
+It is executed after the entry has been resolved and receives access to both the
 [CrelteRequest](/types/crelte/type-aliases/CrelteRequest.html) and the current entry.
 
 ```svelte
@@ -85,7 +85,7 @@ This is the most common form. Each property defines a separate data source.
 ```svelte
 <script module>
 	import entriesQuery from '@/queries/entries.graphql';
-	import { headerLoadData } from '@/layout/Header.svelte';
+	import { headerLoadData } from '@/components/Header.svelte';
 
 	/** @type {import('crelte').LoadData} */
 	export const loadData = {
@@ -143,7 +143,7 @@ All entries are executed in parallel and merged.
 ```svelte
 <script module>
 	import blogsQuery from '@/queries/blogs.graphql';
-	import { headerLoadData } from '@/layout/Header.svelte';
+	import { headerLoadData } from '@/components/Header.svelte';
 
 	/** @type {import('crelte').LoadData} */
 	export const loadData = [
@@ -159,14 +159,14 @@ All entries are executed in parallel and merged.
 
 ## Input
 
-* `loadData` functions receive a [CrelteRequest](/types/crelte/type-aliases/CrelteRequest.html)
+- `loadData` functions receive a [CrelteRequest](/types/crelte/type-aliases/CrelteRequest.html)
   instance and the resolved `entry`.
-* `loadGlobalData` receives only the [CrelteRequest](/types/crelte/type-aliases/CrelteRequest.html),
+- `loadGlobalData` receives only the [CrelteRequest](/types/crelte/type-aliases/CrelteRequest.html),
   as the entry is not yet available.
 
 ## Output
 
-A load function should return an object (or nothing).
+A `loadData`/`loadGlobalData` function should return an object (or nothing).
 The returned data is merged into the component’s props.
 
 ## When to use loadData

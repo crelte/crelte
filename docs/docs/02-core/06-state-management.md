@@ -6,16 +6,19 @@ and a lot of those states are already covered by crelte.
 Here are a few gotchas and tips to keep in mind when building a website.
 
 ### No global variables
-Dont store state which changes in a global variable. This can lead to a lot of weird
+
+Don't store states that change in global variables. This can lead to a lot of weird
 bugs and "race conditions" since this global variable is **shared** between concurrent
 requests on the server.
 
 ### No side-effects
-To avoid future troubles youre load functions should not have any side-effects.
-This means call youre api maybe cache the data in the SsrCache and then return it.
+
+To avoid future troubles your load functions should not have any side-effects.
+This means call your API, maybe cache the data in the [ssrCache](/types/ssr/classes/SsrCache.html), and then return it.
 
 ### store state in the SearchParams
-A good way to store state is in the searchParams. This lets the user copy the url
+
+A good way to store a state is in the searchParams. This lets the user copy the url
 and get the same state again. The client and the server agree on what data to load
 and how to display it.
 
@@ -54,7 +57,7 @@ For this you can either use normal a tags or use the router [open](/types/routin
 
 ### Use ssrCache
 
-To share data between the server and the client you can use the [SsrCache](/types/ssr/classes/SsrCache.html).
+To share data between the server and the client you can use the [ssrCache](/types/ssr/classes/SsrCache.html).
 
 ```svelte
 <script module>
@@ -83,7 +86,7 @@ To share data between the server and the client you can use the [SsrCache](/type
 <p>Random number: {randomNumber}</p>
 ```
 
-**Note**: The SsrCache does not get cleared on the client. So if you wan't
+**Note**: The ssrCache does not get cleared on the client. So if you want
 a fresh value you need to clear it yourself.
 
 ### Cookies
@@ -124,8 +127,7 @@ If you don't want to store the data inside the SearchParams you can also use the
 
 #### State
 
-State is the mechanism provided by the window History API this means the data stored there is only available
-on the client. See [`BaseRoute.setState`](/types/routing/classes/BaseRoute.html#setstate)
+State is provided by the browser’s window History API, so any data stored there is only available on the client. See [`BaseRoute.setState`](/types/routing/classes/BaseRoute.html#setstate).
 
 #### Context
 
@@ -133,7 +135,7 @@ Context is a way to attach any data to the current request or route. It will per
 is destroyed. This means is it not shared between the server and the client and is no longer available after calling `router.back`.
 
 It can be useful to pass data between multiple loadData functions or from an `onRequest` handler or when doing a
-`router.open` or similar call. See [`BaseRoute.setContext`](/types/routing/classes/BaseRoute.html#setcontext)
+`router.open` or similar call. See [`BaseRoute.setContext`](/types/routing/classes/BaseRoute.html#setcontext).
 
 The context is also automatically populated from the dataset of a clicked link.
-See [pagination example](/cookbook/pagination-with-scroll.html)
+See our [pagination example](/cookbook/pagination-with-scroll.html) from the cookbook.

@@ -10,14 +10,14 @@ export default defineConfig({
 	themeConfig: {
 		// https://vitepress.dev/reference/default-theme-config
 		nav: [
-			{ text: 'Guide', link: '/guide/01-introduction/01-introduction' },
+			{ text: 'Docs', link: '/docs/01-introduction/01-introduction' },
 			{ text: 'Tutorial', link: '/tutorial/01-introduction/01-overview' },
 			{ text: 'Cookbook', link: '/cookbook/01-overview' },
 			{ text: 'Types', link: '/types' },
 		],
 
 		sidebar: {
-			'/guide/': { base: '/guide/', items: sidebarGuide() },
+			'/docs/': { base: '/docs/', items: sidebarGuide() },
 			'/tutorial/': { base: '/tutorial/', items: sidebarTutorial() },
 			'/cookbook/': { base: '/cookbook/', items: sidebarCookbook() },
 			'/types/': [
