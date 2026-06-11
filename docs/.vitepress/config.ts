@@ -17,7 +17,7 @@ export default defineConfig({
 		],
 
 		sidebar: {
-			'/docs/': { base: '/docs/', items: sidebarGuide() },
+			'/docs/': { base: '/docs/', items: sidebarDocs() },
 			'/tutorial/': { base: '/tutorial/', items: sidebarTutorial() },
 			'/cookbook/': { base: '/cookbook/', items: sidebarCookbook() },
 			'/types/': [
@@ -38,7 +38,7 @@ export default defineConfig({
 	},
 });
 
-function sidebarGuide(): DefaultTheme.SidebarItem[] {
+function sidebarDocs(): DefaultTheme.SidebarItem[] {
 	return [
 		{
 			text: 'Getting started',

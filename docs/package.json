@@ -1,0 +1,19 @@
+{
+	"name": "crelte-docs",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"predev": "typedoc --options typedoc.json",
+		"prebuild": "typedoc --options typedoc.json",
+		"dev": "vitepress dev",
+		"build": "vitepress build",
+		"preview": "vitepress preview"
+	},
+	"devDependencies": {
+		"typedoc": "^0.28.5",
+		"typedoc-plugin-markdown": "^4.7.0",
+		"typedoc-vitepress-theme": "^1.1.2",
+		"typescript": "^5.0.0",
+		"vitepress": "^1.6.3"
+	}
+}
