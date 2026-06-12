@@ -338,7 +338,12 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 		nReq: Connect.IncomingMessage,
 		res: ServerResponse,
 	) => {
-		const protocol = vite.config.server.https ? 'https' : 'http';
+		// if vite runs behind a reverse proxy which terminates tls
+		// (for example ddev) we need to use the forwarded protocol,
+		// this matches the behaviour of the production server
+		const protocol =
+			(nReq.headers['x-forwarded-proto'] as string | undefined) ??
+			(vite.config.server.https ? 'https' : 'http');
 		const baseUrl = protocol + '://' + nReq.headers['host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
