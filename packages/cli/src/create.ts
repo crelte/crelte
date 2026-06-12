@@ -67,31 +67,39 @@ export default async function create(
 	const projectName = path.basename(wd);
 	const craftDir = j(wd, 'craft');
 	const craftTempDir = j(wd, 'craft-template');
-	const svelteDir = j(wd, 'svelte');
+	const ddevTempDir = j(wd, 'ddev-template');
 
 	// setup a new git repo
 	await rmDir(j(wd, '.git'));
 	await spawn('git', ['init'], { cwd: wd });
 
 	// start to setup craft
-	await mkdir(craftDir);
+	// the ddev project lives at the project root (not in craft/) so the
+	// svelte dev server can run inside the web container as well
+	await mkdir(j(craftDir, 'web'));
 	await spawn(
 		'ddev',
 		[
 			'config',
 			'--project-type=craftcms',
-			'--docroot=web',
+			'--docroot=craft/web',
+			'--composer-root=craft',
+			'--nodejs-version=22',
+			'--additional-hostnames',
+			'admin.' + projectName,
+			'--web-environment-add',
+			'CRAFT_CMD_ROOT=/var/www/html/craft',
 			'--project-name',
 			projectName,
 		],
-		{ cwd: craftDir },
+		{ cwd: wd },
 	);
 
 	// do manually, what 'ddev composer create-project' seems to do
 	// we do it manually because the ddev cli is just stuck and waits
 	// forever on some systems
 	{
-		await spawn('ddev', ['start', projectName], { cwd: craftDir });
+		await spawn('ddev', ['start', projectName], { cwd: wd });
 		// we need to work in a temporary directory, because / craft
 		// isn't empty and we aren't allowed to create - project in a
 		// non - empty directory.
@@ -100,6 +108,8 @@ export default async function create(
 			'ddev',
 			[
 				'exec',
+				'--dir',
+				'/var/www/html/craft',
 				'composer',
 				'create-project',
 				'--no-scripts',
@@ -108,7 +118,7 @@ export default async function create(
 				'craftcms/craft',
 				'cc-temp',
 			],
-			{ cwd: craftDir },
+			{ cwd: wd },
 		);
 
 		// Move contents from temp directory to parent
@@ -116,10 +126,10 @@ export default async function create(
 		await rmDir(craftCreateProjectDir);
 
 		// run ddev start again to maybe create the necessary .env variables
-		await spawn('ddev', ['start', projectName], { cwd: craftDir });
+		await spawn('ddev', ['start', projectName], { cwd: wd });
 	}
 
-	await spawn('ddev', ['composer', 'install'], { cwd: craftDir });
+	await spawn('ddev', ['composer', 'install'], { cwd: wd });
 
 	// since we don't run the after setup step from craft we do that step manually
 	await rmFile(j(craftDir, 'composer.json'));
@@ -134,7 +144,11 @@ export default async function create(
 		craftOptions.language.toUpperCase().replace('-', '_') + '_SITE_URL';
 
 	// try to read .env.web file first (only ddev ~1.24+)
-	let primaryEnvPath = j(craftDir, '.ddev/.env.web');
+	let primaryEnvPath = j(wd, '.ddev/.env.web');
+	if (!(await isFile(primaryEnvPath))) {
+		// older ddev versions write the env variables to the approot .env
+		primaryEnvPath = j(wd, '.env');
+	}
 	if (!(await isFile(primaryEnvPath))) {
 		primaryEnvPath = j(craftDir, '.env');
 	}
@@ -144,11 +158,14 @@ export default async function create(
 		exit('Could not find PRIMARY_SITE_URL in .env', 1);
 	}
 
-	const prevPrimaryUrl = new URL(prevPrimaryUrlMatch![1]);
-	const endpointUrl = new URL(prevPrimaryUrl.href);
-	// we never want the endpoint url to be https in dev because
-	// that fails in node
-	endpointUrl.protocol = 'http';
+	// the primary ddev url (https://<project>.ddev.site) serves the
+	// svelte dev server, craft is served on the admin subdomain
+	const frontendUrl = new URL(prevPrimaryUrlMatch![1]);
+	const adminUrl = new URL(frontendUrl.href);
+	adminUrl.hostname = 'admin.' + adminUrl.hostname;
+	// the endpoint can stay https because node runs inside the web
+	// container where ddev sets NODE_EXTRA_CA_CERTS to the mkcert root
+	const endpointUrl = new URL(adminUrl.href);
 	endpointUrl.pathname = 'api';
 
 	// copy files from the template
@@ -156,14 +173,28 @@ export default async function create(
 	await mergeCopy(craftTempDir, craftDir);
 	await rmDir(craftTempDir);
 
+	// copy the ddev template files (nginx vhosts and the sv command)
+	// and point them to the correct hostnames
+	await mergeCopy(ddevTempDir, j(wd, '.ddev'));
+	await rmDir(ddevTempDir);
+	for (const file of ['svelte-site.conf', 'admin-site.conf']) {
+		const confPath = j(wd, '.ddev/nginx_full', file);
+		const conf = await readFile(confPath);
+		await writeFile(
+			confPath,
+			conf.replaceAll('CRELTE_PROJECT_HOST', frontendUrl.hostname),
+		);
+	}
+
 	// create .env file
 	await appendFile(
 		j(craftDir, '.env.example.dev'),
 		`ENDPOINT_URL=${endpointUrl.href}
 ENDPOINT_TOKEN=
-CRAFT_WEB_URL=${prevPrimaryUrl.href}
-FRONTEND_URL=http://localhost:8080/
-${siteEnvName}=http://localhost:8080/
+CRAFT_WEB_URL=${adminUrl.href}
+CRAFT_BASE_CP_URL=${adminUrl.href}
+FRONTEND_URL=${frontendUrl.href}
+${siteEnvName}=${frontendUrl.href}
 `,
 	);
 	await copyFile(j(craftDir, '.env.example.dev'), j(craftDir, '.env'));
@@ -175,11 +206,16 @@ ${siteEnvName}=http://localhost:8080/
 			`ENDPOINT_URL=
 ENDPOINT_TOKEN=
 CRAFT_WEB_URL=
+CRAFT_BASE_CP_URL=
 FRONTEND_URL=
 ${siteEnvName}=
 `,
 		);
 	}
+
+	// restart so nginx picks up the new vhosts and the sv command
+	// becomes available
+	await spawn('ddev', ['restart'], { cwd: wd });
 
 	// remove unused twig since rendering will happen in svelte
 	await rmFile(j(craftDir, 'templates/index.twig'));
@@ -207,23 +243,23 @@ ${siteEnvName}=
 			'--site-url',
 			'$' + siteEnvName,
 		],
-		{ cwd: craftDir },
+		{ cwd: wd },
 	);
 
 	// install the crelte plugin
 	await spawn('ddev', ['composer', 'require', 'crelte/craft-crelte'], {
-		cwd: craftDir,
+		cwd: wd,
 	});
 	await spawn(
 		'ddev',
 		['craft', 'plugin/install', 'craft-crelte', '--interactive=0'],
 		{
-			cwd: craftDir,
+			cwd: wd,
 		},
 	);
 
 	// enable graphql
-	const endpointToken = await enableGraphQl(craftDir);
+	const endpointToken = await enableGraphQl(wd);
 
 	// write the endpoint token to the env file
 	const envFile = await readFile(j(craftDir, '.env'));
@@ -234,13 +270,18 @@ ${siteEnvName}=
 
 	await copyFile(j(craftDir, '.env'), j(craftDir, '.env.example.dev'));
 
-	await spawn('npm', ['install'], { cwd: svelteDir });
+	// install the npm dependencies inside the web container
+	await spawn('ddev', ['sv', 'npm', 'install'], { cwd: wd });
 
-	const relativeSvelte = path.relative(process.cwd(), svelteDir);
+	const relativeWd = path.relative(process.cwd(), wd) || '.';
 
 	note(
 		`To start your project, run the following command:
-  \`cd ${relativeSvelte} && npm run dev\`
+  \`cd ${relativeWd} && ddev sv npm run dev\`
+
+Your project will be available at:
+  ${color.bold('Frontend')}: ${frontendUrl.href}
+  ${color.bold('Craft CP')}: ${adminUrl.href}admin
 
 Your login credentials are:
   ${color.bold('Username')}: ${craftOptions.username}
@@ -326,12 +367,12 @@ async function craftInstallOptions(): Promise<CraftInstallOptions> {
 // so we start to modify the project config
 //
 // todo: maybe this could be done better
-async function enableGraphQl(craftDir: string): Promise<string> {
+async function enableGraphQl(wd: string): Promise<string> {
 	// eslint-disable-next-line no-useless-escape
 	const SITE_REGEX = /\s*([0-9a-z\-]+):/;
 	const siteUuid = (
 		await spawn('ddev', ['craft', 'pc/get', 'sites'], {
-			cwd: craftDir,
+			cwd: wd,
 		})
 	).stdout.match(SITE_REGEX);
 	if (!siteUuid || !siteUuid.length) throw exit('Could not find site', 1);
@@ -347,14 +388,14 @@ async function enableGraphQl(craftDir: string): Promise<string> {
 				`"scope"=>['sites.${siteUuid[1]}:read','crelte.all:read']` +
 				']));',
 		],
-		{ cwd: craftDir },
+		{ cwd: wd },
 	);
 
 	// eslint-disable-next-line no-useless-escape
 	const SCHEMA_REGEX = /- ([0-9a-z\-]+)/;
 	const schemaMatch = (
 		await spawn('ddev', ['craft', 'graphql/list-schemas'], {
-			cwd: craftDir,
+			cwd: wd,
 		})
 	).stdout.match(SCHEMA_REGEX);
 	if (!schemaMatch || !schemaMatch.length)
@@ -373,7 +414,7 @@ async function enableGraphQl(craftDir: string): Promise<string> {
 				'Endpoint',
 				'--interactive=0',
 			],
-			{ cwd: craftDir },
+			{ cwd: wd },
 		)
 	).stdout.match(TOKEN_REGEX);
 	if (!tokenMatch || !tokenMatch.length)
