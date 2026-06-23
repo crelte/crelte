@@ -15,6 +15,8 @@ type ModTs = {
 	variables?: any;
 	// only to hint that its validVars
 	validVariables?: any;
+	// only to hint that its validVars
+	validIf?: any;
 	validVars?: any;
 	caching?: any;
 	transform?: any;
@@ -92,8 +94,8 @@ export async function initQueryRoutes(
 			routeBuilder.vars = parseVars(mts.variables);
 		}
 
-		if (mts.validVariables) {
-			throw new Error(`use the shorthand validVars in ${filename}`);
+		if (mts.validVariables || mts.validIf) {
+			throw new Error(`use the function validVars in ${filename}`);
 		}
 
 		if (mts.validVars) {

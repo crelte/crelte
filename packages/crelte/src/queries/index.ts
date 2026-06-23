@@ -43,6 +43,20 @@ export type InferVariableTypes<T> = {
  * Defines wether the query variables are valid.
  *
  * Either throw or return a boolean.
+ *
+ * #### Example
+ * ```ts
+ * import { vars, ValidVars } from 'crelte/queries';
+ *
+ * export const variables = {
+ *     siteId: vars.siteId(),
+ *     category: vars.id()
+ * };
+ *
+ * export const validVars: ValidVars<typeof variables> = (vars, sr) => {
+ *     if (!vars.category === 5) throw new Error('category needs to be 5');
+ * };
+ * ```
  */
 export type ValidVars<T extends Record<string, QueryVar<any>>> = (
 	vars: InferVariableTypes<T>,
