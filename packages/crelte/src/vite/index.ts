@@ -180,7 +180,7 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 				publicDir: isSsrBuild ? false : 'public',
 				base: '/',
 				server: {
-					port: 8080,
+					port: config.server?.port ?? 8080,
 				},
 				optimizeDeps: {
 					exclude: ['crelte'],
