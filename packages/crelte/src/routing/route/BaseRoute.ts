@@ -1,4 +1,8 @@
-import { deleteSearchParam } from '../../std/url/utils.js';
+import {
+	deleteSearchParam,
+	pathnameEq,
+	searchEq,
+} from '../../std/url/utils.js';
 import { objClone } from '../../utils.js';
 import Site from '../Site.js';
 import { trimSlashEnd } from '../utils.js';
@@ -340,8 +344,8 @@ export default class BaseRoute {
 	eqUrl(route: BaseRoute | null) {
 		return (
 			route &&
-			this.url.pathname === route.url.pathname &&
-			this.url.origin === route.url.origin
+			this.url.origin === route.url.origin &&
+			pathnameEq(this.url.pathname, route.url.pathname)
 		);
 	}
 
@@ -349,20 +353,6 @@ export default class BaseRoute {
 	 * Checks if the search params are equal to another route
 	 */
 	eqSearch(route: BaseRoute | null) {
-		const searchEq = (a: URLSearchParams, b: URLSearchParams) => {
-			if (a.size !== b.size) return false;
-
-			a.sort();
-			b.sort();
-
-			const aEntries = Array.from(a.entries());
-			const bEntries = Array.from(b.entries());
-
-			return aEntries
-				.map((a, i) => [a, bEntries[i]])
-				.every(([[ak, av], [bk, bv]]) => ak === bk && av === bv);
-		};
-
 		return route && searchEq(this.search, route.search);
 	}
 
