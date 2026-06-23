@@ -338,7 +338,9 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 		nReq: Connect.IncomingMessage,
 		res: ServerResponse,
 	) => {
-		const protocol = vite.config.server.https ? 'https' : 'http';
+		const protocol =
+			(nReq.headers['x-forwarded-proto'] as string | undefined) ??
+			(vite.config.server.https ? 'https' : 'http');
 		const baseUrl = protocol + '://' + nReq.headers['host'];
 
 		const req = requestToWebRequest(baseUrl, nReq);
