@@ -10,6 +10,7 @@
  * - {@link std/stores}
  * - {@link std/sync}
  * - {@link std/rand}
+ * - {@link std/url}
  */
 
 /**

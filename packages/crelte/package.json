@@ -107,6 +107,10 @@
 		"./std/rand": {
 			"types": "./dist/std/rand/index.d.ts",
 			"default": "./dist/std/rand/index.js"
+		},
+		"./std/url": {
+			"types": "./dist/std/url/index.d.ts",
+			"default": "./dist/std/url/index.js"
 		}
 	},
 	"dependencies": {

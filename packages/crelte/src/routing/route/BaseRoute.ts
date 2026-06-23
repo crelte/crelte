@@ -1,3 +1,4 @@
+import { deleteSearchParam } from '../../std/url/utils.js';
 import { objClone } from '../../utils.js';
 import Site from '../Site.js';
 import { trimSlashEnd } from '../utils.js';
@@ -238,12 +239,7 @@ export default class BaseRoute {
 	 * ```
 	 */
 	setSearchParam(key: string, value?: string | number | null) {
-		const deleteValue =
-			typeof value === 'undefined' ||
-			value === null ||
-			(typeof value === 'string' && value === '');
-
-		if (!deleteValue) {
+		if (!deleteSearchParam(value)) {
 			this.search.set(key, value as string);
 		} else {
 			this.search.delete(key);
