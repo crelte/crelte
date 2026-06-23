@@ -1,9 +1,31 @@
 import ServerRouter from '../server/ServerRouter.js';
 
 export const vars = {
+	/**
+	 * Any is not validated except for nullability
+	 */
 	any: (): QueryVar<any> => new QueryVar(),
+
+	/**
+	 * Number is a number, but will also parse strings to numbers
+	 */
 	number: (): QueryVar<number> => new QueryVar().number(),
+
+	/**
+	 * String is a string, but will not parse numbers to strings
+	 */
 	string: (): QueryVar<string> => new QueryVar().string(),
+
+	/**
+	 * Strings is an array of strings, but will also convert a single string to
+	 * an array with one element
+	 *
+	 * #### Note
+	 * The returned array will **never be empty**, but might be null if allowed.
+	 * It is not deduped or sorted.
+	 * If you have ids you should use `vars.ids()` instead.
+	 */
+	strings: (): QueryVar<string[]> => new QueryVar().strings(),
 
 	/**
 	 * Id is almost the same as number but will also parse
@@ -37,6 +59,9 @@ export const vars = {
 	 */
 	ids: (): QueryVar<number[]> => new QueryVar().ids(),
 
+	/**
+	 * Checks for a valid site id which exists
+	 */
 	siteId: (): QueryVar<number> =>
 		new QueryVar()
 			.number()
@@ -51,7 +76,7 @@ export type ValidIf<T> = (v: T, cs: ServerRouter) => boolean;
 
 export class QueryVar<T = any> {
 	private name: string | null;
-	private type: 'any' | 'string' | 'number' | 'id' | 'ids';
+	private type: 'any' | 'string' | 'strings' | 'number' | 'id' | 'ids';
 	private flagNullable: boolean;
 	private defaultValue: T | undefined;
 	private validIfFn: ValidIf<T>;
@@ -67,6 +92,11 @@ export class QueryVar<T = any> {
 	string(): QueryVar<string> {
 		this.type = 'string';
 		return this as unknown as QueryVar<string>;
+	}
+
+	strings(): QueryVar<string[]> {
+		this.type = 'strings';
+		return this as unknown as QueryVar<string[]>;
 	}
 
 	number(): QueryVar<number> {
@@ -98,7 +128,7 @@ export class QueryVar<T = any> {
 	 * Set a validation function for this variable
 	 *
 	 * If the value is allowed to be null and it is null
-	 * valid will not be called.
+	 * the passed function will not be called.
 	 */
 	validIf(fn: ValidIf<T>): QueryVar<T> {
 		this.validIfFn = fn;
@@ -125,6 +155,31 @@ export class QueryVar<T = any> {
 			case 'string':
 				if (typeof v !== 'string')
 					throw new Error(`variable ${this.name} is not a string`);
+				break;
+
+			case 'strings':
+				if (typeof v === 'string') v = [v];
+
+				if (!Array.isArray(v))
+					throw new Error(
+						`variable ${this.name} is not a string or a list of strings`,
+					);
+
+				if (v.length <= 0) {
+					if (this.defaultValue !== undefined)
+						return this.defaultValue;
+
+					if (this.flagNullable) return null;
+
+					throw new Error(
+						`variable ${this.name} is not allowed to be empty`,
+					);
+				}
+
+				if (!v.every(s => typeof s === 'string'))
+					throw new Error(
+						`variable ${this.name} is not a list of strings`,
+					);
 				break;
 
 			case 'number':
