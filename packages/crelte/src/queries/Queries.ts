@@ -42,6 +42,9 @@ export type NamedQuery = { queryName: string };
  * Create a NamedQuery for the given server query name.
  *
  * Prefer importing a graphql file instead.
+ *
+ * #### Note
+ * This needs to match the name of the js/ts file.
  */
 export function namedQuery(name: string): NamedQuery {
 	return { queryName: name };

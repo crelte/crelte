@@ -108,7 +108,10 @@ export async function initQueryRoutes(
 
 	for (const [name, rb] of routeBuilders.entries()) {
 		if (rb.query) {
-			if (rb.handleFn) throw new Error('handle function not supported');
+			if (rb.handleFn)
+				throw new Error(
+					'cannot have a handle function if a query is present',
+				);
 
 			const route = new QueryGqlRoute(name, rb.query, rb);
 
