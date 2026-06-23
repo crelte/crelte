@@ -3,10 +3,17 @@ import QueriesCaching from './QueriesCaching.js';
 import { QueryVar, vars } from '../../queries/vars.js';
 import { extractEntry } from '../../loadData/index.js';
 import { calcKey } from '../../ssr/index.js';
-import { CacheIfFn, newError, TransformFn, validateVars } from './routes.js';
+import {
+	CacheIfFn,
+	newError,
+	TransformFn,
+	validateVars,
+	ValidIfFn,
+} from './routes.js';
 
 export type QueryGqlArgs = {
 	vars: Record<string, QueryVar> | null;
+	validIfFn: ValidIfFn | null;
 	cacheIfFn: CacheIfFn | null;
 	preventCaching: boolean;
 	transformFn: TransformFn | null;
@@ -17,6 +24,7 @@ export default class QueryGqlRoute {
 	name: string;
 	query: string;
 	vars: Record<string, QueryVar> | null;
+	validIfFn: ValidIfFn | null;
 	cacheIfFn: CacheIfFn | null;
 	transformFn: TransformFn | null;
 
@@ -32,6 +40,7 @@ export default class QueryGqlRoute {
 		this.name = name;
 		this.query = query;
 		this.vars = args.vars;
+		this.validIfFn = args.validIfFn;
 		this.cacheIfFn = args.cacheIfFn;
 		this.transformFn = args.transformFn;
 
@@ -112,7 +121,13 @@ export default class QueryGqlRoute {
 		let vars: Record<string, any>;
 		try {
 			const reqVars = await csr.req.json();
-			vars = validateVars(this.vars, reqVars, caching.router);
+			vars = validateVars(
+				this.vars,
+				reqVars,
+				this.validIfFn,
+				caching.router,
+			);
+
 			if ('qName' in vars || 'xCraftSite' in vars)
 				throw new Error(
 					'qName and xCraftSite are reserved variable names',

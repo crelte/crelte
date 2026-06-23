@@ -1,6 +1,6 @@
 import ServerRouter from '../ServerRouter.js';
 import QueriesCaching from './QueriesCaching.js';
-import { CacheIfFn, HandleFn, TransformFn } from './routes.js';
+import { CacheIfFn, HandleFn, TransformFn, ValidIfFn } from './routes.js';
 import { isQueryVar, QueryVar } from '../../queries/vars.js';
 import { Platform } from '../platform.js';
 import QueryHandleRoute from './QueryHandleRoute.js';
@@ -13,6 +13,9 @@ type ModQuery = {
 
 type ModTs = {
 	variables?: any;
+	// only to hint that its validVars
+	validVariables?: any;
+	validVars?: any;
 	caching?: any;
 	transform?: any;
 	handle?: any;
@@ -24,6 +27,7 @@ type RouteBuilder = {
 	query: string | null;
 	jsFile: string | null;
 	vars: Record<string, QueryVar> | null;
+	validIfFn: ValidIfFn | null;
 	/** corresponds to the caching export */
 	cacheIfFn: CacheIfFn | null;
 	preventCaching: boolean;
@@ -59,6 +63,7 @@ export async function initQueryRoutes(
 				query: null,
 				jsFile: null,
 				vars: null,
+				validIfFn: null,
 				cacheIfFn: null,
 				preventCaching: false,
 				transformFn: null,
@@ -85,6 +90,17 @@ export async function initQueryRoutes(
 		const mts = mq as ModTs;
 		if (mts.variables) {
 			routeBuilder.vars = parseVars(mts.variables);
+		}
+
+		if (mts.validVariables) {
+			throw new Error(`use the shorthand validVars in ${filename}`);
+		}
+
+		if (mts.validVars) {
+			if (typeof mts.validVars !== 'function') {
+				throw new Error('validVars should be a function');
+			}
+			routeBuilder.validIfFn = mts.validVars;
 		}
 
 		if (mts.caching) {
@@ -122,7 +138,12 @@ export async function initQueryRoutes(
 			if (rb.cacheIfFn || rb.transformFn || rb.preventCaching)
 				throw new Error('caching or transform not supported');
 
-			const route = new QueryHandleRoute(name, rb.handleFn, rb.vars);
+			const route = new QueryHandleRoute(
+				name,
+				rb.validIfFn,
+				rb.handleFn,
+				rb.vars,
+			);
 
 			router.post('/queries/' + route.name, csr =>
 				route.handle(caching.router, csr),

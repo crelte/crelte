@@ -72,7 +72,7 @@ export const vars = {
 
 /// either throw with an error which will get returned in a 400 response or
 // return false if the value is not valid
-export type ValidIf<T> = (v: T, cs: ServerRouter) => boolean;
+export type ValidIf<T> = (v: T, sr: ServerRouter) => boolean;
 
 export class QueryVar<T = any> {
 	private name: string | null;

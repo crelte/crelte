@@ -8,6 +8,7 @@ import Queries, {
 	QueryOptions,
 } from '../queries/Queries.js';
 import type CrelteServerRequest from '../server/CrelteServer.js';
+import ServerRouter from '../server/ServerRouter.js';
 import { gql } from './gql.js';
 import QueryError, { QueryErrorResponse } from './QueryError.js';
 import { QueryVar, ValidIf, vars, varsIdsEqual } from './vars.js';
@@ -37,6 +38,16 @@ export type InferQueryVarType<T> = T extends QueryVar<infer U> ? U : never;
 export type InferVariableTypes<T> = {
 	[K in keyof T]: InferQueryVarType<T[K]>;
 };
+
+/**
+ * Defines wether the query variables are valid.
+ *
+ * Either throw or return a boolean.
+ */
+export type ValidVars<T extends Record<string, QueryVar<any>>> = (
+	vars: InferVariableTypes<T>,
+	sr: ServerRouter,
+) => void | boolean;
 
 /**
  * Defines when a query can safely be cached.
