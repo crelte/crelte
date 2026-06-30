@@ -124,8 +124,6 @@ This will output:
 <p>Question 1 of 3.</p>
 ```
 
-Variable values can be strings or numbers. `null` and `undefined` are treated as missing values and will leave the placeholder unresolved.
-
 ## Different namespace
 
 If you want to use a different namespace, you can pass it as the first argument to `getTranslations`.

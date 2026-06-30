@@ -13,6 +13,7 @@ import {
 	createTranslations,
 	getTranslationsPlugin,
 	type TranslateFunction,
+	type TranslationVarValue,
 	type TranslateStore,
 	type Translations,
 	TranslationsPlugin,
@@ -50,6 +51,7 @@ export {
 	LoaderCreator,
 	TranslateStore,
 	TranslateFunction,
+	TranslationVarValue,
 	// loaders
 	createFileLoader,
 	createGlobalLoader,
