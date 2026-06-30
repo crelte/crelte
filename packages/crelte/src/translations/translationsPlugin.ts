@@ -9,7 +9,7 @@ export type TranslateFunction = (
 	key: string,
 	vars?: Record<string, TranslationVarValue>,
 ) => string;
-export type TranslationVarValue = string | number | null | undefined;
+export type TranslationVarValue = string | number;
 export type TranslateStore = Readable<TranslateFunction>;
 export type Translations = Record<string, string>;
 export type TranslationsPluginOptions = {
@@ -92,14 +92,17 @@ export class TranslationsPlugin implements Plugin {
 		const store = derived(this.crelte.router.site, site => {
 			return (
 				key: string,
-				vars: Record<string, TranslationVarValue> = {},
+				vars?: Record<string, TranslationVarValue>,
 			) => {
 				const lang = site?.language ?? this.firstLang;
 				if (!lang) throw new Error('no lang');
 
 				const data = this.get(lang, namespace);
 				if (!data) console.error(`namespace '${namespace}' not loaded`);
-				return this.z_resolveVariables(data?.[key] || key, vars);
+
+				const text = data?.[key] || key;
+				if (!vars) return text;
+				return this.z_resolveVariables(text, vars);
 			};
 		});
 
@@ -130,8 +133,11 @@ export class TranslationsPlugin implements Plugin {
 			result += text.slice(index, openIndex);
 
 			const key = text.slice(openIndex + 1, closeIndex);
-			const value = vars[key] ?? `{${key}}`;
-			result += value;
+			if (key in vars) {
+				result += vars[key];
+			} else {
+				result += `{${key}}`;
+			}
 
 			index = closeIndex + 1;
 		}
