@@ -87,6 +87,43 @@ to get a translation function for a specific namespace.
 
 `getTranslations` returns a store with the translation function for the `common` namespace by default.
 
+
+## Variables
+
+Translations can contain variables using curly braces. Pass the values as the second argument to the translation function.
+
+**Example** `common.json`
+
+```json
+{
+	"quiz_progress": "Question {current} of {total}."
+}
+```
+
+```svelte
+<script>
+	import { getTranslations } from 'crelte/translations';
+
+	const t = getTranslations();
+
+	let currentIndex = 0;
+	let questions = ['A', 'B', 'C'];
+</script>
+
+<p>
+	{$t('quiz_progress', {
+		current: currentIndex + 1,
+		total: questions.length
+	})}
+</p>
+```
+
+This will output:
+
+```html
+<p>Question 1 of 3.</p>
+```
+
 ## Different namespace
 
 If you want to use a different namespace, you can pass it as the first argument to `getTranslations`.
