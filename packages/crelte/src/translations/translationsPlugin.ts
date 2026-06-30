@@ -7,8 +7,9 @@ import { getCrelte } from '../index.js';
 
 export type TranslateFunction = (
 	key: string,
-	// replacements?: Record<string, string>,
+	vars?: Record<string, TranslationVarValue>,
 ) => string;
+export type TranslationVarValue = string | number | null | undefined;
 export type TranslateStore = Readable<TranslateFunction>;
 export type Translations = Record<string, string>;
 export type TranslationsPluginOptions = {
@@ -89,17 +90,53 @@ export class TranslationsPlugin implements Plugin {
 	/** @hidden */
 	z_createTranslateStore(namespace: string): TranslateStore {
 		const store = derived(this.crelte.router.site, site => {
-			return (key: string) => {
+			return (
+				key: string,
+				vars: Record<string, TranslationVarValue> = {},
+			) => {
 				const lang = site?.language ?? this.firstLang;
 				if (!lang) throw new Error('no lang');
 
 				const data = this.get(lang, namespace);
 				if (!data) console.error(`namespace '${namespace}' not loaded`);
-				return data?.[key] || key;
+				return this.z_resolveVariables(data?.[key] || key, vars);
 			};
 		});
 
 		return new Readable(store);
+	}
+
+	/** @hidden */
+	z_resolveVariables(
+		text: string,
+		vars: Record<string, TranslationVarValue> = {},
+	): string {
+		let result = '';
+		let index = 0;
+
+		while (index < text.length) {
+			const openIndex = text.indexOf('{', index);
+			if (openIndex === -1) {
+				result += text.slice(index);
+				break;
+			}
+
+			const closeIndex = text.indexOf('}', openIndex + 1);
+			if (closeIndex === -1) {
+				result += text.slice(index);
+				break;
+			}
+
+			result += text.slice(index, openIndex);
+
+			const key = text.slice(openIndex + 1, closeIndex);
+			const value = vars[key] ?? `{${key}}`;
+			result += value;
+
+			index = closeIndex + 1;
+		}
+
+		return result;
 	}
 }
 
