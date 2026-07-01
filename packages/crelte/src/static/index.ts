@@ -12,7 +12,7 @@ export type CrelteStaticRequest = CrelteRequest & {
 	 *
 	 * @example
 	 * ```js
-	 * router.add('/blog/:slug', async (csr) => {
+	 * router.add('/blog/:slug', async csr => {
 	 *     const blogData = await fetchBlogData(csr.getParam('slug'));
 	 *
 	 *     return {

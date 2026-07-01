@@ -33,8 +33,8 @@ export default class ServerRequest extends Request {
 	 *
 	 * @example
 	 * ```js
-	 * router.get('/blog/:slug', async (cs, req) => {
-	 *     return Response.json({ slug: cs.getParam('slug') });
+	 * router.get('/blog/:slug', async csr => {
+	 *     return Response.json({ slug: csr.req.getParam('slug') });
 	 * });
 	 * ```
 	 */
