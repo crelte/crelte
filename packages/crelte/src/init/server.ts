@@ -7,7 +7,7 @@ import {
 	setupPlugins,
 } from './shared.js';
 import SsrComponents from '../ssr/SsrComponents.js';
-import SsrCache from '../ssr/SsrCache.js';
+import SsrCache, { ssrCacheExportToHead } from '../ssr/SsrCache.js';
 import ServerCookies from '../cookies/ServerCookies.js';
 import { svelteRender } from './svelteComponents.js';
 import ServerRouter from '../routing/router/ServerRouter.js';
@@ -154,7 +154,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 
 	bodyClass.z_populateSsrCache(ssrCache);
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += crelte.ssrCache.z_exportToHead();
+	head += ssrCacheExportToHead(crelte.ssrCache);
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace(
@@ -234,7 +234,7 @@ export async function mainError(
 	});
 
 	head += ssrComponents.toHead(data.serverData.ssrManifest);
-	head += ssrCache.z_exportToHead();
+	head += ssrCacheExportToHead(ssrCache);
 
 	let htmlTemplate = data.serverData.htmlTemplate;
 	htmlTemplate = htmlTemplate.replace('<!--page-lang-->', 'de');

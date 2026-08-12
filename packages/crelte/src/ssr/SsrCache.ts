@@ -1,3 +1,5 @@
+import { uneval } from 'devalue';
+
 /**
  * Calculates a key based on the json representation of the data
  *
@@ -147,15 +149,15 @@ export default class SsrCache {
 		delete window._SSR_STORE;
 	}
 
-	private exportAsJson(): string {
-		return JSON.stringify(Array.from(this.store.entries())).replace(
-			/</g,
-			'\\u003c',
-		);
-	}
-
 	/** @hidden */
-	z_exportToHead(): string {
-		return `\n\t\t<script>window._SSR_STORE = ${this.exportAsJson()};</script>`;
+	z_toData(): any {
+		return this.store;
 	}
+}
+
+export function ssrCacheExportToHead(ssr: SsrCache) {
+	const data = Array.from(ssr.z_toData().entries());
+
+	// safety, uneval already escapes data: https://github.com/sveltejs/devalue#xss-mitigation
+	return `\n\t\t<script>window._SSR_STORE = ${uneval(data)};</script>`;
 }
