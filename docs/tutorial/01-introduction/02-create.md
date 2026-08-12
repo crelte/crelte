@@ -22,6 +22,6 @@ npm -v
 4. In this example we use `en-US` as our language.
 5. crelte-cli will now initialize the project; this might take a minute.
 6. After the project is created, you can start the frotend.
-7. `cd tutorial/svelte && npm run dev`
+7. `cd tutorial && ddev npm run dev`
 
-At this point you should be able to access the project at `http://localhost:8080`.
+At this point you should be able to access the project at `https://tutorial.ddev.site`.

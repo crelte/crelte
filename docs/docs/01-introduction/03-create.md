@@ -20,8 +20,8 @@ The simplest way to create a new Crelte project is to run `npx crelte-cli create
 
 ```bash
 npx crelte-cli create my-project
-cd my-project/svelte
-npm run dev
+cd my-project
+ddev npm run dev
 ```
 
 This will create a new project in the `my-project` directory and prompt you with a few questions, e.g. the name of your site and the initial username and password. To explore Crelte we recommend choosing the blog starter template. This will include a few example pages and a blog section showing some features which make crelte great.

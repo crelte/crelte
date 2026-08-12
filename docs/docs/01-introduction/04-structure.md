@@ -4,8 +4,8 @@ A typical Crelte project looks like this:
 
 ```plaintext
 my-project/
+├ .ddev/
 ├ craft/
-│ ├ .ddev/
 │ ├ config/
 │ ├ storage/
 │ ├ templates/

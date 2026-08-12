@@ -5,13 +5,9 @@ new section and a global set which holds our navigation.
 
 ## Open Craft
 
-To open Craft CMS you gan either go to `localhost:8080` and click on any of the craft links there.
+To open Craft CMS you gan either go to `https://tutorial.ddev.site/admin` and click on any of the craft links there.
 
-Or go into your project folder, access the `/craft` folder and execute:
-
-```bash
-ddev launch admin
-```
+Or go directly to `https://admin.tutorial.ddev.site/admin`.
 
 You will now be asked to login using the credentials you defined during the project setup.
 

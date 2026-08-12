@@ -128,7 +128,7 @@ Create that file with the following content:
 
 For the moment add the same content to `pages-page.svelte`.
 
-Now if you visit `http://localhost:8080` you should see the title of the home page and
+Now if you visit `https://tutorial.ddev.site` you should see the title of the home page and
 should be able to navigate to the news page.
 
 ![Home Page](./assets/02-home-page.png)
