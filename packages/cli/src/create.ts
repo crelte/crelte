@@ -13,17 +13,9 @@ import {
 	appendFile,
 	writeFile,
 	isFile,
+	spawnInline,
 } from './utils.js';
-import {
-	group,
-	intro,
-	isCancel,
-	log,
-	note,
-	outro,
-	password,
-	text,
-} from '@clack/prompts';
+import { intro, isCancel, log, note, outro, text } from '@clack/prompts';
 import color from 'picocolors';
 
 type Options = {
@@ -56,9 +48,6 @@ export default async function create(
 
 		wd = nWd as string;
 	}
-
-	// get all information needed to install craft
-	const craftOptions = await craftInstallOptions();
 
 	// clone the template
 	await spawn('git', ['clone', template, wd]);
@@ -93,79 +82,42 @@ export default async function create(
 		{ cwd: wd },
 	);
 
-	// do manually, what 'ddev composer create-project' seems to do
-	// we do it manually because the ddev cli is just stuck and waits
-	// forever on some systems
-	{
-		await spawn('ddev', ['start', projectName], { cwd: wd });
-		// we need to work in a temporary directory, because / craft
-		// isn't empty and we aren't allowed to create - project in a
-		// non - empty directory.
-		const craftCreateProjectDir = j(craftDir, 'cc-temp');
-		await spawn(
-			'ddev',
-			[
-				'exec',
-				'--dir',
-				'/var/www/html/craft',
-				'composer',
-				'create-project',
-				'--no-scripts',
-				'--no-install',
-				'--no-interaction',
-				'craftcms/craft',
-				'cc-temp',
-			],
-			{ cwd: wd },
-		);
-
-		// Move contents from temp directory to parent
-		await mergeCopy(craftCreateProjectDir, craftDir);
-		await rmDir(craftCreateProjectDir);
-
-		// run ddev start again to maybe create the necessary .env variables
-		// this depends on the ddev version
-		await spawn('ddev', ['start', projectName], { cwd: wd });
-	}
-
-	await spawn('ddev', ['composer', 'install'], { cwd: wd });
-
-	// since we don't run the after setup step from craft we do that step manually
-	await rmFile(j(craftDir, 'composer.json'));
-	await copyFile(
-		j(craftDir, 'composer.json.default'),
-		j(craftDir, 'composer.json'),
+	// add collation to .env.web
+	await appendFile(
+		j(wd, '.ddev/.env.web'),
+		`CRAFT_DB_CHARSET="utf8mb4"
+CRAFT_DB_COLLATION="utf8mb4_unicode_ci"
+`,
 	);
-	rmFile(j(craftDir, 'composer.json.default'));
 
-	// how should the site environment variable be called, for exampe EN_US_SITE_URL
-	const siteEnvName =
-		craftOptions.language.toUpperCase().replace('-', '_') + '_SITE_URL';
+	await spawnInline(
+		'ddev',
+		['composer', 'create-project', 'craftcms/craft'],
+		{ cwd: wd },
+	);
 
-	// try to read .env.web file first (only ddev ~1.24+)
-	let primaryEnvPath = j(wd, '.ddev/.env.web');
-	if (!(await isFile(primaryEnvPath))) {
-		primaryEnvPath = j(wd, '.env');
+	const ddevEnvPath = j(wd, '.ddev/.env.web');
+	if (!(await isFile(ddevEnvPath))) {
+		exit(
+			'Could not find .ddev/.env.web file, maybe your ddev version is too old.',
+			1,
+		);
 	}
-	if (!(await isFile(primaryEnvPath))) {
-		primaryEnvPath = j(craftDir, '.env');
-	}
-	const prevEnv = await readFile(primaryEnvPath);
-	const prevPrimaryUrlMatch = prevEnv.match(PRIMARY_SITE_URL_REGEX);
-	if (!prevPrimaryUrlMatch) {
+	const ddevEnv = await readFile(ddevEnvPath);
+	const primaryUrlMatch = ddevEnv.match(PRIMARY_SITE_URL_REGEX);
+	if (!primaryUrlMatch) {
 		exit('Could not find PRIMARY_SITE_URL in .env', 1);
 	}
 
 	// the primary ddev url (https://<project>.ddev.site) serves the
 	// svelte dev server, craft is served on the admin subdomain
-	const frontendUrl = new URL(prevPrimaryUrlMatch![1]);
+	const frontendUrl = new URL(primaryUrlMatch![1]);
 	const adminUrl = new URL(frontendUrl.href);
 	adminUrl.hostname = 'admin.' + adminUrl.hostname;
 	const endpointUrl = new URL(adminUrl.href);
 	endpointUrl.pathname = 'api';
 
 	// copy files from the template
-	await rmFile(j(craftDir, '.env'), { force: true });
 	await mergeCopy(craftTempDir, craftDir);
 	await rmDir(craftTempDir);
 
@@ -182,15 +134,15 @@ export default async function create(
 
 	// create .env file
 	await appendFile(
-		j(craftDir, '.env.example.dev'),
+		j(craftDir, '.env'),
 		`ENDPOINT_URL=${endpointUrl.href}
 ENDPOINT_TOKEN=
+CRAFT_WEB_URL=${adminUrl.href}
 CRAFT_BASE_CP_URL=${adminUrl.href}
 FRONTEND_URL=${frontendUrl.href}
-${siteEnvName}=${frontendUrl.href}
 `,
 	);
-	await copyFile(j(craftDir, '.env.example.dev'), j(craftDir, '.env'));
+	await copyFile(j(craftDir, '.env'), j(craftDir, '.env.example.dev'));
 
 	// add placeholders env files for staging and production
 	for (const file of ['.env.example.staging', '.env.example.production']) {
@@ -198,9 +150,9 @@ ${siteEnvName}=${frontendUrl.href}
 			j(craftDir, file),
 			`ENDPOINT_URL=
 ENDPOINT_TOKEN=
+CRAFT_WEB_URL=
 CRAFT_BASE_CP_URL=
 FRONTEND_URL=
-${siteEnvName}=
 `,
 		);
 	}
@@ -213,29 +165,6 @@ ${siteEnvName}=
 
 	// make sure to commit an empty templates folder
 	await writeFile(j(craftDir, 'templates/.gitkeep'), '');
-
-	// finally we are ready to install craft
-	await spawn(
-		'ddev',
-		[
-			'craft',
-			'install/craft',
-			'--interactive=0',
-			'--email',
-			craftOptions.email,
-			'--username',
-			craftOptions.username,
-			'--password',
-			craftOptions.password,
-			'--language',
-			craftOptions.language,
-			'--site-name',
-			craftOptions.siteName,
-			'--site-url',
-			'$' + siteEnvName,
-		],
-		{ cwd: wd },
-	);
 
 	// install the crelte plugin
 	await spawn('ddev', ['composer', 'require', 'crelte/craft-crelte'], {
@@ -272,11 +201,7 @@ ${siteEnvName}=
 
 Your project will be available at:
   ${color.bold('Frontend')}: ${frontendUrl.href}
-  ${color.bold('Craft CP')}: ${adminUrl.href}admin
-
-Your login credentials are:
-  ${color.bold('Username')}: ${craftOptions.username}
-  ${color.bold('Password')}: ${craftOptions.password}`,
+  ${color.bold('Craft CP')}: ${adminUrl.href}admin`,
 	);
 
 	outro("You're all set up! 🎉");
@@ -309,48 +234,6 @@ function templatePath(template: string | undefined): string {
 	}
 
 	throw exit('Invalid template ' + template, 1);
-}
-
-type CraftInstallOptions = {
-	email: string;
-	username: string;
-	password: string;
-	siteName: string;
-	language: string;
-};
-
-async function craftInstallOptions(): Promise<CraftInstallOptions> {
-	log.info('Please provide the following information to install Craft CMS');
-
-	return await group(
-		{
-			email: () =>
-				text({
-					message: 'Email',
-					// only a minimal check for basic validity
-					validate: value =>
-						!value.includes('@') ? 'Invalid email' : undefined,
-				}),
-			username: () => text({ message: 'Username' }),
-			password: () =>
-				password({
-					message: 'Password',
-					validate: value =>
-						value.length < 6
-							? 'Password too short (min. 6 characters)'
-							: undefined,
-				}),
-			siteName: () => text({ message: 'Site Name' }),
-			language: () =>
-				text({
-					message: 'Language',
-					placeholder: 'for example: en-US or de-CH',
-				}),
-		},
-		{
-			onCancel: () => exitEarly(),
-		},
-	);
 }
 
 // this is a bit complicated

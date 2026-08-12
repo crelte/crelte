@@ -167,6 +167,29 @@ export async function spawn(
 	});
 }
 
+export async function spawnInline(
+	command: string,
+	args: string[],
+	opts: SpawnOptionsWithoutStdio = {},
+): Promise<void> {
+	const child = childProcess.spawn(command, args, {
+		...opts,
+		stdio: 'inherit',
+	});
+
+	return new Promise((resolve, reject) => {
+		child.on('close', code => {
+			if (code === 0) {
+				resolve();
+			} else {
+				reject(new Error(`Command failed with exit code ${code}`));
+			}
+		});
+
+		child.on('error', e => reject(e));
+	});
+}
+
 function sanitizeLine(line: string): string {
 	return line.replace(/(\r\n|\n|\r)/gm, '\\n').replace(/[^\x20-\x7E]/g, '');
 }
