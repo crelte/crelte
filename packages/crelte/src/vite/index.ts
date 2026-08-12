@@ -1,5 +1,4 @@
 import { relative } from 'node:path';
-import MagicString from 'magic-string';
 import {
 	ConfigEnv,
 	Plugin,
@@ -19,7 +18,6 @@ import {
 	modRenderError,
 } from '../server/shared.js';
 import ServerRouter from '../server/ServerRouter.js';
-import sveltePackage from 'svelte/package.json' with { type: 'json' };
 import { initQueryRoutes } from '../server/queries/queries.js';
 import {
 	PLATFORM,
@@ -29,6 +27,11 @@ import {
 import { SiteFromGraphQl } from '../routing/Site.js';
 import { ServerResponse } from 'node:http';
 import QueryError from '../queries/QueryError.js';
+import {
+	CodeTransform,
+	generateTransform,
+	rolldownString,
+} from 'rolldown-string';
 
 const VIRT_MOD_ID = 'virtual:crelte/svelteComponents';
 const RESOLVED_VIRT_MOD_ID = '\0' + VIRT_MOD_ID;
@@ -45,43 +48,33 @@ function usedSsrComponents(
 	code: string,
 	id: string,
 	options: { ssr?: boolean } | undefined,
-	svelte5: boolean,
-): TransformResult | undefined {
+): CodeTransform | undefined {
 	if (!options?.ssr || !id.endsWith('.svelte')) return;
 
 	const file = relative('.', id);
 
-	let idx;
-	if (svelte5) {
-		const defFnSign = 'export default function ';
-		idx = code.indexOf(defFnSign);
-		if (idx < 0) return;
+	const defFnSign = 'export default function ';
+	let idx = code.indexOf(defFnSign);
+	if (idx < 0) return;
 
-		const withPropsIdx = code.indexOf('($$renderer, $$props) {', idx);
-		const noPropsIdx = code.indexOf('($$renderer) {', idx);
-		idx = withPropsIdx >= 0 ? withPropsIdx : noPropsIdx;
-		if (idx < 0) {
-			console.error('could not find svelte5 init', id);
-			return;
-		}
-
-		const renderCompSign = '$$renderer.component(($$renderer) => {';
-		const renderCompIdx = code.indexOf(renderCompSign, idx);
-		if (renderCompIdx >= 0) idx = renderCompIdx;
-
-		// Find the end of the line where the pattern was found
-		idx = code.indexOf('\n', idx);
-		if (idx < 0) return;
-		idx += 1; // \n
-	} else {
-		const initFnSign =
-			'create_ssr_component(($$result, $$props, $$bindings, slots) => {';
-		idx = code.indexOf(initFnSign);
-		if (idx < 0) return;
-		idx += initFnSign.length;
+	const withPropsIdx = code.indexOf('($$renderer, $$props) {', idx);
+	const noPropsIdx = code.indexOf('($$renderer) {', idx);
+	idx = withPropsIdx >= 0 ? withPropsIdx : noPropsIdx;
+	if (idx < 0) {
+		console.error('could not find svelte5 init', id);
+		return;
 	}
 
-	const s = new MagicString(code);
+	const renderCompSign = '$$renderer.component(($$renderer) => {';
+	const renderCompIdx = code.indexOf(renderCompSign, idx);
+	if (renderCompIdx >= 0) idx = renderCompIdx;
+
+	// Find the end of the line where the pattern was found
+	idx = code.indexOf('\n', idx);
+	if (idx < 0) return;
+	idx += 1; // \n
+
+	const s = rolldownString(code, id, options);
 
 	s.prepend(`import { getContext as __modulesGetContext } from 'svelte';\n`);
 
@@ -95,14 +88,7 @@ if (ctx && ctx instanceof Set) {
 `;
 	s.appendLeft(idx, ctxAdd);
 
-	return {
-		map: s.generateMap({
-			source: id,
-			includeContent: true,
-			hires: 'boundary',
-		}),
-		code: s.toString(),
-	};
+	return generateTransform(s, id);
 }
 
 // transform graphql files into a GraphQlQuery which can called with
@@ -143,29 +129,13 @@ export const query = {
 `;
 }
 
-function isSvelte5(): boolean {
-	if (sveltePackage && sveltePackage.version) {
-		return sveltePackage.version.startsWith('5.');
-	}
-	// Fallback or error handling if version cannot be determined
-	console.warn('Could not determine Svelte version. Assuming not Svelte 5.');
-	return false;
-}
-
 // outside of crelte because each build executes crelte again
 let isSsrBuild = false;
 
-export type CrelteOptions = {
-	/** If not specified tries to detect which version is installed */
-	svelte4?: boolean;
-};
-
-export default function crelte(opts?: CrelteOptions): Plugin {
+export default function crelte(): Plugin {
 	let viteConfig: ResolvedConfig;
 	let viteConfigEnv: ConfigEnv;
 	let initialConfig: UserConfig;
-
-	const svelte5 = opts?.svelte4 ? false : isSvelte5();
 
 	return {
 		name: 'crelte',
@@ -229,33 +199,22 @@ export default function crelte(opts?: CrelteOptions): Plugin {
 			}
 
 			if (id === RESOLVED_VIRT_MOD_ID) {
-				if (svelte5) {
-					return (
-						`import { hydrate } from 'svelte';` +
-						`import { render } from 'svelte/server';` +
-						`export function internalSvelteMount(comp, options) {` +
-						`return hydrate(comp, options);` +
-						`}` +
-						`export function internalSvelteRender(comp, options) {` +
-						`return render(comp, options);` +
-						`}`
-					);
-				} else {
-					return (
-						`export function internalSvelteMount(comp, options) {` +
-						`return new comp({ ...options, hydrate: true });` +
-						`}` +
-						`export function internalSvelteRender(comp, options) {` +
-						`return comp.render(options.props, options);` +
-						`}`
-					);
-				}
+				return (
+					`import { hydrate } from 'svelte';` +
+					`import { render } from 'svelte/server';` +
+					`export function internalSvelteMount(comp, options) {` +
+					`return hydrate(comp, options);` +
+					`}` +
+					`export function internalSvelteRender(comp, options) {` +
+					`return render(comp, options);` +
+					`}`
+				);
 			}
 		},
 
 		transform(code, id, options) {
 			return (
-				usedSsrComponents(code, id, options, svelte5) ||
+				usedSsrComponents(code, id, options) ||
 				graphQlFiles(code, id, !!options?.ssr)
 			);
 		},

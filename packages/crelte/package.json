@@ -1,6 +1,6 @@
 {
 	"name": "crelte",
-	"version": "0.5.15",
+	"version": "0.6.0-alpha.1",
 	"author": "Crelte <support@crelte.com>",
 	"type": "module",
 	"scripts": {
@@ -114,19 +114,19 @@
 		}
 	},
 	"dependencies": {
-		"magic-string": "^0.30.17",
+		"rolldown-string": "^0.3.1",
 		"trouter": "^4.0.0"
 	},
 	"peerDependencies": {
-		"svelte": "^4.0.0 || ^5.39.1",
-		"vite": "^5.0.0 || ^6.0.0"
+		"svelte": "^5.39.1",
+		"vite": "^8.0.0"
 	},
 	"devDependencies": {
 		"@sveltejs/package": "^2.3.1",
-		"@sveltejs/vite-plugin-svelte": "^4.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.0.0",
+		"@types/node": "^22.13.10",
 		"svelte-check": "^4.1.4",
 		"typescript-svelte-plugin": "^0.3.45",
-		"vitest": "^3.0.0",
-		"@types/node": "^22.13.10"
+		"vitest": "^4.0.0"
 	}
 }
