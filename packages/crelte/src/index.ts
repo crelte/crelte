@@ -125,13 +125,13 @@ export function getEntry(): Readable<Entry> {
 /**
  * returns an env variable from the craft/.env file.
  * All env variables need to start with VITE_
- * except ENDPOINT_URL, CRAFT_WEB_URL and FRONTEND_URL
+ * except ENDPOINT_URL, CRAFT_BASE_CP_URL and FRONTEND_URL
  *
  * #### Note
  * This only works during component initialisation.
  */
 export function getEnv(name: 'ENDPOINT_URL'): string;
-export function getEnv(name: 'CRAFT_WEB_URL'): string;
+export function getEnv(name: 'CRAFT_BASE_CP_URL'): string;
 export function getEnv(name: 'FRONTEND_URL'): string;
 export function getEnv(name: string): string | null;
 export function getEnv(name: string): string | null {

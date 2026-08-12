@@ -127,10 +127,10 @@ export type Crelte = {
 	/**
 	 * returns an env variable from the craft/.env file.
 	 * All env variables need to start with VITE_
-	 * except ENDPOINT_URL, CRAFT_WEB_URL and FRONTEND_URL
+	 * except ENDPOINT_URL, CRAFT_BASE_CP_URL and FRONTEND_URL
 	 */
 	getEnv(name: 'ENDPOINT_URL'): string;
-	getEnv(name: 'CRAFT_WEB_URL'): string;
+	getEnv(name: 'CRAFT_BASE_CP_URL'): string;
 	getEnv(name: 'FRONTEND_URL'): string;
 	getEnv(name: string): string | null;
 

@@ -86,7 +86,7 @@ export default class CrelteServerRequest {
 	 * returns an env variable from the craft/.env file.
 	 */
 	getEnv(name: 'ENDPOINT_URL'): string;
-	getEnv(name: 'CRAFT_WEB_URL'): string;
+	getEnv(name: 'CRAFT_BASE_CP_URL'): string;
 	getEnv(name: 'FRONTEND_URL'): string;
 	getEnv(name: string): string | null;
 	getEnv(name: string): string | null {

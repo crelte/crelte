@@ -74,7 +74,7 @@ export async function main(data: MainData): Promise<RenderResponse> {
 
 	const endpoint = data.serverData.endpoint;
 	ssrCache.set('ENDPOINT_URL', endpoint);
-	ssrCache.set('CRAFT_WEB_URL', data.serverData.craftWeb);
+	ssrCache.set('CRAFT_BASE_CP_URL', data.serverData.craftUrl);
 	ssrCache.set('FRONTEND_URL', data.serverData.frontend);
 
 	const cookies = new ServerCookies(data.serverData.headers);

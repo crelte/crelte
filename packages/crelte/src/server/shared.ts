@@ -27,7 +27,7 @@ export type EnvData = {
 	env: Map<string, string>;
 	endpointUrl: string;
 	endpointToken?: string;
-	craftWebUrl: string;
+	craftBaseCpUrl: string;
 	frontendUrl: string;
 	viteEnv: Map<string, string>;
 };
@@ -47,8 +47,8 @@ export async function initEnvData(os: Platform): Promise<EnvData> {
 
 	const endpointToken = env.get('ENDPOINT_TOKEN');
 
-	const craftWebUrl = env.get('CRAFT_WEB_URL');
-	if (!craftWebUrl) throw new Error('CRAFT_WEB_URL not set');
+	const craftBaseCpUrl = env.get('CRAFT_BASE_CP_URL');
+	if (!craftBaseCpUrl) throw new Error('CRAFT_BASE_CP_URL not set');
 
 	const frontendUrl = env.get('FRONTEND_URL');
 	if (!frontendUrl) throw new Error('FRONTEND_URL not set');
@@ -62,7 +62,7 @@ export async function initEnvData(os: Platform): Promise<EnvData> {
 		env,
 		endpointUrl,
 		endpointToken,
-		craftWebUrl,
+		craftBaseCpUrl,
 		frontendUrl,
 		viteEnv,
 	};
@@ -145,7 +145,7 @@ export type RenderRequest = {
 	htmlTemplate: string;
 	ssrManifest: Record<string, string[]>;
 	endpoint: string;
-	craftWeb: string;
+	craftUrl: string;
 	frontend: string;
 	viteEnv: Map<string, string>;
 	sites: SiteFromGraphQl[];
@@ -170,7 +170,7 @@ export async function modRender(
 		htmlTemplate: template,
 		ssrManifest: {},
 		endpoint: env.endpointUrl,
-		craftWeb: env.craftWebUrl,
+		craftUrl: env.craftBaseCpUrl,
 		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
 		sites,
@@ -199,7 +199,7 @@ export type RenderErrorRequest = {
 	ssrManifest: Record<string, string[]>;
 	acceptLang: string | null;
 	endpoint: string;
-	craftWeb: string;
+	craftUrl: string;
 	frontend: string;
 	viteEnv: Map<string, string>;
 };
@@ -239,7 +239,7 @@ export async function modRenderError(
 		ssrManifest: {},
 		acceptLang,
 		endpoint: env.endpointUrl,
-		craftWeb: env.craftWebUrl,
+		craftUrl: env.craftBaseCpUrl,
 		frontend: env.frontendUrl,
 		viteEnv: env.viteEnv,
 		...opts,

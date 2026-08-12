@@ -137,7 +137,6 @@ CRAFT_DB_COLLATION="utf8mb4_unicode_ci"
 		j(craftDir, '.env'),
 		`ENDPOINT_URL=${endpointUrl.href}
 ENDPOINT_TOKEN=
-CRAFT_WEB_URL=${adminUrl.href}
 CRAFT_BASE_CP_URL=${adminUrl.href}
 FRONTEND_URL=${frontendUrl.href}
 `,
@@ -150,7 +149,6 @@ FRONTEND_URL=${frontendUrl.href}
 			j(craftDir, file),
 			`ENDPOINT_URL=
 ENDPOINT_TOKEN=
-CRAFT_WEB_URL=
 CRAFT_BASE_CP_URL=
 FRONTEND_URL=
 `,
