@@ -249,7 +249,9 @@ export default class ClientRouter extends BaseRouter {
 	updateScroll(cr: CrelteRequest, _route: Route): void {
 		const req = cr.req;
 
-		if (req.disableScroll) return;
+		if (req.disableScroll) {
+			return this.onScroll(); // make sure the current scrollY get's stored to the history
+		}
 
 		// scroll to target
 		let scrollTo:
