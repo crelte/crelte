@@ -57,7 +57,26 @@ jobs:
           npm run lint
 
       - name: Publish to npm
+        shell: bash
         run: |
           cd ${PACKAGE_FOLDER} # Navigate to the correct package folder
           echo "Publishing package from ${PACKAGE_FOLDER} with version ${VERSION}"
-          npm publish --provenance
+
+          # Check if the version is a prerelease (contains a hyphen, e.g., v0.6.0-alpha.0)
+          if [[ "${VERSION}" == *-* ]]; then
+            # Extract the identifier (gets 'alpha' from 'v0.6.0-alpha.0' or 'rc' from 'v1.0.0-rc.1')
+            DIST_TAG=$(echo "${VERSION}" | awk -F'-' '{print $2}' | awk -F'.' '{print $1}')
+
+            # Fallback to 'next' if extraction is empty
+            if [[ -z "${DIST_TAG}" ]]; then
+              DIST_TAG="next"
+            fi
+
+            echo "Prerelease detected. Publishing with --tag ${DIST_TAG}"
+            npm publish --provenance --tag ${DIST_TAG}
+          else
+            echo "Stable release detected. Publishing to latest tag."
+            npm publish --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # Ensure you are passing your auth token
