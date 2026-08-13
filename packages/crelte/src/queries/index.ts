@@ -8,7 +8,6 @@ import Queries, {
 	QueryOptions,
 } from '../queries/Queries.js';
 import type CrelteServerRequest from '../server/CrelteServer.js';
-import ServerRouter from '../server/ServerRouter.js';
 import { gql } from './gql.js';
 import QueryError, { QueryErrorResponse } from './QueryError.js';
 import { QueryVar, ValidIf, vars, varsIdsEqual } from './vars.js';
@@ -53,14 +52,14 @@ export type InferVariableTypes<T> = {
  *     category: vars.id()
  * };
  *
- * export const validVars: ValidVars<typeof variables> = (vars, sr) => {
+ * export const validVars: ValidVars<typeof variables> = (vars, csr) => {
  *     if (!vars.category === 5) throw new Error('category needs to be 5');
  * };
  * ```
  */
 export type ValidVars<T extends Record<string, QueryVar<any>>> = (
 	vars: InferVariableTypes<T>,
-	sr: ServerRouter,
+	csr: CrelteServerRequest,
 ) => void | boolean;
 
 /**
@@ -76,12 +75,18 @@ export type ValidVars<T extends Record<string, QueryVar<any>>> = (
  * };
  *
  * export const caching: Caching<typeof variables> =
- *     (queryResponse, variables) => !!queryResponse.entries.length;
+ *     (queryResponse, variables, csr) => !!queryResponse.entries.length;
  * ```
  */
 export type Caching<
 	T extends Record<string, QueryVar<any>> = Record<string, QueryVar<any>>,
-> = boolean | ((response: any, vars: InferVariableTypes<T>) => boolean);
+> =
+	| boolean
+	| ((
+			response: any,
+			vars: InferVariableTypes<T>,
+			csr: CrelteServerRequest,
+	  ) => boolean);
 
 /** use {@link Transfrom} */
 export type TransformFn<
@@ -89,6 +94,7 @@ export type TransformFn<
 > = (
 	response: any,
 	vars: InferVariableTypes<T>,
+	csr: CrelteServerRequest,
 ) => void | any | Promise<void | any>;
 
 /**
@@ -96,11 +102,12 @@ export type TransformFn<
  *
  * #### Example
  * ```ts
- * export const transform: Transform<typeof variables> = (response, vars) => {
- *     for (const entry of response.entries) {
- *         entry.title = entry.title.toUpperCase();
- *     }
- * };
+ * export const transform: Transform<typeof variables> =
+ *     (response, vars, csr) => {
+ *         for (const entry of response.entries) {
+ *             entry.title = entry.title.toUpperCase();
+ *         }
+ *     };
  * ```
  */
 export type Transform<

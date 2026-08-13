@@ -1,13 +1,16 @@
 import { QueryVar } from '../../queries/vars.js';
 import CrelteServerRequest from '../CrelteServer.js';
-import ServerRouter from '../ServerRouter.js';
 
-export type CacheIfFn = (response: any, vars: Record<string, any>) => boolean;
+export type CacheIfFn = (
+	response: any,
+	vars: Record<string, any>,
+	csr: CrelteServerRequest,
+) => boolean;
 
 /// Either throw or return a boolean
 export type ValidIfFn = (
 	vars: Record<string, any>,
-	sr: ServerRouter,
+	csr: CrelteServerRequest,
 ) => void | boolean;
 
 /// Anything other than returning undefined will replace the response
@@ -33,7 +36,7 @@ export function validateVars(
 	qvars: Record<string, QueryVar> | null,
 	vars: any,
 	validIfFn: ValidIfFn | null,
-	sr: ServerRouter,
+	csr: CrelteServerRequest,
 ): Record<string, any> {
 	if (!vars || typeof vars !== 'object')
 		throw new Error('expected an object as vars');
@@ -43,12 +46,12 @@ export function validateVars(
 	const nVars: Record<string, any> = {};
 
 	for (const [k, v] of Object.entries(qvars)) {
-		nVars[k] = v.validValue(vars[k], sr);
+		nVars[k] = v.validValue(vars[k], csr);
 	}
 
 	if (validIfFn) {
 		// or throw
-		const valid = validIfFn(nVars, sr);
+		const valid = validIfFn(nVars, csr);
 		if (typeof valid === 'boolean' && !valid)
 			throw new Error('invalid variables for query');
 	}

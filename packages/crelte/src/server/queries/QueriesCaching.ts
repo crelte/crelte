@@ -13,7 +13,6 @@ export default class QueriesCaching {
 	private cacheDir: string | null;
 	private validBearerToken: string | null;
 	debug: boolean;
-	router: ServerRouter;
 
 	constructor(
 		platform: Platform,
@@ -21,7 +20,6 @@ export default class QueriesCaching {
 		opts?: QueriesCachingOptions,
 	) {
 		this.platform = platform;
-		this.router = cs;
 		this.debug = !!opts?.debug;
 
 		const enableCaching = cs.getEnv('CACHING') === 'true';

@@ -1,4 +1,4 @@
-import ServerRouter from '../server/ServerRouter.js';
+import CrelteServerRequest from '../server/CrelteServer.js';
 
 export const vars = {
 	/**
@@ -65,14 +65,12 @@ export const vars = {
 	siteId: (): QueryVar<number> =>
 		new QueryVar()
 			.number()
-			.validIf(
-				(num, router) => !!router.sites.find(site => site.id === num),
-			),
+			.validIf((num, csr) => !!csr.sites.find(site => site.id === num)),
 };
 
 /// either throw with an error which will get returned in a 400 response or
 // return false if the value is not valid
-export type ValidIf<T> = (v: T, sr: ServerRouter) => boolean;
+export type ValidIf<T> = (v: T, csr: CrelteServerRequest) => boolean;
 
 export class QueryVar<T = any> {
 	private name: string | null;
@@ -135,7 +133,7 @@ export class QueryVar<T = any> {
 		return this;
 	}
 
-	validValue(v: any, cs: ServerRouter): T | null {
+	validValue(v: any, csr: CrelteServerRequest): T | null {
 		// undefined is treated as null
 		if (typeof v === 'undefined') v = null;
 
@@ -229,7 +227,7 @@ export class QueryVar<T = any> {
 				throw new Error('uknown type ' + this.type);
 		}
 
-		if (!this.validIfFn(v, cs))
+		if (!this.validIfFn(v, csr))
 			throw new Error(`variable ${this.name} is not valid`);
 
 		return v;

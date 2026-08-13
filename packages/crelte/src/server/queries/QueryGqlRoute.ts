@@ -121,12 +121,7 @@ export default class QueryGqlRoute {
 		let vars: Record<string, any>;
 		try {
 			const reqVars = await csr.req.json();
-			vars = validateVars(
-				this.vars,
-				reqVars,
-				this.validIfFn,
-				caching.router,
-			);
+			vars = validateVars(this.vars, reqVars, this.validIfFn, csr);
 
 			if ('qName' in vars || 'xCraftSite' in vars)
 				throw new Error(
@@ -223,7 +218,7 @@ export default class QueryGqlRoute {
 
 		// now we have a valid json resp.
 		// should we cache it?
-		if (cacheKey && this.cacheIfFn?.(jsonResp.data, vars)) {
+		if (cacheKey && this.cacheIfFn?.(jsonResp.data, vars, csr)) {
 			try {
 				await caching.setCache(cacheKey, jsonResp);
 				if (logInfo) console.log(logInfo + ' set cache');

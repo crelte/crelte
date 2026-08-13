@@ -135,7 +135,7 @@ export default class Queries {
 	}
 
 	/**
-	 * Create a new Queries instance that always intented to call an
+	 * Create a new Queries instance that is always intented to call an
 	 * external GraphQl endpoint.
 	 */
 	static newExternal(endpoint: string, bearerToken?: string): Queries {

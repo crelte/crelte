@@ -147,9 +147,7 @@ export async function initQueryRoutes(
 				rb.vars,
 			);
 
-			router.post('/queries/' + route.name, csr =>
-				route.handle(caching.router, csr),
-			);
+			router.post('/queries/' + route.name, csr => route.handle(csr));
 		} else {
 			throw new Error(
 				`query js/ts ${name} file needs to either have ` +

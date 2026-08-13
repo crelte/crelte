@@ -1,6 +1,5 @@
 import { QueryVar } from '../../queries/vars.js';
 import CrelteServerRequest from '../CrelteServer.js';
-import ServerRouter from '../ServerRouter.js';
 import { HandleFn, newError, validateVars, ValidIfFn } from './routes.js';
 
 // only internal
@@ -22,14 +21,11 @@ export default class QueryHandleRoute {
 		this.vars = vars;
 	}
 
-	async handle(
-		cs: ServerRouter,
-		csr: CrelteServerRequest,
-	): Promise<Response> {
+	async handle(csr: CrelteServerRequest): Promise<Response> {
 		let vars: Record<string, any>;
 		try {
 			const reqVars = await csr.req.json();
-			vars = validateVars(this.vars, reqVars, this.validIfFn, cs);
+			vars = validateVars(this.vars, reqVars, this.validIfFn, csr);
 		} catch (e) {
 			return newError(e, 400);
 		}
