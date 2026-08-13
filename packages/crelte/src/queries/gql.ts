@@ -24,7 +24,11 @@ export function gql(
 			const variable = keys[i];
 
 			// nesting support
-			if (isQuery(variable) && 'query' in variable) {
+			if (
+				typeof variable === 'object' &&
+				variable !== null &&
+				'query' in variable
+			) {
 				query += variable.query;
 			} else if (typeof variable === 'string') {
 				query += variable;
