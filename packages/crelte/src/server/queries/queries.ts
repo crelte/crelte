@@ -132,6 +132,7 @@ export async function initQueryRoutes(
 				);
 
 			const route = new QueryGqlRoute(name, rb.query, rb);
+			await route.init();
 
 			router.post('/queries/' + route.name, csr =>
 				route.handle(caching, csr),

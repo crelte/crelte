@@ -1,4 +1,4 @@
-import { GqlQuery, isQuery } from './Queries.js';
+import { GqlQuery } from './Queries.js';
 
 /**
  * Create a GraphQL query string with variables.

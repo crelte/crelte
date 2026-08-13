@@ -1,4 +1,5 @@
 import { uneval } from 'devalue';
+import { cryptoSha1Hash } from '../utils.js';
 
 /**
  * Calculates a key based on the json representation of the data
@@ -11,20 +12,7 @@ export async function calcKey(data: any): Promise<string> {
 	// specifically in the craft preview locally
 	if (!crypto?.subtle) return json;
 
-	// Convert the string data to an ArrayBuffer
-	const encoder = new TextEncoder();
-	const dataBuffer = encoder.encode(json);
-
-	// Use the Web Crypto API to hash the data with SHA-1
-	const hashBuffer = await crypto.subtle.digest('SHA-1', dataBuffer);
-
-	// Convert the ArrayBuffer to a hex string
-	const hashArray = Array.from(new Uint8Array(hashBuffer)); // Create an array from the buffer
-	const hashHex = hashArray
-		.map(b => b.toString(16).padStart(2, '0'))
-		.join(''); // Convert to hex string
-
-	return hashHex;
+	return await cryptoSha1Hash(json);
 }
 
 /**

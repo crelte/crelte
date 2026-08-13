@@ -34,3 +34,24 @@ export function urlWithPath(url: string, path?: string): URL {
 	u.pathname = path ?? '';
 	return u;
 }
+
+export async function cryptoSha1Hash(str: string): Promise<string> {
+	// Convert the string data to an ArrayBuffer
+	const encoder = new TextEncoder();
+	const dataBuffer = encoder.encode(str);
+
+	// Use the Web Crypto API to hash the data with SHA-1
+	const hashBuffer = await crypto.subtle.digest('SHA-1', dataBuffer);
+
+	const bytes = new Uint8Array(hashBuffer);
+	// @ts-ignore using 2025 baseline feature
+	if (typeof bytes.toHex === 'function') return bytes.toHex();
+
+	// Convert the ArrayBuffer to a hex string
+	const hashArray = Array.from(bytes); // Create an array from the buffer
+	const hashHex = hashArray
+		.map(b => b.toString(16).padStart(2, '0'))
+		.join(''); // Convert to hex string
+
+	return hashHex;
+}

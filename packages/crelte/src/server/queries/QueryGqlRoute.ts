@@ -10,6 +10,7 @@ import {
 	validateVars,
 	ValidIfFn,
 } from './routes.js';
+import { cryptoSha1Hash } from '../../utils.js';
 
 export type QueryGqlArgs = {
 	vars: Record<string, QueryVar> | null;
@@ -23,6 +24,7 @@ export type QueryGqlArgs = {
 export default class QueryGqlRoute {
 	name: string;
 	query: string;
+	queryHash: string;
 	vars: Record<string, QueryVar> | null;
 	validIfFn: ValidIfFn | null;
 	cacheIfFn: CacheIfFn | null;
@@ -39,6 +41,7 @@ export default class QueryGqlRoute {
 
 		this.name = name;
 		this.query = query;
+		this.queryHash = query;
 		this.vars = args.vars;
 		this.validIfFn = args.validIfFn;
 		this.cacheIfFn = args.cacheIfFn;
@@ -54,6 +57,10 @@ export default class QueryGqlRoute {
 		if (this.name === 'entry') this.fillEntryDefaults();
 		else if (this.name === 'global') this.fillGlobalDefaults();
 		else this.fillBasicDefaults();
+	}
+
+	async init() {
+		this.queryHash = await cryptoSha1Hash(this.query);
 	}
 
 	private fillEntryDefaults() {
@@ -123,9 +130,9 @@ export default class QueryGqlRoute {
 			const reqVars = await csr.req.json();
 			vars = validateVars(this.vars, reqVars, this.validIfFn, csr);
 
-			if ('qName' in vars || 'xCraftSite' in vars)
+			if (['qName', 'qHash', 'xCraftSite'].some(name => name in vars))
 				throw new Error(
-					'qName and xCraftSite are reserved variable names',
+					'qName, qHash and xCraftSite are reserved variable names',
 				);
 		} catch (e) {
 			return newError(e, 400);
@@ -153,7 +160,12 @@ export default class QueryGqlRoute {
 		let cacheKey: string | null = null;
 		const useCache = !previewToken && caching.isEnabled();
 		if (useCache) {
-			cacheKey = await calcKey({ ...vars, qName: this.name, xCraftSite });
+			cacheKey = await calcKey({
+				...vars,
+				qName: this.name,
+				qHash: this.queryHash,
+				xCraftSite,
+			});
 			const cached = await caching.getCache(cacheKey);
 
 			if (logInfo) console.log(`${logInfo} ${cached ? 'hit' : 'miss'}`);
