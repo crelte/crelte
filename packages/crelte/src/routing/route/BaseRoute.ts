@@ -31,13 +31,7 @@ export type BaseRouteOptions = {
  * `replace` and `push` will not call loadData
  */
 export type RouteOrigin =
-	| 'init'
-	| 'manual'
-	| 'preload'
-	| 'click'
-	| 'pop'
-	| 'replace'
-	| 'push';
+	'init' | 'manual' | 'preload' | 'click' | 'pop' | 'replace' | 'push';
 
 /**
  * A Route contains information about the current page for example the url and

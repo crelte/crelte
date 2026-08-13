@@ -27,8 +27,7 @@ export interface TemplateModule {
 }
 
 export type LazyTemplateModule =
-	| (() => Promise<TemplateModule>)
-	| TemplateModule;
+	(() => Promise<TemplateModule>) | TemplateModule;
 
 export type TemplateModules = Map<string, LazyTemplateModule>;
 

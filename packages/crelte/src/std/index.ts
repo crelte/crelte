@@ -31,12 +31,7 @@ export interface Cloneable {
  * A type that represents a value that can be cloned.
  */
 export type CloneableOrPrimitive =
-	| Cloneable
-	| string
-	| number
-	| boolean
-	| null
-	| undefined;
+	Cloneable | string | number | boolean | null | undefined;
 
 /**
  * Creates a clone of the provided value. The values need to be either
