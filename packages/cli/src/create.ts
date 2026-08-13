@@ -20,6 +20,7 @@ import color from 'picocolors';
 
 type Options = {
 	template?: string;
+	branch?: string;
 };
 
 const PRIMARY_SITE_URL_REGEX = /PRIMARY_SITE_URL=\s*"?(.*?)"?\s*$/m;
@@ -49,8 +50,12 @@ export default async function create(
 		wd = nWd as string;
 	}
 
+	const cloneArgs = ['clone'];
+	if (opts.branch) cloneArgs.push('-b', opts.branch);
+	cloneArgs.push(template, wd);
+
 	// clone the template
-	await spawn('git', ['clone', template, wd]);
+	await spawn('git', cloneArgs);
 
 	wd = path.resolve(wd);
 	const projectName = path.basename(wd);

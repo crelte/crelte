@@ -13,6 +13,7 @@ program
 		'--template <string>',
 		'the template to use: default, or a url to clone',
 	)
+	.option('--branch <string>', 'the branch to use when cloning a template')
 	.action((cwd, a, b) => create(cwd, a, b));
 
 program.parse();
