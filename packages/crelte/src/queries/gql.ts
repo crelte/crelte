@@ -1,4 +1,4 @@
-import { InlineQuery, isQuery } from './Queries.js';
+import { GqlQuery, isQuery } from './Queries.js';
 
 /**
  * Create a GraphQL query string with variables.
@@ -13,7 +13,7 @@ import { InlineQuery, isQuery } from './Queries.js';
 export function gql(
 	strings: TemplateStringsArray | string[] | string,
 	...keys: unknown[]
-): InlineQuery {
+): GqlQuery {
 	if (typeof strings === 'string') strings = [strings];
 
 	let query = '';

@@ -17,44 +17,28 @@ export type QueriesOptions = {
 /**
  * A GraphQL query
  *
- * **You should almost never**
- *
- * When importing a graphql file you will get a {@link NamedQuery}
- * or use the {@link gql} template function to create
- * an {@link InlineQuery}.
- * Alternatively you can use the {@link namedQuery} function to create
- * a {@link NamedQuery}.
+ * When importing a graphql file you will get a string with the name of the
+ * query or you can use the {@link gql} template function to create
+ * an {@link GqlQuery}.
+ * Alternatively you can use the name of the query directly, note thought
+ * that this will not reload when you're query changes.
  */
-export type Query = InlineQuery | NamedQuery;
+export type Query = string | GqlQuery;
 
 /**
  * You should never create this type directly. It is returned from
  * the {@link gql} template function.
  */
-export type InlineQuery = { path?: string; query: string };
+export type GqlQuery = { path?: string; query: string };
 
-/**
- * Always create this object via the {@link namedQuery} function
- */
-export type NamedQuery = { queryName: string };
-
-/**
- * Create a NamedQuery for the given server query name.
- *
- * Prefer importing a graphql file instead.
- *
- * #### Note
- * This needs to match the name of the js/ts file.
- */
-export function namedQuery(name: string): NamedQuery {
-	return { queryName: name };
-}
-
-/** Returns true if the passed object is a GraphQlQuery */
+/** Returns true if the passed object is a Query */
 export function isQuery(obj: any): obj is Query {
-	if (typeof obj !== 'object' || obj === null) return false;
-
-	return typeof obj.query === 'string' || typeof obj.queryName === 'string';
+	return (
+		typeof obj === 'string' ||
+		(typeof obj === 'object' &&
+			obj !== null &&
+			typeof obj.query === 'string')
+	);
 }
 
 /**
@@ -296,13 +280,13 @@ class Inner {
 	): Promise<unknown> {
 		let logName: string, url: URL;
 
-		if ('queryName' in query) {
+		if (typeof query === 'string') {
 			if (!this.frontend)
 				throw new Error('only inline queries supported');
 
-			logName = `query (server: ${query.queryName})`;
+			logName = `query (server: ${query})`;
 			url = new URL(this.frontend);
-			url.pathname = '/queries/' + query.queryName;
+			url.pathname = '/queries/' + query;
 		} else {
 			logName = `query (${query.path ?? 'unknown'})`;
 			url = new URL(this.endpoint);
@@ -329,7 +313,7 @@ class Inner {
 		if (this.loggingTiming) timing = Date.now();
 
 		let body: any;
-		if ('queryName' in query) {
+		if (typeof query === 'string') {
 			body = vars;
 		} else {
 			body = { query: query.query, variables: vars };

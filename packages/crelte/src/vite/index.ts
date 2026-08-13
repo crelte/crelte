@@ -107,9 +107,7 @@ function graphQlFiles(
 
 	if (!ssr) {
 		return `
-export default {
-	queryName: ${JSON.stringify(name)}
-};
+export default ${JSON.stringify(name)};
 `;
 	}
 
@@ -118,9 +116,7 @@ export default {
 		.replace(/\u2029/g, '\\u2029');
 
 	return `
-export default {
-	queryName: ${JSON.stringify(name)}
-};
+export default ${JSON.stringify(name)};
 
 export const query = {
 	path: ${JSON.stringify(path)},

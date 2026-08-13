@@ -74,8 +74,6 @@ export type LoadData<A1 = any> =
 	| Query
 	| LoadDataObj<A1>
 	| LoadDataArray<A1>
-	| string
-	| number
 	| null
 	| undefined;
 

@@ -53,7 +53,7 @@ export default class InternalApp {
 	}
 
 	get loadGlobalData(): LoadData<null> {
-		return this.inner.loadGlobalData ?? { queryName: 'global' };
+		return this.inner.loadGlobalData ?? 'global';
 	}
 
 	init(crelte: Crelte): void {
@@ -62,7 +62,7 @@ export default class InternalApp {
 
 	get loadEntry(): LoadData<null> {
 		// if no loadEntry property was defined we expect a graphql entry file
-		return this.inner.loadEntry ?? { queryName: 'entry' };
+		return this.inner.loadEntry ?? 'entry';
 	}
 
 	async loadTemplate(entry: Entry): Promise<TemplateModule> {
