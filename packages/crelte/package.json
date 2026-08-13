@@ -111,6 +111,10 @@
 		"./std/url": {
 			"types": "./dist/std/url/index.d.ts",
 			"default": "./dist/std/url/index.js"
+		},
+		"./std/encdec": {
+			"types": "./dist/std/encdec/index.d.ts",
+			"default": "./dist/std/encdec/index.js"
 		}
 	},
 	"dependencies": {
