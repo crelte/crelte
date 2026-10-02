@@ -293,6 +293,13 @@ export default class BaseRoute {
 		}
 	}
 	/**
+	 * Returns the site preview token, or null if it is missing or empty.
+	 */
+	getSiteToken(): string | null {
+		return this.search.get('siteToken') || null;
+	}
+
+	/**
 	 * Returns true if the route is in live preview mode
 	 */
 	inLivePreview(): boolean {

@@ -20,6 +20,7 @@ export default class ClientRouter extends BaseRouter {
 
 		this.scrollDebounceTimeout = null;
 		this.preloadOnMouseOver = opts.preloadOnMouseOver;
+
 		this.onError = () => {};
 	}
 
@@ -82,13 +83,7 @@ export default class ClientRouter extends BaseRouter {
 			}
 		}
 
-		// if the domain of the current site is different than the domain of the
-		// new site we need to do a window.location.href call
-		if (
-			(current && current.url.origin !== req.url.origin) ||
-			// @ts-ignore
-			import.meta.env.SSR
-		) {
+		if (this.requiresPageLoad(req)) {
 			window.location.href = req.url.href;
 			return;
 		}
@@ -107,6 +102,11 @@ export default class ClientRouter extends BaseRouter {
 	async pushRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
 
+		if (this.requiresPageLoad(req)) {
+			window.location.href = url.href;
+			return;
+		}
+
 		return this.handleRequest(req, route => {
 			window.history.pushState(
 				route.z_toState(),
@@ -119,6 +119,11 @@ export default class ClientRouter extends BaseRouter {
 	async replaceRequest(req: Request, _opts: RequestOptions = {}) {
 		const url = req.url;
 
+		if (this.requiresPageLoad(req)) {
+			window.location.replace(url.href);
+			return;
+		}
+
 		return this.handleRequest(req, () => {
 			window.history.replaceState(
 				req.z_toState(),
@@ -130,6 +135,15 @@ export default class ClientRouter extends BaseRouter {
 
 	back(): void {
 		window.history.back();
+	}
+
+	private requiresPageLoad(req: Request): boolean {
+		const current = this.route.get();
+		return (
+			!!current &&
+			(current.url.origin !== req.url.origin ||
+				current.getSiteToken() !== req.getSiteToken())
+		);
 	}
 
 	/**
@@ -204,6 +218,11 @@ export default class ClientRouter extends BaseRouter {
 				origin: 'pop',
 			});
 			req.z_fillFromState(e.state);
+
+			if (this.requiresPageLoad(req)) {
+				window.location.reload();
+				return;
+			}
 
 			// todo handle errors
 			this.handleRequest(req, () => {});

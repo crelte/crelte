@@ -58,10 +58,17 @@ export type QueryOptions = {
 	bearerToken?: string;
 
 	/**
-	 * Configure caching
+	 * Configure Crelte's local query caching.
 	 * @default true
 	 */
 	caching?: boolean;
+
+	/**
+	 * Allow Craft's configured GraphQL caching. Set false to bypass it.
+	 * Does not affect Crelte's caching.
+	 * @default true
+	 */
+	craftCaching?: boolean;
 
 	/**
 	 * Usually automatically set
@@ -165,6 +172,7 @@ export default class Queries {
 			bearerToken,
 			xCraftSiteId,
 			caching: opts.caching ?? true,
+			craftCaching: opts.craftCaching ?? true,
 		});
 	}
 
@@ -183,6 +191,7 @@ type InnerQueryOptions = {
 	bearerToken: string | null;
 	xCraftSiteId: number | null;
 	caching: boolean;
+	craftCaching: boolean;
 };
 
 class Inner {
@@ -303,6 +312,8 @@ class Inner {
 
 		if (opts.xCraftSiteId)
 			headers['X-Craft-Site'] = opts.xCraftSiteId.toString();
+
+		if (!opts.craftCaching) headers['X-Craft-GQL-Cache'] = 'no-cache';
 
 		if (this.loggingRequests) {
 			console.log(logName + ' to:', url.toString(), vars, headers);

@@ -143,22 +143,15 @@ export default class QueryGqlRoute {
 			logInfo = `[queries: ${this.name}] vars: ${JSON.stringify(vars)}`;
 		}
 
-		let previewToken: string | null = null;
-		let siteToken: string | null = null;
-
 		const reqSearch = new URL(csr.req.url).searchParams;
-
-		if (reqSearch.has('token')) {
-			previewToken = reqSearch.get('token');
-		} else if (reqSearch.has('siteToken')) {
-			siteToken = reqSearch.get('siteToken');
-		}
+		const previewToken = reqSearch.get('token');
+		const siteToken = reqSearch.get('siteToken');
 
 		// check for x-craft-site header and pass it on
 		const xCraftSite = csr.req.headers.get('X-Craft-Site');
 
 		let cacheKey: string | null = null;
-		const useCache = !previewToken && caching.isEnabled();
+		const useCache = !previewToken && !siteToken && caching.isEnabled();
 		if (useCache) {
 			cacheKey = await calcKey({
 				...vars,
@@ -189,6 +182,10 @@ export default class QueryGqlRoute {
 		if (xDebug) headers['X-Debug'] = xDebug;
 
 		if (xCraftSite) headers['X-Craft-Site'] = xCraftSite;
+
+		if (csr.req.headers.get('X-Craft-GQL-Cache') === 'no-cache') {
+			headers['X-Craft-GQL-Cache'] = 'no-cache';
+		}
 
 		// now execute the gql request
 		let resp: Response;

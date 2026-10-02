@@ -77,6 +77,7 @@ export type SitesCache = {
 export async function initSites(
 	env: EnvData,
 	cache?: SitesCache,
+	siteToken?: string,
 ): Promise<SiteFromGraphQl[]> {
 	const queries = Queries.new(
 		env.endpointUrl,
@@ -84,19 +85,34 @@ export async function initSites(
 		new SsrCache(),
 		{ bearerToken: env.endpointToken },
 	);
-	return await loadSites(queries, cache);
+	return await loadSites(queries, cache, siteToken);
+}
+
+export async function initRequestSites(
+	env: EnvData,
+	sites: SiteFromGraphQl[],
+	req: Request,
+): Promise<SiteFromGraphQl[]> {
+	const siteToken = new URL(req.url).searchParams.get('siteToken');
+	if (!siteToken) return sites;
+
+	// Preview sites belong to this request, not the shared site cache.
+	return await initSites(env, undefined, siteToken);
 }
 
 // requires, GraphQl, SsrCache
 async function loadSites(
 	queries: Queries,
 	cache?: SitesCache,
+	siteToken?: string,
 ): Promise<SiteFromGraphQl[]> {
-	if ('CRAFT_SITES_CACHED' in globalThis) {
+	const useCache = !siteToken;
+
+	if (useCache && 'CRAFT_SITES_CACHED' in globalThis) {
 		return (globalThis as any)['CRAFT_SITES_CACHED'];
 	}
 
-	if (cache?.enabled && cache?.readSitesCache) {
+	if (useCache && cache?.enabled && cache?.readSitesCache) {
 		try {
 			const sites = (await cache.readSitesCache()) as SiteFromGraphQl[];
 			// @ts-ignore
@@ -122,13 +138,15 @@ async function loadSites(
 		`,
 		{},
 		// don't cache since we cache ourself
-		{ caching: false },
+		{ caching: false, craftCaching: useCache, siteToken },
 	)) as { crelteSites: SiteFromGraphQl[] };
 
-	// @ts-ignore
-	globalThis['CRAFT_SITES_CACHED'] = resp.crelteSites;
-	if (cache?.enabled && cache?.writeSitesCache) {
-		await cache.writeSitesCache(resp.crelteSites);
+	if (useCache) {
+		// @ts-ignore
+		globalThis['CRAFT_SITES_CACHED'] = resp.crelteSites;
+		if (cache?.enabled && cache?.writeSitesCache) {
+			await cache.writeSitesCache(resp.crelteSites);
+		}
 	}
 	return resp.crelteSites;
 }

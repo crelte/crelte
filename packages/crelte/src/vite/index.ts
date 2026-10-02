@@ -14,6 +14,7 @@ import {
 	EnvData,
 	initEnvData,
 	initSites,
+	initRequestSites,
 	modRender,
 	modRenderError,
 } from '../server/shared.js';
@@ -306,11 +307,13 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			sites = await initSites(env);
 		}
 
+		const requestSites = await initRequestSites(env, sites, req);
+
 		const router = new ServerRouter(
 			env.endpointUrl,
 			env.frontendUrl,
 			env.env,
-			sites,
+			requestSites,
 			{ endpointToken: env.endpointToken },
 		);
 
@@ -355,7 +358,13 @@ async function serveVite(env: EnvData, vite: ViteDevServer) {
 			return;
 		}
 
-		const response = await modRender(env, sites, serverMod, template, req);
+		const response = await modRender(
+			env,
+			requestSites,
+			serverMod,
+			template,
+			req,
+		);
 		await webResponseToResponse(response, res);
 	};
 

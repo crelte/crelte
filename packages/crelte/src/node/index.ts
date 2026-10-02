@@ -6,6 +6,7 @@ import {
 	EnvData,
 	initEnvData,
 	initSites,
+	initRequestSites,
 	modRender,
 	modRenderError,
 } from '../server/shared.js';
@@ -37,12 +38,15 @@ async function writeSitesCache(data: any): Promise<void> {
 async function initRouter(
 	serverMod: any,
 	env: EnvData,
+	sites?: SiteFromGraphQl[],
 ): Promise<[SiteFromGraphQl[], ServerRouter]> {
-	const sites = await initSites(env, {
-		enabled: process.env.NODE_ENV === 'production',
-		writeSitesCache,
-		readSitesCache,
-	});
+	if (!sites) {
+		sites = await initSites(env, {
+			enabled: process.env.NODE_ENV === 'production',
+			writeSitesCache,
+			readSitesCache,
+		});
+	}
 
 	const router = new ServerRouter(
 		env.endpointUrl,
@@ -113,7 +117,13 @@ export default async function createServer(serverMod: any, buildTime: string) {
 			throw routesError ?? new Error('Router not initialized');
 		}
 
-		const routeResp = await router.z_handle(req);
+		const requestSites = await initRequestSites(env, sites, req);
+		const requestRouter =
+			requestSites === sites
+				? router
+				: (await initRouter(serverMod, env, requestSites))[1];
+
+		const routeResp = await requestRouter.z_handle(req);
 		if (routeResp) {
 			await webResponseToResponse(routeResp, res);
 			return;
@@ -121,9 +131,14 @@ export default async function createServer(serverMod: any, buildTime: string) {
 
 		if (await basicAuthCheck(req, res, env)) return;
 
-		const response = await modRender(env, sites, serverMod, template, req, {
-			ssrManifest,
-		});
+		const response = await modRender(
+			env,
+			requestSites,
+			serverMod,
+			template,
+			req,
+			{ ssrManifest },
+		);
 		await webResponseToResponse(response, res);
 	};
 

@@ -235,9 +235,12 @@ export default class BaseRouter {
 		const req = this.targetToRequest(target, { origin: 'preload' });
 		const current = this.route.get();
 
-		// if the origin matches, the route will be able to be loaded
-		// so let's preload it
-		if (current && current.url.origin === req.url.origin) {
+		// Preload only within the current origin and site preview context.
+		if (
+			current &&
+			current.url.origin === req.url.origin &&
+			current.getSiteToken() === req.getSiteToken()
+		) {
 			// todo i don't wan't to send a CrelteRequest?
 			// todo, it would be nice if this could not have any side effects
 			// but at the moment cr.router.open will cause a redirect
