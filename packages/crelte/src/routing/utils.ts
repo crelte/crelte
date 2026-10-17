@@ -28,6 +28,7 @@ export function shouldInterceptClick(
 	const saveLink = e.altKey;
 	if (!link || !link.href || openInNewTab || saveLink) return false;
 	if (link.target.toLowerCase() === '_blank') return false;
+	if (link.hasAttribute('download')) return false;
 	if (!link.href.startsWith('http')) return false;
 
 	return true;

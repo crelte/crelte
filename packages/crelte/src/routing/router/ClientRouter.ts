@@ -195,7 +195,12 @@ export default class ClientRouter extends BaseRouter {
 				const link = e.target.closest('a');
 
 				if (currentMouseOver && link === currentMouseOver) return;
-				if (link && link.target.toLowerCase() === '_blank') return;
+				if (
+					link &&
+					(link.target.toLowerCase() === '_blank' ||
+						link.hasAttribute('download'))
+				)
+					return;
 
 				if (
 					link &&
